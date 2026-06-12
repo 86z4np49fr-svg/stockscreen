@@ -165,34 +165,103 @@ async function analyzeStock() {
     }
     
     const m = metric.metric;
-    const roe = m.roeTTM;
-    const pe = m.peBasicExclExtraTTM;
-    const de = m.totalDebt && m.totalEquity ? (m.totalDebt / m.totalEquity).toFixed(2) : null;
-    const netMargin = m.netMarginTTM;
-    const score = Math.round((roe ? (roe/15)*20 : 0) + (netMargin ? (netMargin/20)*15 : 0) + (pe ? Math.max(0, 15-(pe/3)) : 0) + (de ? (1-Math.min(de/1, 1))*20 : 0) + 30);
+    
+    // Extract all 24 indicators
+    function getVal(keys) {
+      for (const key of keys) {
+        for (const [k, v] of Object.entries(m)) {
+          if (k.toLowerCase().includes(key.toLowerCase()) && v != null) return Number(v).toFixed(2);
+        }
+      }
+      return null;
+    }
+    
+    const data = {
+      roe: getVal(['roe']), roce: getVal(['roic']), netMargin: getVal(['netmargin']), grossMargin: getVal(['grossmargin']),
+      de: m.totalDebt && m.totalEquity ? (m.totalDebt/m.totalEquity).toFixed(2) : null,
+      icr: getVal(['interest']), currentRatio: getVal(['currentratio']),
+      evEbitda: getVal(['ev','ebitda']), peg: getVal(['peg']), pe: getVal(['pe']), pb: getVal(['pb']),
+      revenueGrowth: getVal(['revenue','growth']), dividendYield: getVal(['dividend']),
+      fcfYield: getVal(['fcf']), operatingMargin: getVal(['operatingmargin']),
+      ocfToNI: getVal(['ocf']), debtToEbitda: getVal(['debt','ebitda']),
+      quickRatio: getVal(['quickratio']), assetTurnover: getVal(['assetturno']),
+      payoutRatio: getVal(['payout']), epsGrowth: getVal(['eps','growth']),
+      roa: getVal(['roa'])
+    };
+    
+    const rag = (key, v) => {
+      if (v == null) return '';
+      v = Number(v);
+      const t = {roe:{g:15,a:8},roce:{g:15,a:8},roa:{g:10,a:5},de:{g:.5,a:1},icr:{g:3,a:2},
+        evEbitda:{g:10,a:15},peg:{g:1,a:1.5},pe:{g:15,a:25},pb:{g:1.5,a:3},
+        netMargin:{g:20,a:10},grossMargin:{g:50,a:30},revenueGrowth:{g:15,a:5},currentRatio:{g:2,a:1},
+        dividendYield:{g:3,a:1},fcfYield:{g:5,a:2},operatingMargin:{g:15,a:8},ocfToNI:{g:1,a:.7},
+        debtToEbitda:{g:2,a:3},quickRatio:{g:1.2,a:.8},assetTurnover:{g:1.5,a:.9},
+        payoutRatio:{g:30,a:60},epsGrowth:{g:12,a:4}};
+      const lower = ['de','evEbitda','peg','pe','pb','payoutRatio'].includes(key);
+      const th = t[key];
+      if (!th) return '';
+      return lower ? (v<=th.g?'g':v<=th.a?'a':'r') : (v>=th.g?'g':v>=th.a?'a':'r');
+    };
+    
+    const indicator = (name, key, val) => {
+      const r = rag(key, val);
+      return `<div class="stat-box" style="border-color:${r==='g'?'rgba(52,211,153,.35)':r==='a'?'rgba(251,191,36,.35)':'rgba(248,113,113,.35)'}"><div class="stat-label">${name}</div><div class="stat-value" style="color:${r==='g'?'var(--green)':r==='a'?'#fbbf24':'var(--red)'}">${val||'—'}</div></div>`;
+    };
+    
+    const score = Math.round((data.roe ? (data.roe/15)*12 : 0) + (data.roce ? (data.roce/15)*12 : 0) + (data.de ? (1-Math.min(data.de/1,1))*10 : 0) + (data.netMargin ? (data.netMargin/20)*8 : 0) + (data.revenueGrowth ? Math.min(data.revenueGrowth/15, 1)*10 : 0) + (data.fcfYield ? Math.min(data.fcfYield/5, 1)*10 : 0) + (data.pe ? Math.max(0, 10-data.pe/3) : 0) + (data.currentRatio ? Math.min(data.currentRatio/2, 1)*7 : 0) + (data.quickRatio ? Math.min(data.quickRatio/1.2, 1)*5 : 0) + (data.operatingMargin ? Math.min(data.operatingMargin/15, 1)*8 : 0));
     const grade = score >= 85 ? 'A' : score >= 70 ? 'B' : score >= 55 ? 'C' : score >= 40 ? 'D' : 'F';
     
-    output.innerHTML = `
+    const html = `
       <div class="card">
-        <div style="display:flex;gap:16px;align-items:flex-start">
+        <div style="display:flex;gap:16px;align-items:flex-start;margin-bottom:16px">
           <div style="font-size:48px;font-weight:800;color:var(--${grade==='A'||grade==='B'?'green':'red'})">${grade}</div>
           <div style="flex:1">
             <div style="font-size:18px;font-weight:800">${profile.name}</div>
             <div style="font-size:12px;color:var(--muted);margin-top:4px">${profile.finnhubIndustry || 'N/A'}</div>
           </div>
         </div>
-        <div class="stat-grid" style="margin-top:12px">
-          <div class="stat-box"><div class="stat-label">ROE</div><div class="stat-value" style="color:${roe>15?'var(--green)':'var(--red)'}">${roe?.toFixed(1)||'—'}%</div></div>
-          <div class="stat-box"><div class="stat-label">P/E</div><div class="stat-value" style="color:${pe<20?'var(--green)':'var(--red)'}">${pe?.toFixed(1)||'—'}</div></div>
-          <div class="stat-box"><div class="stat-label">D/E</div><div class="stat-value" style="color:${de<1?'var(--green)':'var(--red)'}">${de||'—'}</div></div>
-          <div class="stat-box"><div class="stat-label">Net Margin</div><div class="stat-value" style="color:${netMargin>20?'var(--green)':'var(--red)'}">${netMargin?.toFixed(1)||'—'}%</div></div>
-        </div>
-        <div style="margin-top:12px;padding:12px;background:var(--card);border-radius:8px">
-          <div style="font-size:13px;font-weight:800">Score: ${score}/100</div>
+        
+        <div style="margin-bottom:16px;padding:12px;background:var(--card);border-radius:8px;border-left:3px solid var(--${score>=70?'green':score>=50?'accent':'red'})">
+          <div style="font-size:13px;font-weight:800">Score: ${Math.round(score)}/100</div>
           <div style="font-size:12px;color:var(--muted);margin-top:6px">${score>=70?'Strong fundamentals':score>=50?'Mixed outlook':'Concerns present'}</div>
         </div>
+        
+        <div style="margin-bottom:16px">
+          <div style="font-size:13px;font-weight:800;margin-bottom:10px">💰 Money Maker</div>
+          <div class="stat-grid">${indicator('ROE %','roe',data.roe)}${indicator('ROCE %','roce',data.roce)}${indicator('Net Margin %','netMargin',data.netMargin)}${indicator('Gross Margin %','grossMargin',data.grossMargin)}</div>
+        </div>
+        
+        <div style="margin-bottom:16px">
+          <div style="font-size:13px;font-weight:800;margin-bottom:10px">🛡️ Safety Net</div>
+          <div class="stat-grid">${indicator('D/E Ratio','de',data.de)}${indicator('Int. Coverage','icr',data.icr)}${indicator('Current Ratio','currentRatio',data.currentRatio)}</div>
+        </div>
+        
+        <div style="margin-bottom:16px">
+          <div style="font-size:13px;font-weight:800;margin-bottom:10px">🏷️ Price Tag</div>
+          <div class="stat-grid">${indicator('EV/EBITDA','evEbitda',data.evEbitda)}${indicator('PEG Ratio','peg',data.peg)}${indicator('P/E Ratio','pe',data.pe)}${indicator('P/B Ratio','pb',data.pb)}</div>
+        </div>
+        
+        <div style="margin-bottom:16px">
+          <div style="font-size:13px;font-weight:800;margin-bottom:10px">🌱 Getting Better</div>
+          <div class="stat-grid">${indicator('Revenue Growth %','revenueGrowth',data.revenueGrowth)}</div>
+        </div>
+        
+        <div style="margin-bottom:16px">
+          <div style="font-size:13px;font-weight:800;margin-bottom:10px">🔬 Quality & Efficiency</div>
+          <div class="stat-grid">${indicator('FCF Yield %','fcfYield',data.fcfYield)}${indicator('Op. Margin %','operatingMargin',data.operatingMargin)}${indicator('OCF/NI','ocfToNI',data.ocfToNI)}${indicator('Debt/EBITDA','debtToEbitda',data.debtToEbitda)}${indicator('Quick Ratio','quickRatio',data.quickRatio)}${indicator('Asset Turnover','assetTurnover',data.assetTurnover)}${indicator('Payout Ratio %','payoutRatio',data.payoutRatio)}${indicator('EPS Growth %','epsGrowth',data.epsGrowth)}</div>
+        </div>
+        
+        <div style="margin-bottom:16px">
+          <div style="font-size:13px;font-weight:800;margin-bottom:10px">💵 Extra Stats</div>
+          <div class="stat-grid">${indicator('Dividend Yield %','dividendYield',data.dividendYield)}${indicator('ROA %','roa',data.roa)}</div>
+        </div>
+        
+        <button style="width:100%;padding:10px;background:var(--card);border:1px solid var(--border);color:var(--accent);border-radius:8px;cursor:pointer;font-weight:700;margin-top:12px" onclick="alert('Peer comparison coming soon!')">📊 Compare to peers</button>
       </div>
     `;
+    
+    output.innerHTML = html;
   } catch(e) {
     output.innerHTML = '<div style="color:var(--red)">❌ Error: ' + e.message + '</div>';
   }
