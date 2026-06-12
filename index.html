@@ -65,6 +65,7 @@ footer{margin-top:40px;padding-top:16px;border-top:1px solid var(--border);color
     <button class="nav-tab active" id="tab-analyzer">📊 Analyzer</button>
     <button class="nav-tab" id="tab-portfolio">💼 Portfolio</button>
     <button class="nav-tab" id="tab-screener">🔍 Screener</button>
+    <button class="nav-tab" id="tab-technicals">📈 Technicals</button>
     <button class="nav-tab" id="tab-news">📰 News</button>
   </div>
 
@@ -110,6 +111,15 @@ footer{margin-top:40px;padding-top:16px;border-top:1px solid var(--border);color
     <div id="screenerOutput" class="empty">Add tickers to compare.</div>
   </div>
 
+  <div class="view" id="technicals">
+    <div class="row">
+      <input type="text" id="techInput" placeholder="Ticker for technical analysis">
+      <button class="btn btn-go" id="techBtn">Analyze 📈</button>
+      <button class="btn btn-ghost" id="techDemoBtn">Demo</button>
+    </div>
+    <div id="techOutput" class="empty">Enter a ticker to see RSI, MACD, moving averages, Bollinger Bands, and price chart.</div>
+  </div>
+
   <div class="view" id="news">
     <div class="row">
       <input type="text" id="newsInput" placeholder="Ticker for news" style="max-width:200px">
@@ -129,6 +139,7 @@ const state = { portfolio: [], screenerResults: [] };
 document.getElementById('tab-analyzer').addEventListener('click', () => switchTab('analyzer'));
 document.getElementById('tab-portfolio').addEventListener('click', () => switchTab('portfolio'));
 document.getElementById('tab-screener').addEventListener('click', () => switchTab('screener'));
+document.getElementById('tab-technicals').addEventListener('click', () => switchTab('technicals'));
 document.getElementById('tab-news').addEventListener('click', () => switchTab('news'));
 
 function switchTab(name) {
@@ -464,6 +475,240 @@ function renderScreener() {
       analyzeStock();
     });
   });
+}
+
+// ===== TECHNICALS =====
+document.getElementById('techBtn').addEventListener('click', loadTechnicals);
+document.getElementById('techDemoBtn').addEventListener('click', () => {
+  document.getElementById('techInput').value = 'AAPL';
+  loadTechnicals();
+});
+
+// --- Indicator math (computed from daily closes) ---
+function calcSMA(closes, period) {
+  const out = new Array(closes.length).fill(null);
+  let sum = 0;
+  for (let i = 0; i < closes.length; i++) {
+    sum += closes[i];
+    if (i >= period) sum -= closes[i - period];
+    if (i >= period - 1) out[i] = sum / period;
+  }
+  return out;
+}
+
+function calcEMA(closes, period) {
+  const out = new Array(closes.length).fill(null);
+  const k = 2 / (period + 1);
+  let ema = null;
+  for (let i = 0; i < closes.length; i++) {
+    if (i === period - 1) {
+      let s = 0;
+      for (let j = 0; j < period; j++) s += closes[j];
+      ema = s / period;
+      out[i] = ema;
+    } else if (i >= period) {
+      ema = closes[i] * k + ema * (1 - k);
+      out[i] = ema;
+    }
+  }
+  return out;
+}
+
+function calcRSI(closes, period) {
+  period = period || 14;
+  const out = new Array(closes.length).fill(null);
+  let avgGain = 0, avgLoss = 0;
+  for (let i = 1; i < closes.length; i++) {
+    const change = closes[i] - closes[i - 1];
+    const gain = change > 0 ? change : 0;
+    const loss = change < 0 ? -change : 0;
+    if (i <= period) {
+      avgGain += gain / period;
+      avgLoss += loss / period;
+      if (i === period) out[i] = 100 - (100 / (1 + (avgLoss === 0 ? 100 : avgGain / avgLoss)));
+    } else {
+      avgGain = (avgGain * (period - 1) + gain) / period;
+      avgLoss = (avgLoss * (period - 1) + loss) / period;
+      out[i] = 100 - (100 / (1 + (avgLoss === 0 ? 100 : avgGain / avgLoss)));
+    }
+  }
+  return out;
+}
+
+function calcMACD(closes) {
+  const ema12 = calcEMA(closes, 12);
+  const ema26 = calcEMA(closes, 26);
+  const macdLine = closes.map((c, i) => (ema12[i] != null && ema26[i] != null) ? ema12[i] - ema26[i] : null);
+  // Signal line = 9-period EMA of the MACD line
+  const valid = macdLine.map(v => v == null ? 0 : v);
+  const signalRaw = calcEMA(valid, 9);
+  const firstIdx = macdLine.findIndex(v => v != null);
+  const signal = signalRaw.map((v, i) => i >= firstIdx + 8 ? v : null);
+  return { macdLine, signal };
+}
+
+function calcBollinger(closes, period, mult) {
+  period = period || 20; mult = mult || 2;
+  const mid = calcSMA(closes, period);
+  const upper = new Array(closes.length).fill(null);
+  const lower = new Array(closes.length).fill(null);
+  for (let i = period - 1; i < closes.length; i++) {
+    let variance = 0;
+    for (let j = i - period + 1; j <= i; j++) variance += Math.pow(closes[j] - mid[i], 2);
+    const sd = Math.sqrt(variance / period);
+    upper[i] = mid[i] + mult * sd;
+    lower[i] = mid[i] - mult * sd;
+  }
+  return { mid, upper, lower };
+}
+
+async function loadTechnicals() {
+  const ticker = document.getElementById('techInput').value.trim().toUpperCase();
+  if (!ticker) return alert('Enter a ticker');
+  const output = document.getElementById('techOutput');
+  output.innerHTML = '<div style="color:var(--accent)">⟳ Loading price history...</div>';
+
+  try {
+    const to = Math.floor(Date.now() / 1000);
+    const from = to - (420 * 24 * 60 * 60); // ~420 days for SMA200
+    const url = 'https://finnhub.io/api/v1/stock/candle?symbol=' + ticker + '&resolution=D&from=' + from + '&to=' + to + '&token=' + API_KEY;
+    const candles = await fetch(url).then(r => r.json());
+
+    if (!candles || candles.s !== 'ok' || !candles.c || candles.c.length < 30) {
+      output.innerHTML = '<div class="card"><div style="color:var(--red);font-weight:700;margin-bottom:8px">❌ Could not load price history for ' + ticker + '</div><div style="font-size:12px;color:var(--muted);line-height:1.6">Finnhub returned: <b>' + (candles && candles.s ? candles.s : (candles && candles.error ? candles.error : 'no data')) + '</b><br><br>Note: Finnhub restricts the candle (price history) endpoint on some free-tier keys. If this keeps failing, we can switch the Technicals tab to a different free data source (e.g. Twelve Data or Alpha Vantage) — fundamentals will keep using Finnhub as before.</div></div>';
+      return;
+    }
+
+    const closes = candles.c;
+    const volumes = candles.v || [];
+    const times = candles.t;
+    const price = closes[closes.length - 1];
+
+    const sma50 = calcSMA(closes, 50);
+    const sma200 = calcSMA(closes, 200);
+    const ema20 = calcEMA(closes, 20);
+    const rsi = calcRSI(closes, 14);
+    const { macdLine, signal } = calcMACD(closes);
+    const boll = calcBollinger(closes, 20, 2);
+
+    const last = arr => { for (let i = arr.length - 1; i >= 0; i--) { if (arr[i] != null) return arr[i]; } return null; };
+    const s50 = last(sma50), s200 = last(sma200), e20 = last(ema20);
+    const rsiNow = last(rsi);
+    const macdNow = last(macdLine), sigNow = last(signal);
+    const bUp = last(boll.upper), bLow = last(boll.lower), bMid = last(boll.mid);
+
+    // 52-week range
+    const yearCloses = closes.slice(-252);
+    const hi52 = Math.max(...yearCloses), lo52 = Math.min(...yearCloses);
+    const rangePos = ((price - lo52) / (hi52 - lo52)) * 100;
+
+    // Signals
+    const signals = [];
+    let trendState, trendColor;
+    if (s50 && s200 && price > s50 && s50 > s200) { trendState = 'Strong Uptrend'; trendColor = 'var(--green)'; }
+    else if (s50 && s200 && price < s50 && s50 < s200) { trendState = 'Downtrend'; trendColor = 'var(--red)'; }
+    else { trendState = 'Mixed / Sideways'; trendColor = '#fbbf24'; }
+    signals.push({ name: 'Trend (vs SMA50/200)', value: trendState, color: trendColor, detail: 'Price $' + price.toFixed(2) + ' | SMA50 ' + (s50 ? '$' + s50.toFixed(2) : '—') + ' | SMA200 ' + (s200 ? '$' + s200.toFixed(2) : '—') });
+
+    // Golden / death cross in last 30 sessions
+    if (s50 && s200) {
+      let cross = null;
+      for (let i = Math.max(1, closes.length - 30); i < closes.length; i++) {
+        if (sma50[i] != null && sma200[i] != null && sma50[i-1] != null && sma200[i-1] != null) {
+          if (sma50[i-1] <= sma200[i-1] && sma50[i] > sma200[i]) cross = 'golden';
+          if (sma50[i-1] >= sma200[i-1] && sma50[i] < sma200[i]) cross = 'death';
+        }
+      }
+      if (cross === 'golden') signals.push({ name: 'Crossover Alert', value: '✨ Golden Cross (last 30 days)', color: 'var(--green)', detail: 'SMA50 crossed above SMA200 — classic bullish signal' });
+      if (cross === 'death') signals.push({ name: 'Crossover Alert', value: '💀 Death Cross (last 30 days)', color: 'var(--red)', detail: 'SMA50 crossed below SMA200 — classic bearish signal' });
+    }
+
+    const rsiState = rsiNow > 70 ? ['Overbought', 'var(--red)', 'Price may be stretched — pullback risk'] : rsiNow < 30 ? ['Oversold', '#fbbf24', 'Heavily sold — watch for reversal'] : ['Neutral', 'var(--green)', 'No extreme momentum reading'];
+    signals.push({ name: 'RSI (14)', value: rsiNow.toFixed(1) + ' — ' + rsiState[0], color: rsiState[1], detail: rsiState[2] });
+
+    const macdBull = macdNow != null && sigNow != null && macdNow > sigNow;
+    signals.push({ name: 'MACD (12,26,9)', value: macdBull ? 'Bullish (above signal)' : 'Bearish (below signal)', color: macdBull ? 'var(--green)' : 'var(--red)', detail: 'MACD ' + (macdNow != null ? macdNow.toFixed(2) : '—') + ' vs Signal ' + (sigNow != null ? sigNow.toFixed(2) : '—') });
+
+    let bollState, bollColor;
+    if (bUp && price > bUp) { bollState = 'Above upper band — stretched'; bollColor = 'var(--red)'; }
+    else if (bLow && price < bLow) { bollState = 'Below lower band — washed out'; bollColor = '#fbbf24'; }
+    else { bollState = 'Inside bands — normal range'; bollColor = 'var(--green)'; }
+    signals.push({ name: 'Bollinger Bands (20,2)', value: bollState, color: bollColor, detail: 'Upper $' + (bUp ? bUp.toFixed(2) : '—') + ' | Mid $' + (bMid ? bMid.toFixed(2) : '—') + ' | Lower $' + (bLow ? bLow.toFixed(2) : '—') });
+
+    signals.push({ name: '52-Week Range', value: rangePos.toFixed(0) + '% of range', color: rangePos > 80 ? 'var(--green)' : rangePos < 20 ? 'var(--red)' : '#fbbf24', detail: 'Low $' + lo52.toFixed(2) + ' → High $' + hi52.toFixed(2) });
+
+    if (volumes.length > 20) {
+      const recentVol = volumes.slice(-5).reduce((a,b) => a+b, 0) / 5;
+      const avgVol = volumes.slice(-60).reduce((a,b) => a+b, 0) / Math.min(60, volumes.length);
+      const volRatio = recentVol / avgVol;
+      signals.push({ name: 'Volume (5d vs 60d avg)', value: volRatio > 1.5 ? 'Heavy volume (' + volRatio.toFixed(1) + 'x)' : volRatio < 0.6 ? 'Light volume (' + volRatio.toFixed(1) + 'x)' : 'Normal (' + volRatio.toFixed(1) + 'x)', color: volRatio > 1.5 ? '#fbbf24' : 'var(--green)', detail: 'Elevated volume confirms moves; light volume = low conviction' });
+    }
+
+    const sigCards = signals.map(s => '<div class="stat-box" style="border-left:3px solid ' + s.color + '"><div class="stat-label">' + s.name + '</div><div style="font-size:14px;font-weight:800;margin-top:4px;color:' + s.color + '">' + s.value + '</div><div style="font-size:11px;color:var(--muted);margin-top:6px;line-height:1.5">' + s.detail + '</div></div>').join('');
+
+    output.innerHTML = '<div class="card">' +
+      '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px;flex-wrap:wrap;gap:8px">' +
+        '<div style="font-size:18px;font-weight:800">' + ticker + ' — $' + price.toFixed(2) + '</div>' +
+        '<div style="font-size:11px;color:var(--muted)">Daily closes, ~' + closes.length + ' sessions</div>' +
+      '</div>' +
+      '<canvas id="techChart" style="width:100%;height:300px;background:var(--card);border-radius:10px;border:1px solid var(--border)"></canvas>' +
+      '<div style="font-size:11px;color:var(--muted);margin:8px 0 16px">— Price &nbsp; <span style="color:#fbbf24">— SMA50</span> &nbsp; <span style="color:#60a5fa">— SMA200</span> &nbsp; <span style="color:#a78bfa">— EMA20</span></div>' +
+      '<div style="font-size:13px;font-weight:800;margin-bottom:12px">📡 Technical Signals</div>' +
+      '<div class="stat-grid" style="grid-template-columns:repeat(auto-fit,minmax(240px,1fr))">' + sigCards + '</div>' +
+      '<div style="font-size:11px;color:var(--muted);margin-top:14px;line-height:1.6">⚠️ Technical signals describe recent price behavior — they are not predictions. Use alongside the fundamental analysis in the Analyzer tab.</div>' +
+    '</div>';
+
+    drawTechChart(closes, sma50, sma200, ema20);
+  } catch(e) {
+    output.innerHTML = '<div style="color:var(--red)">❌ Error: ' + e.message + '</div>';
+  }
+}
+
+function drawTechChart(closes, sma50, sma200, ema20) {
+  const canvas = document.getElementById('techChart');
+  if (!canvas) return;
+  const dpr = window.devicePixelRatio || 1;
+  const w = canvas.clientWidth, h = canvas.clientHeight;
+  canvas.width = w * dpr;
+  canvas.height = h * dpr;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+
+  const pad = { l: 48, r: 10, t: 10, b: 20 };
+  const all = closes.concat(sma50.filter(v => v != null), sma200.filter(v => v != null));
+  const min = Math.min(...all) * 0.98;
+  const max = Math.max(...all) * 1.02;
+  const x = i => pad.l + (i / (closes.length - 1)) * (w - pad.l - pad.r);
+  const y = v => pad.t + (1 - (v - min) / (max - min)) * (h - pad.t - pad.b);
+
+  // gridlines + labels
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+  ctx.fillStyle = '#8b97a8';
+  ctx.font = '10px system-ui';
+  for (let g = 0; g <= 4; g++) {
+    const v = min + (g / 4) * (max - min);
+    const gy = y(v);
+    ctx.beginPath(); ctx.moveTo(pad.l, gy); ctx.lineTo(w - pad.r, gy); ctx.stroke();
+    ctx.fillText('$' + v.toFixed(0), 6, gy + 3);
+  }
+
+  function drawLine(series, color, width) {
+    ctx.strokeStyle = color;
+    ctx.lineWidth = width;
+    ctx.beginPath();
+    let started = false;
+    for (let i = 0; i < series.length; i++) {
+      if (series[i] == null) continue;
+      if (!started) { ctx.moveTo(x(i), y(series[i])); started = true; }
+      else ctx.lineTo(x(i), y(series[i]));
+    }
+    ctx.stroke();
+  }
+
+  drawLine(sma200, '#60a5fa', 1.2);
+  drawLine(sma50, '#fbbf24', 1.2);
+  drawLine(ema20, '#a78bfa', 1);
+  drawLine(closes, '#34d399', 1.6);
 }
 
 // News
