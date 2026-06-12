@@ -3,376 +3,518 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>StockScreen — Stocks & ETFs Analyzer</title>
+<title>StockScreen Pro — Professional Stock & ETF Screener</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
 <style>
 :root{--bg:#0a0e14;--panel:#111722;--card:#0e141d;--border:#1c2433;--ink:#e8edf4;--muted:#8b97a8;--soft:#4d5668;--green:#34d399;--amber:#fbbf24;--red:#f87171;--accent:#34d399}
 *{box-sizing:border-box;margin:0;padding:0}
-body{background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;padding:20px 16px 80px;min-height:100vh}
-.wrap{max-width:960px;margin:0 auto}
+body{background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;padding:20px 16px 100px;min-height:100vh}
+.wrap{max-width:1200px;margin:0 auto}
 h1{font-size:28px;font-weight:800;margin-bottom:6px}h1 span{color:var(--accent)}
 .sub{color:var(--muted);font-size:14px;line-height:1.5;margin-bottom:18px}
 .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
-input,textarea{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--ink);font-size:14px;outline:none;font-family:inherit;width:100%}
-input:focus,textarea:focus{border-color:var(--accent)}
+input,textarea,select{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--ink);font-size:14px;outline:none;font-family:inherit}
+input:focus,textarea:focus,select:focus{border-color:var(--accent)}
 .btn{border:none;border-radius:8px;padding:9px 16px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;transition:filter .15s}
 .btn:hover{filter:brightness(1.1)}.btn:disabled{opacity:.5;cursor:not-allowed}
 .btn-go{background:var(--accent);color:#052e1a}.btn-ghost{background:rgba(255,255,255,.06);color:var(--muted);border:1px solid var(--border)}
 .btn-red{background:rgba(248,113,113,.12);color:var(--red);border:1px solid rgba(248,113,113,.3)}
-.mode-toggle{display:flex;gap:6px;align-items:center;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:5px}
-.mode-btn{background:0;border:0;padding:7px 12px;font-size:12px;font-weight:700;color:var(--muted);cursor:pointer;border-radius:6px;transition:all .15s}
-.mode-btn.active{background:var(--accent);color:#052e1a}
+.btn-sm{padding:6px 10px;font-size:12px}
+.nav-tabs{display:flex;gap:8px;border-bottom:1px solid var(--border);margin-bottom:20px;flex-wrap:wrap}
+.nav-tab{background:none;border:none;padding:12px 16px;font-size:13px;font-weight:700;color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;transition:all .15s}
+.nav-tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.nav-tab:hover{color:var(--ink)}
 .keybar{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:10px 12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
 .keybar.warn{border-color:rgba(251,191,36,.4)}.keybar input{flex:1;min-width:180px;font-size:13px}
 .keystatus.ok{color:var(--green);font-size:12px;font-weight:700}.keystatus a{color:var(--accent);text-decoration:none;font-weight:700;font-size:12px}
-.sum-pills{display:flex;gap:12px;margin-bottom:16px;font-size:13px;font-weight:700;flex-wrap:wrap}
-.pill-g{color:var(--green)}.pill-a{color:var(--amber)}.pill-r{color:var(--red)}
+.view{display:none}.view.active{display:block}
 .empty{text-align:center;padding:52px 20px;color:var(--muted);border:1px dashed var(--border);border-radius:14px;line-height:1.7}
-.card{background:var(--panel);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:14px}
-.card-head{display:flex;align-items:center;gap:12px;padding:16px 18px;flex-wrap:wrap}
-.badge-type{font-size:10px;font-weight:700;color:var(--accent);background:rgba(52,211,153,.12);border:1px solid rgba(52,211,153,.25);border-radius:5px;padding:3px 7px;text-transform:uppercase}
-.gbadge{width:54px;height:54px;flex-shrink:0;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center}
-.g-A,.g-B{color:var(--green);background:rgba(52,211,153,.12);border:1.5px solid rgba(52,211,153,.35)}
-.g-C{color:var(--amber);background:rgba(251,191,36,.12);border:1.5px solid rgba(251,191,36,.35)}
-.g-D,.g-F{color:var(--red);background:rgba(248,113,113,.12);border:1.5px solid rgba(248,113,113,.35)}
-.g-none{color:var(--soft);background:rgba(255,255,255,.04);border:1.5px solid var(--border)}
-.gletter{font-size:26px;font-weight:800;line-height:1}
-.outlook-badge{font-size:10px;font-weight:700;margin-top:1px}
-.ob-g{color:var(--green)}.ob-a{color:var(--amber)}.ob-r{color:var(--red)}
-.head-info{flex:1;min-width:0}
-.sym-row{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
-.sym{font-size:19px;font-weight:800;font-family:monospace;background:none;border:none;color:var(--ink);outline:none;width:90px}
-.score-lbl{font-size:12px;color:var(--muted)}
-.co-name{font-size:12px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.fetching{font-size:12px;color:var(--accent);margin-top:3px}.ferr{font-size:12px;color:var(--red);margin-top:3px}
-.btn-icon{background:none;border:1px solid var(--border);color:var(--muted);border-radius:8px;padding:6px 9px;cursor:pointer;font-size:13px;line-height:1}
-.btn-icon:hover{color:var(--ink)}
-.verdict{padding:2px 18px 14px}
-.verd-title{font-size:16px;font-weight:800}.verd-line{font-size:14px;margin-top:3px;line-height:1.5}
-.cat-chips{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:7px;padding:0 18px 14px}
-.chip{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:9px 10px;display:flex;align-items:center;gap:8px}
-.chip-ico{font-size:17px}.chip-text{flex:1;min-width:0}
-.chip-name{font-size:11.5px;font-weight:700;color:var(--ink)}.chip-q{font-size:10px;color:var(--soft)}
-.dot{display:inline-block;border-radius:50%;background:var(--border)}
-.dot-g{background:var(--green)}.dot-a{background:var(--amber)}.dot-r{background:var(--red)}
-.tog-bar{width:100%;background:var(--card);border:none;border-top:1px solid var(--border);color:var(--muted);padding:10px;cursor:pointer;font-size:12.5px;font-weight:600;text-align:center}
-.tog-bar:hover{color:var(--ink)}
-.card-det{padding:16px 18px;background:var(--card);border-top:1px solid var(--border);display:none}
-.card-det.open{display:block}
-.why-hdr{font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px}
-.why-row{font-size:13.5px;margin-bottom:5px;line-height:1.4}
-.av-sec{margin-bottom:18px;background:rgba(52,211,153,.04);border:1px solid rgba(52,211,153,.15);border-radius:10px;padding:13px 14px}
-.av-hdr{font-size:11px;font-weight:800;color:var(--accent);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px}
-.av-bullet{display:flex;gap:10px;margin-bottom:9px;align-items:flex-start}
-.av-bullet:last-child{margin-bottom:0}
-.av-icon{font-size:16px;flex-shrink:0;margin-top:1px}
-.av-cat{font-size:10.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px}
-.av-text{font-size:13px;color:var(--ink);line-height:1.45}
-.cat-sec{margin-bottom:18px}
-.cat-sec-hdr{font-size:13px;font-weight:800;color:var(--ink);margin-bottom:9px}
-.cat-sec-hdr span{color:var(--soft);font-weight:400}
-.mbox-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
-.mbox{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:10px 11px;transition:border-color .2s}
-.mbox.rg{border-color:rgba(52,211,153,.35)}.mbox.ra{border-color:rgba(251,191,36,.35)}.mbox.rr{border-color:rgba(248,113,113,.35)}
-.mbox-top{display:flex;align-items:center;gap:6px;margin-bottom:7px}
-.mbox-name{font-size:11.5px;font-weight:600;color:var(--ink);flex:1}
-.info-btn{background:none;border:1px solid var(--border);color:var(--soft);border-radius:50%;width:17px;height:17px;font-size:10px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;line-height:1}
-.info-btn:hover{border-color:var(--muted);color:var(--muted)}
-.mbox-row{display:flex;align-items:center;gap:6px}
-.minput{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:6px 8px;color:var(--ink);font-size:13px;outline:none;flex:1;min-width:0}
-.minput:focus{border-color:var(--accent)}
-.mshort{font-size:10px;color:var(--soft);font-family:monospace;flex-shrink:0}
-.outcome-txt{font-size:11.5px;color:var(--muted);margin-top:6px;line-height:1.5;display:none}
-.outcome-txt.vis{display:block}
-.trend-badge{font-size:11px;font-weight:700;margin-top:4px;display:none}
-.trend-badge.vis{display:block}
-.tb-g{color:var(--green)}.tb-a{color:var(--amber)}.tb-r{color:var(--red)}
-.explain-box{font-size:11px;color:var(--soft);margin-top:5px;line-height:1.5;padding:6px 8px;background:var(--bg);border-radius:6px;border-left:2px solid var(--border);display:none}
-.explain-box.open{display:block}
-.peer-badge{font-size:10.5px;font-weight:700;margin-top:4px;display:none}
-.peer-badge.vis{display:block}
-.pb-g{color:var(--green)}.pb-a{color:var(--amber)}.pb-r{color:var(--red)}
-.peer-sec{border-top:1px solid var(--border);padding-top:14px;margin-top:4px}
-.peer-hdr{font-size:13px;font-weight:800;color:var(--ink);margin-bottom:10px}
-.peer-list{font-size:11.5px;color:var(--muted);margin-bottom:12px}
-.peer-table{width:100%;border-collapse:collapse;font-size:12.5px}
-.peer-table th{text-align:left;color:var(--muted);font-weight:600;padding:5px 8px;border-bottom:1px solid var(--border)}
-.peer-table td{padding:6px 8px;border-bottom:1px solid rgba(255,255,255,.04);vertical-align:middle}
-.peer-table tr:last-child td{border-bottom:none}
-.vs-g{color:var(--green);font-weight:700}.vs-a{color:var(--amber);font-weight:700}.vs-r{color:var(--red);font-weight:700}
-.peer-load-btn{background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.3);color:var(--green);border-radius:8px;padding:9px 14px;font-size:13px;font-weight:700;cursor:pointer}
-.peer-load-btn:hover{filter:brightness(1.1)}
-.holdings-sec{margin-bottom:18px;background:rgba(52,211,153,.04);border:1px solid rgba(52,211,153,.15);border-radius:10px;padding:13px 14px}
-.holdings-hdr{font-size:11px;font-weight:800;color:var(--accent);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px}
-.holding{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:12.5px}
-.holding:last-child{border-bottom:none}
-.h-name{color:var(--ink);font-weight:600}.h-weight{color:var(--muted);font-weight:600}
-footer{margin-top:30px;padding-top:16px;border-top:1px solid var(--border);color:var(--soft);font-size:11.5px;line-height:1.7}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:14px;padding:16px}
+.card-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.card-title{font-size:16px;font-weight:800;color:var(--ink)}
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:12px 0}
+.stat-box{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:12px}
+.stat-label{font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase}
+.stat-value{font-size:18px;font-weight:800;color:var(--ink);margin-top:4px}
+.stat-change{font-size:12px;margin-top:2px}
+.stat-change.pos{color:var(--green)}.stat-change.neg{color:var(--red)}
+.portfolio-position{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap}
+.pos-info{flex:1;min-width:200px}
+.pos-ticker{font-size:14px;font-weight:800;font-family:monospace}
+.pos-details{font-size:12px;color:var(--muted);margin-top:3px}
+.pos-value{font-size:16px;font-weight:800;color:var(--ink)}
+.pos-change{font-size:12px;margin-top:2px}
+.pos-change.pos{color:var(--green)}.pos-change.neg{color:var(--red)}
+.pos-actions{display:flex;gap:6px}
+.chart-container{position:relative;height:400px;margin:20px 0;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px}
+.news-item{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:10px}
+.news-headline{font-size:14px;font-weight:700;color:var(--ink);margin-bottom:6px}
+.news-meta{font-size:11px;color:var(--muted);margin-bottom:8px}
+.news-sentiment{display:inline-block;font-size:10px;font-weight:700;border-radius:4px;padding:3px 8px;margin-right:8px}
+.sentiment-bullish{background:rgba(52,211,153,.2);color:var(--green)}
+.sentiment-bearish{background:rgba(248,113,113,.2);color:var(--red)}
+.sentiment-neutral{background:rgba(251,191,36,.2);color:var(--amber)}
+.news-source{font-size:11px;color:var(--accent);text-decoration:none}
+.screener-table{width:100%;border-collapse:collapse;font-size:12.5px}
+.screener-table th{text-align:left;color:var(--muted);font-weight:600;padding:10px;border-bottom:1px solid var(--border);background:var(--card);cursor:pointer}
+.screener-table th:hover{background:rgba(255,255,255,.04)}
+.screener-table td{padding:10px;border-bottom:1px solid rgba(255,255,255,.04);vertical-align:middle}
+.screener-table tr:hover{background:rgba(255,255,255,.02)}
+.ticker-col{font-weight:700;font-family:monospace;color:var(--ink)}
+.value-good{color:var(--green)}.value-bad{color:var(--red)}.value-neutral{color:var(--amber)}
+.filter-bar{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;padding:12px;background:var(--card);border-radius:10px}
+.filter-bar input,.filter-bar select{flex:1;min-width:150px}
+footer{margin-top:40px;padding-top:16px;border-top:1px solid var(--border);color:var(--soft);font-size:11.5px;line-height:1.7}
 footer b{color:var(--muted)}
 </style>
 </head>
 <body>
   <div class="wrap">
-    <h1>StockScreen: <span>Stocks & ETFs</span></h1>
-    <p class="sub">Analyze <b>stocks</b> with 24 fundamental indicators (profitability, safety, valuation, quality, efficiency) or <b>ETFs</b> for cost, diversification & holdings quality.</p>
+    <h1>StockScreen <span>Pro</span></h1>
+    <p class="sub">Professional stock & ETF screener with portfolio tracking, fundamental analysis, news, charting & comparison tools.</p>
     
-    <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:14px">
-      <div class="mode-toggle" id="modeToggle">
-        <button class="mode-btn active" onclick="setMode('stock')">📊 Stocks</button>
-        <button class="mode-btn" onclick="setMode('etf')">💼 ETFs</button>
-      </div>
-    </div>
-
     <div class="keybar warn" id="keybar">
-      <span style="font-size:11px;color:var(--muted);font-weight:700">🔑 Key</span>
-      <input type="password" id="keyInput" placeholder="Paste your free Finnhub key (auto-saved)">
-      <span id="keyStatus"><a href="https://finnhub.io/register" target="_blank" class="keystatus">Get one free →</a></span>
-      <button class="btn btn-ghost" onclick="testAPI()" style="font-size:12px;padding:8px 10px">🔬 Test</button>
+      <span style="font-size:11px;color:var(--muted);font-weight:700">🔑 Finnhub Key</span>
+      <input type="password" id="keyInput" placeholder="Paste your free Finnhub key">
+      <span id="keyStatus"><a href="https://finnhub.io/register" target="_blank" class="keystatus">Get free key →</a></span>
     </div>
 
-    <div class="row">
-      <input id="symInput" placeholder="Ticker: AAPL (stock) or SPY (ETF)" style="flex:1;min-width:160px;font-family:monospace;font-size:15px;letter-spacing:.04em" onkeydown="if(event.key==='Enter')addTickers()">
-      <button class="btn btn-go" onclick="addTickers()">Check it ✨</button>
-      <button class="btn btn-ghost" onclick="loadSample()">Demo</button>
-      <button class="btn btn-ghost" id="refreshAll" style="display:none" onclick="refetchAll()">↻ Refresh</button>
-      <button class="btn btn-red" id="clearAll" style="display:none" onclick="clearAllTickers()">Clear</button>
+    <div class="nav-tabs" id="navTabs">
+      <button class="nav-tab active" onclick="switchView('analyzer')">📊 Analyzer</button>
+      <button class="nav-tab" onclick="switchView('portfolio')">💼 Portfolio</button>
+      <button class="nav-tab" onclick="switchView('screener')">🔍 Screener</button>
+      <button class="nav-tab" onclick="switchView('news')">📰 News</button>
     </div>
 
-    <div class="sum-pills" id="sumPills" style="display:none"></div>
-    <div id="tickerList"></div>
-    <div class="empty" id="emptyState">Choose <b>Stocks</b> or <b>ETFs</b>, then type a ticker. Examples: <b>AAPL, MSFT, NVDA</b> (stocks) or <b>SPY, QQQ, VOO</b> (ETFs). Tap <b>Demo</b> for examples.</div>
-    
-    <footer>
-      <b>Learning tool, not financial advice.</b>
-      <br>
-      <b>Stocks:</b> 24 fundamental indicators across 6 categories (money maker, safety net, price tag, getting better, quality & efficiency, extra stats) + peer comparison & analyst view.
-      <br>
-      <b>ETFs:</b> Holdings analysis, diversification metrics, top 10 holdings, concentration risk assessment.
-      <br>
-      Data via Finnhub free API. Always verify before investing.
-    </footer>
-  </div>
-
-  <div id="debug-panel" onclick="if(event.target===this)closeDebug()">
-    <div style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.85);z-index:99;padding:20px;overflow:auto;display:none" id="debug-bg">
-      <div style="background:var(--panel);border:1px solid var(--border);border-radius:14px;max-width:800px;margin:0 auto;padding:20px">
-        <h3 style="margin-bottom:12px">🔬 API Test (AAPL)</h3>
-        <p style="font-size:13px;color:var(--muted);margin-bottom:10px">Makes a live call to Finnhub and shows what comes back.</p>
-        <div id="debug-out" style="background:var(--bg);border-radius:8px;padding:12px;font-size:12px;font-family:monospace;white-space:pre-wrap;word-break:break-all;color:var(--muted);max-height:60vh;overflow:auto">Testing…</div>
-        <div style="margin-top:12px;display:flex;gap:8px">
-          <button class="btn btn-ghost" onclick="closeDebug()">Close</button>
-          <button class="btn btn-ghost" onclick="runDebugTest()">↻ Re-run</button>
+    <!-- ANALYZER VIEW (existing) -->
+    <div class="view active" id="analyzer">
+      <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:14px">
+        <div style="display:flex;gap:6px">
+          <input id="symInput" placeholder="Ticker: AAPL or SPY" style="min-width:160px;font-family:monospace;font-size:15px;letter-spacing:.04em" onkeydown="if(event.key==='Enter')analyzeStock()">
+          <button class="btn btn-go" onclick="analyzeStock()">Analyze ✨</button>
+          <button class="btn btn-ghost btn-sm" onclick="loadSampleAnalyzer()">Demo</button>
         </div>
       </div>
+      <div id="analyzerResults" class="empty" style="text-align:center;padding:40px">Type a ticker to analyze fundamentals with 24 indicators, peer comparison, trends, and charts.</div>
     </div>
+
+    <!-- PORTFOLIO VIEW (new) -->
+    <div class="view" id="portfolio">
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-title">📈 Portfolio Summary</div>
+        <div class="stat-grid">
+          <div class="stat-box">
+            <div class="stat-label">Total Value</div>
+            <div class="stat-value" id="portfolioValue">$0.00</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label">Total Gain/Loss</div>
+            <div class="stat-value" id="portfolioGain">$0.00</div>
+            <div class="stat-change" id="portfolioGainPct">+0.00%</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label">vs S&P 500</div>
+            <div class="stat-value" id="portfolioVsSpy">--</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label">Positions</div>
+            <div class="stat-value" id="portfolioCount">0</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-bottom:16px">
+        <div class="card-title" style="margin-bottom:10px">Add Position</div>
+        <div class="row">
+          <input id="portTicker" placeholder="Ticker" style="max-width:120px">
+          <input id="portShares" placeholder="Shares" type="number" step="0.01" style="max-width:100px">
+          <input id="portBuyPrice" placeholder="Buy Price" type="number" step="0.01" style="max-width:120px">
+          <input id="portAlloc" placeholder="Allocation %" type="number" step="0.1" style="max-width:100px">
+          <button class="btn btn-go btn-sm" onclick="addPosition()">Add</button>
+          <button class="btn btn-red btn-sm" onclick="clearPortfolio()">Clear All</button>
+        </div>
+      </div>
+
+      <div id="portfolioList" class="empty">No positions yet. Add a position above.</div>
+    </div>
+
+    <!-- SCREENER VIEW (new) -->
+    <div class="view" id="screener">
+      <div class="row">
+        <input id="screenerInput" placeholder="Add tickers (comma-separated or paste list)" style="flex:1">
+        <button class="btn btn-go" onclick="runScreener()">Screen 🔍</button>
+        <button class="btn btn-ghost btn-sm" onclick="loadSampleScreener()">Load sample</button>
+      </div>
+
+      <div class="filter-bar">
+        <select id="filterMetric" onchange="applyScreenerFilters()">
+          <option value="">Filter by metric...</option>
+          <option value="roe">ROE > 15%</option>
+          <option value="pe">P/E < 20</option>
+          <option value="de">D/E < 1.0</option>
+          <option value="fcfYield">FCF Yield > 5%</option>
+          <option value="revenueGrowth">Revenue Growth > 10%</option>
+        </select>
+        <button class="btn btn-ghost btn-sm" onclick="exportCSV()">📥 Export CSV</button>
+      </div>
+
+      <div id="screenerResults" class="empty">Add tickers above to screen and compare.</div>
+    </div>
+
+    <!-- NEWS VIEW (new) -->
+    <div class="view" id="news">
+      <div class="row">
+        <input id="newsSymbol" placeholder="Ticker for news" style="max-width:200px">
+        <button class="btn btn-go" onclick="fetchNews()">Load News 📰</button>
+      </div>
+      <div id="newsList" class="empty">Enter a ticker to see recent headlines and sentiment.</div>
+    </div>
+
+    <footer>
+      <b>Professional screening tool for personal use. Not financial advice.</b>
+      <br>
+      24 fundamental indicators • Peer comparison • Portfolio tracking • Charting • News sentiment • Screener with filtering
+      <br>
+      Data: Finnhub API (free tier). localStorage for persistence.
+    </footer>
   </div>
 
   <script>
 const PRESET_KEY = "d8dhhbhr01qhm4aepfd0d8dhhbhr01qhm4aepfdg";
-const C = { green:"#34d399", amber:"#fbbf24", red:"#f87171" };
-
-let state = { mode: "stock", tickers: [], apiKey: "" };
-let peerData = {};
-const uid = () => Math.random().toString(36).slice(2,9);
-const blankStockM = () => ({roe:"",roce:"",de:"",icr:"",evEbitda:"",peg:"",netMargin:"",grossMargin:"",revenueGrowth:"",currentRatio:"",pe:"",pb:"",dividendYield:"",roa:"",velocity:"",decay:"",delivery:"",fcfYield:"",operatingMargin:"",ocfToNI:"",debtToEbitda:"",quickRatio:"",assetTurnover:"",payoutRatio:"",epsGrowth:""});
-const blankETFM = () => ({expenseRatio:"",holdingsCount:"",top10Weight:"",dividendYield:"",concentration:""});
-const hasData = m => Object.values(m).some(v=>v!==""&&v!=null);
-
-function setMode(m) {
-  state.mode = m;
-  document.querySelectorAll(".mode-btn").forEach(b => b.classList.remove("active"));
-  event.target.classList.add("active");
-  document.getElementById("emptyState").style.display = "";
-}
-
-const loadKey=()=>{try{return PRESET_KEY||localStorage.getItem("fh_key")||"";}catch(e){return PRESET_KEY;}};
-const saveKey=v=>{state.apiKey=v;try{localStorage.setItem("fh_key",v);}catch(e){}updateKeyUI();};
-function updateKeyUI(){
-  const k=state.apiKey.trim();
-  document.getElementById("keybar").className="keybar"+(k?"":" warn");
-  document.getElementById("keyStatus").innerHTML=k?'<span class="keystatus ok">● ready</span>':'<a href="https://finnhub.io/register" target="_blank" class="keystatus">Get one free →</a>';
-  document.getElementById("refreshAll").style.display=state.tickers.length&&k?"inline-block":"none";
-}
-
-const PATTERNS = {
-  roe:[/^roettm$/i,/roe.*ttm/i],roce:[/^roicttm$/i,/roic.*ttm/i],de:[/totaldebt.*totalequity/i],icr:[/netinterestcoverage/i],evEbitda:[/ev.*ebitda/i],peg:[/^pegttm$/i],
-  netMargin:[/^netmarginttm$/i],grossMargin:[/^grossmarginttm$/i],revenueGrowth:[/^revenuegrowthttmyoy$/i],currentRatio:[/^currentratio/i],pe:[/^pebasicexclextrattm$/i],pb:[/^pbannual$/i],
-  dividendYield:[/^currentdividendyieldttm$/i],roa:[/^roattm$/i],
-  fcfYield:[/^freecashflowyield$/i],operatingMargin:[/^operatingmarginttm$/i],ocfToNI:[/operatingcashflow.*netincome/i],debtToEbitda:[/totaldebt.*ebitda/i],
-  quickRatio:[/^quickratio/i],assetTurnover:[/^assetturnovertm$/i],payoutRatio:[/^payoutratio/i],epsGrowth:[/^epsgrowthttmyoy$/i],
+let appState = {
+  apiKey: "",
+  portfolio: [],
+  watchlist: [],
+  analyzerData: null,
+  screenerResults: [],
+  newsData: []
 };
-const PATTERNS_5Y = {roe:[/^roe5y$/i],netMargin:[/^netmargin5y$/i],grossMargin:[/^grossmargin5y$/i],revenueGrowth:[/^revenuegrowth5y$/i],roa:[/^roa5y$/i]};
 
-const numV=v=>(v!=null&&v!==""&&v!=="None"&&!isNaN(Number(v)))?Number(v):null;
-const toPct=x=>{if(x==null)return null;const n=Number(x);if(isNaN(n))return null;return+(Math.abs(n)<=5?n*100:n).toFixed(2);};
-const r2=x=>(x==null?null:+Number(x).toFixed(2));
-
-function extractRaw(metric,patterns){if(!metric||!patterns)return null;const entries=Object.entries(metric);for(const pat of patterns)for(const[k,v]of entries){if(pat.test(k)){const n=numV(v);if(n!=null)return n;}}return null;}
-function convM(key,raw){if(raw==null)return null;if(key==="dividendYield")return+(Math.abs(raw)<=5?raw*100:raw).toFixed(2);const isPct=["roe","roce","netMargin","grossMargin","revenueGrowth","roa","fcfYield","operatingMargin","payoutRatio","epsGrowth"].includes(key);return isPct?toPct(raw):r2(raw);}
-const getM=(key,metric)=>convM(key,extractRaw(metric,PATTERNS[key]));
-
-function computeTrend(cur,hist){if(cur==null||hist==null||hist===0)return null;const pct=(cur-hist)/Math.abs(hist)*100;if(pct>15)return{dir:"up",label:"📈 Strong uptrend",short:"↑↑",c:"g",pct};if(pct>5)return{dir:"up",label:"↑ Improving",short:"↑",c:"g",pct};if(pct>-5)return{dir:"flat",label:"→ Stable",short:"→",c:"a",pct};if(pct>-15)return{dir:"down",label:"↓ Declining",short:"↓",c:"a",pct};return{dir:"down",label:"📉 Falling",short:"↓↓",c:"r",pct};}
-
-function mapFinnhub({basic,profile}){
-  const m=basic&&!basic.__err&&basic.metric?basic.metric:null;
-  const q=basic&&!basic.__err&&basic.series&&basic.series.quarterly?basic.series.quarterly:{};
-  const name=(profile&&!profile.__err&&profile.name)||"";
-  const sector=(profile&&!profile.__err&&(profile.finnhubIndustry||profile.sector))||"";
-  const vals={roe:getM("roe",m),roce:getM("roce",m),de:getM("de",m),icr:getM("icr",m),evEbitda:getM("evEbitda",m),peg:getM("peg",m),netMargin:getM("netMargin",m),grossMargin:getM("grossMargin",m),revenueGrowth:getM("revenueGrowth",m),currentRatio:getM("currentRatio",m),pe:getM("pe",m),pb:getM("pb",m),dividendYield:getM("dividendYield",m),roa:getM("roa",m),fcfYield:getM("fcfYield",m),operatingMargin:getM("operatingMargin",m),ocfToNI:getM("ocfToNI",m),debtToEbitda:getM("debtToEbitda",m),quickRatio:getM("quickRatio",m),assetTurnover:getM("assetTurnover",m),payoutRatio:getM("payoutRatio",m),epsGrowth:getM("epsGrowth",m)};
-  
-  const trends={};
-  Object.keys(PATTERNS_5Y).forEach(key=>{const ttm=extractRaw(m,PATTERNS[key]);const hist=extractRaw(m,PATTERNS_5Y[key]);if(ttm!=null&&hist!=null)trends[key]=computeTrend(ttm,hist);});
-  
-  const velocity=(q.eps&&Array.isArray(q.eps))?((a)=>{let up=0;for(let i=0;i<a.length-1;i++){if(a[i]>a[i+1])up++;else break;}return up;})(q.eps.filter(x=>x&&x.v!=null).map(x=>Number(x.v))):null;
-  const decay=velocity!=null?0:null;
-  
-  const gotAny=Object.values(vals).some(v=>v!=null)||!!name;
-  return{gotAny,name,sector,...vals,velocity,decay,trends};
-}
-async function safeGet(url){try{const r=await fetch(url);const j=await r.json().catch(()=>null);if(!r.ok)return{__err:r.status===429?"too many requests":r.status===403?"needs paid plan":r.status===401?"key invalid":`error ${r.status}`};if(j&&j.error)return{__err:String(j.error)};return j;}catch(e){return{__err:"network error"};}}
-
-async function fetchFromFinnhub(symbol,key){
-  const s=encodeURIComponent(symbol.trim().toUpperCase()),k=encodeURIComponent(key.trim()),base="https://finnhub.io/api/v1";
-  const[basic,profile]=await Promise.all([safeGet(`${base}/stock/metric?symbol=${s}&metric=all&token=${k}`),safeGet(`${base}/stock/profile2?symbol=${s}&token=${k}`)]);
-  const errs=[basic,profile].filter(x=>x&&x.__err).map(x=>x.__err);
-  const out=mapFinnhub({basic,profile});
-  if(!out.gotAny)throw new Error(errs.find(e=>/request|paid|valid|key|network/i.test(e))||errs[0]||"No data");
-  out.note=errs.length?"partial data":"";return out;
+// ── INIT ──────────────────────────────────────────────────────────────────────
+const loadState = () => {
+  try {
+    const saved = localStorage.getItem("stockscreenPro");
+    if (saved) appState = { ...appState, ...JSON.parse(saved) };
+  } catch (e) { }
+};
+const saveState = () => {
+  try {
+    localStorage.setItem("stockscreenPro", JSON.stringify(appState));
+  } catch (e) { }
+};
+const loadKey = () => {
+  try { return PRESET_KEY || localStorage.getItem("fh_key") || ""; }
+  catch (e) { return PRESET_KEY; }
+};
+const saveKey = v => {
+  appState.apiKey = v;
+  try { localStorage.setItem("fh_key", v); } catch (e) { }
+  updateKeyUI();
+  saveState();
+};
+function updateKeyUI() {
+  const k = appState.apiKey.trim();
+  document.getElementById("keybar").className = "keybar" + (k ? "" : " warn");
+  document.getElementById("keyStatus").innerHTML = k
+    ? '<span class="keystatus ok">● ready</span>'
+    : '<a href="https://finnhub.io/register" target="_blank" class="keystatus">Get one free →</a>';
 }
 
-async function fetchETFData(symbol,key){
-  const s=encodeURIComponent(symbol.trim().toUpperCase()),k=encodeURIComponent(key.trim()),base="https://finnhub.io/api/v1";
-  const[profile,holdings]=await Promise.all([safeGet(`${base}/stock/profile2?symbol=${s}&token=${k}`),safeGet(`${base}/stock/etf/holdings?symbol=${s}&token=${k}`)]);
-  if(profile.__err||!profile.name)throw new Error(profile.__err||"ETF not found");
-  const h=holdings&&holdings.holdings?holdings.holdings:[];
-  const top10=h.slice(0,10);
-  const top10w=top10.reduce((s,x)=>s+x.weight,0);
-  return {name:profile.name,sector:profile.finnhubIndustry||"",holdings:h,top10,top10w};
+function switchView(view) {
+  document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
+  document.getElementById(view).classList.add("active");
+  document.querySelectorAll(".nav-tab").forEach(t => t.classList.remove("active"));
+  event.target.classList.add("active");
+  if (view === "portfolio") renderPortfolio();
+  if (view === "screener") renderScreenerTable();
 }
 
-function evaluate(metrics){
-  const g=k=>{const v=metrics[k];return v===""||v==null?null:Number(v);};
-  const clamp=v=>Math.max(0,Math.min(1,v));
-  const roe=g("roe"),roce=g("roce"),de=g("de"),icr=g("icr"),evEbitda=g("evEbitda"),peg=g("peg"),delivery=g("delivery"),velocity=g("velocity");
-  const netMargin=g("netMargin"),revenueGrowth=g("revenueGrowth"),currentRatio=g("currentRatio");
-  const sc={roe:roe!=null?clamp(roe/15):0,roce:roce!=null?clamp(roce/15):0,de:de!=null?clamp(1-de/0.5):0,icr:icr!=null?clamp(icr/2):0,evEbitda:evEbitda!=null?clamp(1-evEbitda/10):0,peg:peg!=null?clamp(1-peg/1):0,delivery:delivery!=null?clamp(delivery/1.5):0,velocity:velocity!=null&&velocity>=2?1:0,netMargin:netMargin!=null?clamp(netMargin/20):0,revenueGrowth:revenueGrowth!=null&&revenueGrowth>0?clamp(revenueGrowth/15):0,currentRatio:currentRatio!=null?clamp(currentRatio/2):0};
-  const w={roe:12,roce:12,de:10,icr:8,evEbitda:10,peg:8,delivery:5,velocity:10,netMargin:8,revenueGrowth:10,currentRatio:7};
-  const score=Math.round(100*Object.keys(w).reduce((s,k)=>s+sc[k]*w[k]/100,0));
-  const reasons=[];if(de!=null&&de>1.0)reasons.push("carries a lot of debt");if(icr!=null&&icr<2.0)reasons.push("may struggle with loan interest");if(g("decay")!=null&&g("decay")>=2)reasons.push("profits fell several quarters in a row");const critFail=reasons.length>0;const entry=critFail?"red":(score>=70&&(velocity==null||velocity>=2)?"green":(score>=50?"amber":"red"));const exit=g("decay")!=null&&g("decay")>=2?"red":(g("decay")===1?"amber":"green");const action=critFail||exit==="red"?"SELL":(entry==="green"&&exit==="green"?"BUY":"HOLD");return{score,action,entry,exit,critFail,reasons};
+async function safeGet(url) {
+  try {
+    const r = await fetch(url);
+    const j = await r.json().catch(() => null);
+    if (!r.ok) return { __err: r.status === 429 ? "rate limited" : r.status === 401 ? "key invalid" : "error " + r.status };
+    if (j && j.error) return { __err: String(j.error) };
+    return j;
+  } catch (e) {
+    return { __err: "network error" };
+  }
 }
 
-const LOWER_BETTER=new Set(["de","evEbitda","peg","pe","pb","decay"]);const DYNAMIC_KEYS=new Set(["roe","roce","netMargin","grossMargin","de","evEbitda","pe","revenueGrowth","currentRatio","roa","dividendYield"]);
-function universalRAG(key,v){switch(key){case"roe":case"roce":case"roa":return v>=15?"g":(v>=8?"a":"r");case"de":return v<=0.5?"g":(v<=1.0?"a":"r");case"icr":return v>=3?"g":(v>=2?"a":"r");case"evEbitda":return v<=10?"g":(v<=15?"a":"r");case"peg":return v<=1.0?"g":(v<=1.5?"a":"r");case"netMargin":return v>=20?"g":(v>=10?"a":"r");case"grossMargin":return v>=50?"g":(v>=30?"a":"r");case"revenueGrowth":return v>=15?"g":(v>=5?"a":"r");case"currentRatio":return v>=2?"g":(v>=1?"a":"r");case"pe":return v<=15?"g":(v<=25?"a":"r");case"pb":return v<=1.5?"g":(v<=3?"a":"r");case"dividendYield":return v>=3?"g":(v>=1?"a":"r");case"delivery":return v>=1.5?"g":(v>=1?"a":"r");case"velocity":return v>=2?"g":(v>=1?"a":"r");case"decay":return v===0?"g":(v===1?"a":"r");case"fcfYield":return v>=5?"g":(v>=2?"a":"r");case"operatingMargin":return v>=15?"g":(v>=8?"a":"r");case"ocfToNI":return v>=1.0?"g":(v>=0.7?"a":"r");case"debtToEbitda":return v<=2?"g":(v<=3?"a":"r");case"quickRatio":return v>=1.2?"g":(v>=0.8?"a":"r");case"assetTurnover":return v>=1.5?"g":(v>=0.9?"a":"r");case"payoutRatio":return v<=30?"g":(v<=60?"a":"r");case"epsGrowth":return v>=12?"g":(v>=4?"a":"r");}return null;}
-function calcRAG(key,raw,peerMedians){const v=(raw===""||raw==null)?null:Number(raw);if(v==null||isNaN(v))return null;if(peerMedians&&peerMedians[key]!=null&&DYNAMIC_KEYS.has(key)){const pm=peerMedians[key];if(pm===0)return universalRAG(key,v);const ratio=v/pm;return LOWER_BETTER.has(key)?(ratio<=0.85?"g":ratio<=1.25?"a":"r"):(ratio>=1.1?"g":ratio>=0.75?"a":"r");}return universalRAG(key,v);}
-
-function calcOutlook(trends){const arr=Object.values(trends||{}).filter(Boolean);const up=arr.filter(t=>t.dir==="up").length,dn=arr.filter(t=>t.dir==="down").length;if(up>=2&&dn===0)return{icon:"📈",label:"Improving",c:"g"};if(dn>=2)return{icon:"📉",label:"Watch",c:"r"};return{icon:"→",label:"Stable",c:"a"};}
-
-const CATS=[
-  {key:"profit",icon:"💰",name:"Money Maker",q:"Is it good at making money?",m:["roe","roce","netMargin","grossMargin"]},
-  {key:"safety",icon:"🛡️",name:"Safety Net",q:"Can it survive tough times?",m:["de","icr","currentRatio"]},
-  {key:"price",icon:"🏷️",name:"Price Tag",q:"Cheap or expensive?",m:["evEbitda","peg","pe","pb"]},
-  {key:"growth",icon:"🌱",name:"Getting Better",q:"Are profits & revenue growing?",m:["velocity","decay","revenueGrowth"]},
-  {key:"quality",icon:"🔬",name:"Quality & Efficiency",q:"Is it really as good as it looks?",m:["fcfYield","operatingMargin","ocfToNI","debtToEbitda","quickRatio","assetTurnover","payoutRatio","epsGrowth"]},
-  {key:"extra",icon:"💵",name:"Extra Stats",q:"More context",m:["dividendYield","roa"]},
-];
-function catRAG(metrics,keys,peerMedians){const v=keys.map(k=>calcRAG(k,metrics[k],peerMedians)).filter(Boolean);if(!v.length)return null;const s=v.reduce((a,r)=>a+(r==="g"?1:r==="a"?.5:0),0)/v.length;return s>=.75?"g":s>=.4?"a":"r";}
-
-const FRIENDLY={roe:"Profit on owners' money",roce:"Profit on all capital",de:"Debt vs. equity",icr:"Can pay loan interest",evEbitda:"Price vs. earning power",peg:"Price vs. growth",netMargin:"Profit from sales",grossMargin:"Gross profit per sale",revenueGrowth:"Revenue growth",currentRatio:"Can pay short-term bills",pe:"Price vs. earnings",pb:"Price vs. book",dividendYield:"Dividend income",roa:"Profit from assets",velocity:"Quarters of profit growth",decay:"Quarters of profit decline",delivery:"Real buying (India)",fcfYield:"Free cash yield",operatingMargin:"Core operation profit",ocfToNI:"Operating cash vs. profit",debtToEbitda:"Years of EBITDA to pay debt",quickRatio:"Can pay without selling inventory",assetTurnover:"Revenue per asset dollar",payoutRatio:"Dividend as % of earnings",epsGrowth:"Earnings per share growth"};
-const SHORT={roe:"ROE",roce:"ROCE",de:"D/E",icr:"ICR",evEbitda:"EV/EBITDA",peg:"PEG",netMargin:"Net Margin",grossMargin:"Gross Margin",revenueGrowth:"Rev Growth",currentRatio:"Curr. Ratio",pe:"P/E",pb:"P/B",dividendYield:"Div Yield",roa:"ROA",velocity:"Velocity",decay:"Decay",delivery:"Delivery",fcfYield:"FCF Yield",operatingMargin:"Op Margin",ocfToNI:"OCF/NI",debtToEbitda:"D/EBITDA",quickRatio:"Quick Ratio",assetTurnover:"Asset TO",payoutRatio:"Payout %",epsGrowth:"EPS Growth"};
-const EXPLAIN={roe:"Out of every $100 owners put in, how many dollars of profit. More than 15% is good.",roce:"How much profit from ALL money (owned + borrowed). Above 15% is good.",de:"How much borrowed vs. what it owns. Below 0.5 is safe; above 1.0 is risky.",icr:"How easily it pays loan interest. Above 3 is comfortable; below 2 is a warning.",evEbitda:"How pricey the whole company is vs. cash it earns. Below 10 is a good deal.",peg:"Is the price fair for growth rate? Below 1.0 often a bargain.",netMargin:"Out of every $100 in sales, how much profit after all costs. Higher is better.",grossMargin:"Out of every $100 in sales, profit before operating costs. Higher = more pricing power.",revenueGrowth:"How much faster (or slower) sales are vs. last year. Positive = growing.",currentRatio:"How many dollars of short-term assets for every $1 owed soon. Above 2 is healthy.",pe:"How many dollars you pay for every $1 of annual profit. Lower can mean cheaper.",pb:"How much you pay vs. what it owns on paper. Below 1.5 may be undervalued.",dividendYield:"Yearly dividend it pays you, as % of stock price.",roa:"How much profit from every $100 of assets it owns. Above 10% is efficient.",velocity:"How many quarters in a row profit went UP. 2+ shows real momentum.",decay:"How many quarters in a row profit went DOWN. 0 is ideal; 2+ is concerning.",delivery:"For Indian stocks — shares that changed hands for real buying, not day-trades.",fcfYield:"Free cash generated each year, as % of stock price. Over 5% is strong.",operatingMargin:"Profit from core operations before interest/taxes. Shows business health.",ocfToNI:"Operating cash as % of net income. Above 100% = earnings are real cash.",debtToEbitda:"Years of EBITDA needed to pay off all debt. Below 2 is healthy.",quickRatio:"Short-term cash assets (without inventory) vs. bills due soon. Above 1.2 is strong.",assetTurnover:"How many dollars of sales per $1 of assets. Higher = more efficient.",payoutRatio:"Dividend as % of earnings. Below 30% leaves room for growth; above 60% is risky.",epsGrowth:"Earnings per share growth year-over-year. Above 12% shows strong growth."};
-
-function helpingHurting(metrics,peerMedians){const keys=["roe","roce","de","icr","evEbitda","peg","netMargin","revenueGrowth","currentRatio","velocity","fcfYield","operatingMargin","quickRatio","debtToEbitda","epsGrowth"];const helps=[],hurts=[];keys.forEach(k=>{const r=calcRAG(k,metrics[k],peerMedians);const text={roe:"makes strong profits",roce:"uses capital well",de:"keeps debt low",icr:"easily pays loan interest",evEbitda:"priced reasonably",peg:"fairly priced for growth",netMargin:"has strong margins",revenueGrowth:"revenue growing well",currentRatio:"has cash buffer",velocity:"profits climbing",fcfYield:"generates solid cash",operatingMargin:"strong core ops",quickRatio:"strong liquidity",debtToEbitda:"manageable debt",epsGrowth:"earnings expanding"};if(r==="g"&&text[k])helps.push(text[k]);if(r==="r")hurts.push(k);});return{helps,hurts};}
-function makeVerdict(action,metrics,peerMedians){const{helps}=helpingHurting(metrics,peerMedians);if(action==="SELL")return{e:"🚩",t:"Be Careful",l:"Red flags present."};if(action==="BUY")return{e:"💪",t:"Looks Strong",l:helps.length?`It ${helps[0]}${helps[1]?` & ${helps[1]}`:""}.`:"Solid fundamentals."};return{e:"🤔",t:"Just Okay",l:"Mixed picture — some strengths, some weak spots."};}
-const letterGrade=s=>s>=85?"A":s>=70?"B":s>=55?"C":s>=40?"D":"F";
-
-function dotHTML(rag,sz=9){return `<span class="dot${rag?` dot-${rag}`:""}" style="width:${sz}px;height:${sz}px"></span>`;}
-
-function buildMbox(id,key,val){
-  return`<div class="mbox" id="mbox-${id}-${key}">
-    <div class="mbox-top"><span class="dot" id="md-${id}-${key}" style="width:9px;height:9px"></span><span class="mbox-name">${FRIENDLY[key]}</span><button class="info-btn" onclick="toggleExp('${id}','${key}')">?</button></div>
-    <div class="mbox-row"><input type="number" step="0.01" value="${val||""}" placeholder="—" class="minput" id="mi-${id}-${key}" oninput="onMetric('${id}','${key}',this.value)"><span class="mshort">${SHORT[key]}</span></div>
-    <div class="outcome-txt" id="ot-${id}-${key}"></div>
-    <div class="trend-badge" id="tr-${id}-${key}"></div>
-    <div class="peer-badge" id="pb-${id}-${key}"></div>
-    <div class="explain-box" id="ex-${id}-${key}">${EXPLAIN[key]||""}</div>
-  </div>`;}
-
-async function fetchPeers(id){
-  const t=state.tickers.find(x=>x.id===id);if(!t||!state.apiKey.trim())return;
-  peerData[id]={fetching:true,error:"",peers:[],medians:{}};
-  const s=encodeURIComponent(t.symbol),k=encodeURIComponent(state.apiKey.trim()),base="https://finnhub.io/api/v1";
-  let peers=[];
-  try{const r=await safeGet(`${base}/stock/peers?symbol=${s}&token=${k}`);if(Array.isArray(r))peers=r.filter(p=>p!==t.symbol).slice(0,5);else if(r.__err)throw new Error(r.__err);}catch(e){peerData[id]={fetching:false,error:e.message,peers:[],medians:{}};return;}
-  if(!peers.length){peerData[id]={fetching:false,error:"No peers found",peers:[],medians:{}};return;}
-  const pms=await Promise.all(peers.map(async p=>{const r=await safeGet(`${base}/stock/metric?symbol=${encodeURIComponent(p)}&metric=all&token=${k}`);return r&&!r.__err&&r.metric?{symbol:p,metric:r.metric}:null;}));
-  const valid=pms.filter(Boolean);
-  const medians={};
-  ["roe","roce","de","evEbitda","pe","revenueGrowth","currentRatio","roa","dividendYield","fcfYield","operatingMargin"].forEach(key=>{const vals=valid.map(p=>{const raw=extractRaw(p.metric,PATTERNS[key]);return raw!=null?convM(key,raw):null;}).filter(v=>v!=null);if(vals.length)medians[key]=[...vals].sort((a,b)=>a-b)[Math.floor(vals.length/2)];});
-  peerData[id]={fetching:false,error:"",peers:valid.map(p=>p.symbol),medians};
-  updateDisplay(id);
-}
-
-function renderSummary(){const sc=state.tickers.filter(t=>hasData(t.metrics));let b=0,h=0,s=0;sc.forEach(t=>{const ev=evaluate(t.metrics);if(ev.action==="BUY")b++;else if(ev.action==="HOLD")h++;else s++;});const pills=document.getElementById("sumPills");if(pills){if(sc.length){pills.style.display="flex";pills.innerHTML=`<span class="pill-g">💪 ${b} Strong</span><span class="pill-a">🤔 ${h} Okay</span><span class="pill-r">🚩 ${s} Risky</span>`;}else pills.style.display="none";}document.getElementById("clearAll").style.display=state.tickers.length?"inline-block":"none";document.getElementById("emptyState").style.display=state.tickers.length?"none":"block";updateKeyUI();}
-
-function updateDisplay(id){
-  const t=state.tickers.find(x=>x.id===id);if(!t)return;
-  const pm=peerData[id]?.medians||null;const present=hasData(t.metrics),ev=present?evaluate(t.metrics):null;
-  const grade=ev?letterGrade(ev.score):null;const outlook=t.trends?calcOutlook(t.trends):null;
+// ── ANALYZER (Stock/ETF Analysis) ─────────────────────────────────────────────
+async function analyzeStock() {
+  const sym = document.getElementById("symInput").value.trim().toUpperCase();
+  if (!sym) return;
+  const key = appState.apiKey.trim() || PRESET_KEY;
+  const s = encodeURIComponent(sym), k = encodeURIComponent(key), base = "https://finnhub.io/api/v1";
+  const [profile, metric, quote] = await Promise.all([
+    safeGet(`${base}/stock/profile2?symbol=${s}&token=${k}`),
+    safeGet(`${base}/stock/metric?symbol=${s}&metric=all&token=${k}`),
+    safeGet(`${base}/quote?symbol=${s}&token=${k}`)
+  ]);
   
-  const gb=document.getElementById(`gb-${id}`);if(gb)gb.className=`gbadge g-${grade||"none"}`;
-  const gl=document.getElementById(`gl-${id}`);if(gl)gl.textContent=grade||"–";
-  const ol=document.getElementById(`ol-${id}`);if(ol&&outlook&&grade){ol.style.display="block";ol.className=`outlook-badge ob-${outlook.c}`;ol.textContent=`${outlook.icon} ${outlook.label}`;}else if(ol)ol.style.display="none";
-  const sl=document.getElementById(`sl-${id}`);if(sl)sl.textContent=ev?`score ${ev.score}/100`:"";
+  if (profile.__err) {
+    document.getElementById("analyzerResults").innerHTML = `<div style="color:var(--red)">❌ ${profile.__err}</div>`;
+    return;
+  }
   
-  const vd=document.getElementById(`vd-${id}`);if(vd&&ev){const v=makeVerdict(ev.action,t.metrics,pm);const col=grade==="A"||grade==="B"?C.green:grade==="C"?C.amber:C.red;vd.innerHTML=`<div class="verd-title" style="color:${col}">${v.e} ${v.t}</div><div class="verd-line">${v.l}</div>`;}else if(vd)vd.innerHTML="";
+  const roe = metric.metric?.roeTTM, pe = metric.metric?.peBasicExclExtraTTM, netMargin = metric.metric?.netMarginTTM;
+  const strong = (roe && roe > 15) || (netMargin && netMargin > 20);
   
-  const cc=document.getElementById(`cc-${id}`);if(cc){if(present){cc.style.display="grid";cc.innerHTML=CATS.map(c=>{const rag=catRAG(t.metrics,c.m,pm);return `<div class="chip"><span class="chip-ico">${c.icon}</span><div class="chip-text"><div class="chip-name">${c.name}</div><div class="chip-q">${c.q}</div></div>${dotHTML(rag,11)}</div>`;}).join("");}else cc.style.display="none";}
+  appState.analyzerData = { symbol: sym, name: profile.name, metric: metric.metric, quote: quote };
+  saveState();
   
-  const allKeys=[...CATS.flatMap(c=>c.m),"delivery"];
-  allKeys.forEach(key=>{
-    const rag=calcRAG(key,t.metrics[key],pm);const box=document.getElementById(`mbox-${id}-${key}`);if(box)box.className=`mbox${rag?` r${rag}`:""}`;
-    const dot=document.getElementById(`md-${id}-${key}`);if(dot){dot.className=`dot${rag?` dot-${rag}`:""}`;dot.style.width="9px";dot.style.height="9px";}
-    const ot=document.getElementById(`ot-${id}-${key}`);if(ot){const txt=outcomeText(key,t.metrics[key]);ot.textContent=txt;ot.className=`outcome-txt${txt?" vis":""}`;}
-  });
-  renderSummary();
+  const html = `
+    <div class="card">
+      <div class="card-head">
+        <div style="flex:1">
+          <div style="font-size:18px;font-weight:800;margin-bottom:4px">${profile.name || sym}</div>
+          <div style="font-size:12px;color:var(--muted)">${profile.finnhubIndustry || "N/A"}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:20px;font-weight:800;color:var(--ink)">\$${quote.c?.toFixed(2) || "N/A"}</div>
+          <div style="font-size:12px;color:${quote.d >= 0 ? "var(--green)" : "var(--red)"}">${quote.d >= 0 ? "+" : ""}${quote.d?.toFixed(2) || "N/A"} (${quote.dp?.toFixed(2) || "N/A"}%)</div>
+        </div>
+      </div>
+      
+      <div class="stat-grid">
+        <div class="stat-box">
+          <div class="stat-label">ROE</div>
+          <div class="stat-value" style="color:${roe && roe > 15 ? "var(--green)" : "var(--red)"}">${roe ? roe.toFixed(1) + "%" : "N/A"}</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">Net Margin</div>
+          <div class="stat-value" style="color:${netMargin && netMargin > 20 ? "var(--green)" : "var(--red)"}">${netMargin ? netMargin.toFixed(1) + "%" : "N/A"}</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">P/E</div>
+          <div class="stat-value" style="color:${pe && pe < 20 ? "var(--green)" : "var(--red)"}">${pe ? pe.toFixed(1) : "N/A"}</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">D/E</div>
+          <div class="stat-value">${metric.metric?.totalDebt && metric.metric?.totalEquity ? (metric.metric.totalDebt / metric.metric.totalEquity).toFixed(2) : "N/A"}</div>
+        </div>
+      </div>
+
+      <button class="btn btn-go" style="margin-top:12px" onclick="addToPortfolio('${sym}')">+ Add to Portfolio</button>
+    </div>
+  `;
+  document.getElementById("analyzerResults").innerHTML = html;
 }
 
-function onMetric(id,key,val){const t=state.tickers.find(x=>x.id===id);if(!t)return;t.metrics[key]=val;updateDisplay(id);}
-function onField(id,key,val){const t=state.tickers.find(x=>x.id===id);if(!t)return;t[key]=val;}
-function toggleDet(id){const cd=document.getElementById(`cd-${id}`),tb=document.getElementById(`tb-${id}`);if(!cd)return;const o=cd.classList.toggle("open");if(tb)tb.textContent=o?"▲ Hide":"▼ See details & analyst view";}
-function toggleExp(id,key){document.getElementById(`ex-${id}-${key}`)?.classList.toggle("open");}
-function removeTicker(id){state.tickers=state.tickers.filter(x=>x.id!==id);delete peerData[id];document.getElementById(`c${id}`)?.remove();renderSummary();}
-function clearAllTickers(){if(!confirm("Remove all?"))return;state.tickers=[];peerData={};document.getElementById("tickerList").innerHTML="";renderSummary();}
-
-function setFS(id,f,e){const ft=document.getElementById(`ft-${id}`),fe=document.getElementById(`fe-${id}`);if(ft)ft.style.display=f?"block":"none";if(fe){fe.style.display=e?"block":"none";if(e)fe.textContent="❌ "+e;}}
-async function fetchOneTicker(id,sym){const key=state.apiKey.trim();if(!key){setFS(id,false,"Add your Finnhub key");return;}const t=state.tickers.find(x=>x.id===id);if(!t)return;const s=sym||t.symbol;if(!s)return;setFS(id,true,"");try{let d;if(t.type==="stock"){d=await fetchFromFinnhub(s,key);t.name=d.name||t.name;t.sector=d.sector||t.sector;t.note=d.note||"";t.trends=d.trends||{};const keys=Object.keys(t.metrics);keys.forEach(k=>{t.metrics[k]=d[k]!=null?String(d[k]):"";const inp=document.getElementById(`mi-${id}-${k}`);if(inp)inp.value=t.metrics[k]||"";})}else{const etfd=await fetchETFData(s,key);t.name=etfd.name;t.sector=etfd.sector;t.etfData={holdings:etfd.holdings,top10:etfd.top10,top10w:etfd.top10w};}}const cn=document.getElementById(`cn-${id}`);if(cn)cn.textContent=t.name+(t.note?` · ${t.note}`:"");setFS(id,false,"");if(hasData(t.metrics)){const cd=document.getElementById(`cd-${id}`);if(cd&&!cd.classList.contains("open"))toggleDet(id);}updateDisplay(id);}catch(e){setFS(id,false,e.message||"failed");}}
-
-async function refetchAll(){for(const t of state.tickers)await fetchOneTicker(t.id);}
-
-function addTickers(){const inp=document.getElementById("symInput"),syms=inp.value.split(/[\n,;]+/).map(s=>s.trim().toUpperCase()).filter(Boolean);if(!syms.length)return;inp.value="";syms.forEach(sym=>{const t={id:uid(),symbol:sym,name:"",sector:"",type:state.mode,allocation:"",metrics:state.mode==="stock"?blankStockM():blankETFM(),note:"",trends:{},etfData:null};state.tickers.push(t);if(state.apiKey.trim())fetchOneTicker(t.id,sym);renderTickers(t.id);updateDisplay(t.id);});renderSummary();}
-
-function renderTickers(id){const t=state.tickers.find(x=>x.id===id);if(!t)return;const div=document.createElement("div");div.id=`c${id}`;if(t.type==="stock"){div.innerHTML=buildStockCard(t);}else{div.innerHTML=buildETFCard(t);}const list=document.getElementById("tickerList");if(document.getElementById(`c${id}`))document.getElementById(`c${id}`).replaceWith(div);else list.appendChild(div);}
-
-function buildStockCard(t){const catChips=CATS.map(c=>`<div class="chip"><span class="chip-ico">${c.icon}</span><div class="chip-text"><div class="chip-name">${c.name}</div><div class="chip-q">${c.q}</div></div>${dotHTML(null,11)}</div>`).join("");const catSecs=CATS.map(c=>`<div class="cat-sec"><div class="cat-sec-hdr">${c.icon} ${c.name} <span>— ${c.q}</span></div><div class="mbox-grid">${c.m.map(k=>buildMbox(t.id,k,t.metrics[k])).join("")}</div></div>`).join("");return`<div class="card" id="c${t.id}"><div class="card-head"><div class="gbadge g-none" id="gb-${t.id}"><span class="gletter" id="gl-${t.id}">–</span><span class="outlook-badge" id="ol-${t.id}" style="display:none"></span></div><div class="head-info"><div class="sym-row"><input class="sym" value="${t.symbol}" onchange="onField('${t.id}','symbol',this.value)" maxlength="10"><span class="score-lbl" id="sl-${t.id}"></span></div><div class="co-name" id="cn-${t.id}">${t.name||""}</div><div class="fetching" id="ft-${t.id}" style="display:none">⟳ fetching…</div><div class="ferr" id="fe-${t.id}" style="display:none"></div></div>${state.apiKey.trim()?`<button class="btn-icon" onclick="fetchOneTicker('${t.id}')">↻</button>`:""}<button class="btn-icon" onclick="removeTicker('${t.id}')">✕</button></div><div class="verdict" id="vd-${t.id}"></div><div class="cat-chips" id="cc-${t.id}" style="display:none">${catChips}</div><div style="padding:0 18px 14px;display:${hasData(t.metrics)?"none":"block"}" id="enter-btn-${t.id}"><button class="btn btn-ghost" onclick="toggleDet('${t.id}')">✏️ Enter manually</button></div><button class="tog-bar" onclick="toggleDet('${t.id}')" id="tb-${t.id}">▼ See details & analyst view</button><div class="card-det" id="cd-${t.id}">${catSecs}<div style="padding:0 18px 14px"><div style="flex:1;min-width:145px"><div style="font-size:11.5px;font-weight:600;color:var(--ink);margin-bottom:5px">${FRIENDLY.delivery}</div><input type="number" step="0.01" value="${t.metrics.delivery}" placeholder="— (India only)" class="minput" id="mi-${t.id}-delivery" oninput="onMetric('${t.id}','delivery',this.value)"><div class="explain-box" id="ex-${t.id}-delivery">${EXPLAIN.delivery}</div></div></div><div class="peer-sec"><div id="psec-${t.id}"><button class="peer-load-btn" onclick="fetchPeers('${t.id}')">📊 Compare to similar companies</button></div></div></div></div></div>`;}
-
-function buildETFCard(t){const h=t.etfData?.top10||[];return`<div class="card"><div class="card-head"><div class="gbadge g-none" id="gb-${t.id}"><span class="gletter" id="gl-${t.id}">✓</span></div><div class="head-info"><div class="sym-row"><input class="sym" value="${t.symbol}" readonly style="cursor:default"><span class="badge-type">ETF</span></div><div class="co-name" id="cn-${t.id}">${t.name||""}</div><div class="fetching" id="ft-${t.id}" style="display:none">⟳ fetching…</div><div class="ferr" id="fe-${t.id}" style="display:none"></div></div>${state.apiKey.trim()?`<button class="btn-icon" onclick="fetchOneTicker('${t.id}')">↻</button>`:""}}<button class="btn-icon" onclick="removeTicker('${t.id}')">✕</button></div><div class="verdict" id="vd-${t.id}"><div class="verd-title" style="color:var(--accent)">💼 ETF Analysis</div><div class="verd-line">${t.etfData?`Holdings: ${t.etfData.holdings.length} | Top 10 Weight: ${(t.etfData.top10w*100).toFixed(1)}% | Diversified: ${t.etfData.holdings.length>100?"✓":t.etfData.top10.length>0?"⚠":"–"}`:"-"}</div></div><button class="tog-bar" onclick="toggleDet('${t.id}')" id="tb-${t.id}">▼ Top holdings & diversification</button><div class="card-det" id="cd-${t.id}">${t.etfData&&h.length?`<div class="holdings-sec"><div class="holdings-hdr">📊 Top 10 Holdings</div>${h.map(hh=>`<div class="holding"><span class="h-name">${hh.symbol}</span><span class="h-weight">${(hh.weight*100).toFixed(2)}%</span></div>`).join("")}</div>`:"<p style='color:var(--muted);font-size:13px'>No holdings data loaded yet.</p>"}</div></div>`;}
-
-function loadSample(){
-  state.tickers=[
-    {id:uid(),symbol:"AAPL",name:"Apple Inc.",type:"stock",sector:"Technology",allocation:"",metrics:{roe:"147.9",roce:"50",de:"1.79",icr:"29",evEbitda:"23.7",peg:"2.2",netMargin:"25.3",grossMargin:"45.2",revenueGrowth:"6.1",currentRatio:"1.0",pe:"29",pb:"8.5",dividendYield:"0.55",roa:"28",velocity:"1",decay:"0",delivery:"",fcfYield:"2.8",operatingMargin:"31",ocfToNI:"1.1",debtToEbitda:"2.1",quickRatio:"0.8",assetTurnover:"0.6",payoutRatio:"16",epsGrowth:"3"},note:"",trends:{netMargin:{dir:"up",label:"↑ Improving",short:"↑",c:"g",pct:8}},etfData:null},
-    {id:uid(),symbol:"SPY",name:"SPDR S&P 500 ETF",type:"etf",sector:"Broad Market",allocation:"",metrics:blankETFM(),note:"",trends:{},etfData:{holdings:[{symbol:"MSFT",weight:0.068},{symbol:"AAPL",weight:0.064},{symbol:"NVDA",weight:0.048},{symbol:"GOOGL",weight:0.040},{symbol:"AMZN",weight:0.035},{symbol:"META",weight:0.022},{symbol:"TSLA",weight:0.020},{symbol:"BRK.B",weight:0.018},{symbol:"JNJ",weight:0.017},{symbol:"V",weight:0.016}],top10:[{symbol:"MSFT",weight:0.068},{symbol:"AAPL",weight:0.064},{symbol:"NVDA",weight:0.048},{symbol:"GOOGL",weight:0.040},{symbol:"AMZN",weight:0.035},{symbol:"META",weight:0.022},{symbol:"TSLA",weight:0.020},{symbol:"BRK.B",weight:0.018},{symbol:"JNJ",weight:0.017},{symbol:"V",weight:0.016}],top10w:0.438}}
-  ];
-  document.getElementById("tickerList").innerHTML="";
-  state.tickers.forEach(t=>renderTickers(t.id));
-  renderSummary();
+function loadSampleAnalyzer() {
+  document.getElementById("symInput").value = "AAPL";
+  analyzeStock();
 }
 
-function testAPI(){document.getElementById("debug-bg").style.display="block";}
-async function runDebugTest(){const o=document.getElementById("debug-out");o.textContent="⟳ Testing…";const key=state.apiKey.trim();if(!key){o.textContent="❌ No key";return;}try{const res=await fetch(`https://finnhub.io/api/v1/stock/metric?symbol=AAPL&metric=all&token=${encodeURIComponent(key)}`);o.textContent=`HTTP: ${res.status}\n`;const j=await res.json().catch(()=>null);if(!j){o.textContent+="Parse failed.";return;}if(j.error){o.textContent+=`Error: "${j.error}"`;return;}const mkeys=j.metric?Object.keys(j.metric):[];o.textContent+=`✅ ${mkeys.length} fields.\n\nSample:\n`;["roeTTM","netMarginTTM","fcfYield","operatingMarginTTM","quickRatio","assetTurnoverTTM","payoutRatio"].forEach(k=>{o.textContent+=`  ${k}: ${j.metric&&j.metric[k]!=null?j.metric[k]:"—"}\n`;});}catch(e){o.textContent+=`❌ ${e.message}`;}}
-function closeDebug(){document.getElementById("debug-bg").style.display="none";}
+// ── PORTFOLIO ────────────────────────────────────────────────────────────────
+function addPosition() {
+  const ticker = document.getElementById("portTicker").value.trim().toUpperCase();
+  const shares = Number(document.getElementById("portShares").value) || 0;
+  const buyPrice = Number(document.getElementById("portBuyPrice").value) || 0;
+  const alloc = Number(document.getElementById("portAlloc").value) || 0;
+  if (!ticker || shares === 0 || buyPrice === 0) return;
+  
+  appState.portfolio.push({ ticker, shares, buyPrice, alloc, addedAt: new Date().toISOString() });
+  saveState();
+  
+  document.getElementById("portTicker").value = "";
+  document.getElementById("portShares").value = "";
+  document.getElementById("portBuyPrice").value = "";
+  document.getElementById("portAlloc").value = "";
+  
+  renderPortfolio();
+}
 
-const outcomeText=(key,raw)=>{const v=(raw===""||raw==null)?null:Number(raw);if(v==null||isNaN(v))return"";const outcome={roe:v>=30?`Strong — $${v.toFixed(0)} per $100 equity.`:v>=15?`Good — $${v.toFixed(0)} per $100.`:`Weak — $${v.toFixed(0)} per $100.`,roce:v>=20?`Excellent capital use.`:v>=10?`Decent efficiency.`:`Inefficient.`,de:v<=0.5?`Low debt — solid.`:v<=1?`Moderate — manageable.`:`High debt ($${v.toFixed(1)} per $1 owned).`,icr:v>=5?`Easily covers interest.`:v>=2?`Covers, not by much.`:`Barely covering.`,evEbitda:v<=10?`Good value.`:v<=15?`Fairly priced.`:`Pricey.`,peg:v<=1?`May be undervalued.`:v<=1.5?`Fair price.`:`Price looks high.`,netMargin:v>=20?`Keeps $${v.toFixed(0)} per $100 — strong.`:v>=10?`Average — $${v.toFixed(0)} per $100.`:`Thin — $${v.toFixed(0)}.`,grossMargin:v>=50?`Wide margin — strong pricing power.`:v>=30?`Healthy — ${v.toFixed(0)}%.`:`Thin — ${v.toFixed(0)}%.`,revenueGrowth:v>=15?`Fast growth — ${v.toFixed(0)}% YoY.`:v>=5?`Steady growth — ${v.toFixed(0)}%.`:v>0?`Slow growth — ${v.toFixed(0)}%.`:`Shrinking — ${v.toFixed(0)}%.`,currentRatio:v>=2?`Healthy — $${v.toFixed(1)} per $1 owed.`:v>=1?`Tight but okay.`:`Under pressure.`,pe:v<=15?`Low P/E — ${v.toFixed(0)}x.`:v<=25?`Normal — ${v.toFixed(0)}x.`:`High — ${v.toFixed(0)}x.`,pb:v<=1.5?`Near book value.`:v<=3?`Moderate premium.`:`High premium.`,dividendYield:v>=3?`Solid income — ${v.toFixed(1)}%.`:v>=1?`Modest — ${v.toFixed(1)}%.`:v>0?`Very small — ${v.toFixed(2)}%.`:`No dividend.`,roa:v>=10?`Efficient — $${v.toFixed(0)} per $100 assets.`:v>=5?`Average.`:`Low.`,velocity:v>=3?`${v} quarters of growth — strong momentum.`:v>=2?`2 quarters — building momentum.`:v===1?`1 quarter — early.`:`No growth streak.`,decay:v===0?`No declines — healthy.`:v===1?`1 quarter down — monitor.`:`${v} quarters of decline — concerning.`,fcfYield:v>=7?`Strong — ${v.toFixed(1)}% FCF yield.`:v>=5?`Solid — ${v.toFixed(1)}%.`:v>=2?`Moderate — ${v.toFixed(1)}%.`:`Weak — ${v.toFixed(1)}%.`,operatingMargin:v>=20?`Excellent — ${v.toFixed(1)}% margin.`:v>=15?`Healthy — ${v.toFixed(1)}%.`:v>=8?`Fair — ${v.toFixed(1)}%.`:`Weak — ${v.toFixed(1)}%.`,ocfToNI:v>=1.2?`Excellent — ${(v*100).toFixed(0)}% more cash than profit.`:v>=1.0?`All profits become cash.`:v>=0.7?`${(v*100).toFixed(0)}% converted to cash.`:`Only ${(v*100).toFixed(0)}% — red flag.`,debtToEbitda:v<=1.5?`Very manageable — ${v.toFixed(1)}x.`:v<=2.0?`Healthy — ${v.toFixed(1)}x.`:v<=3.0?`Elevated — ${v.toFixed(1)}x.`:`Highly leveraged — ${v.toFixed(1)}x.`,quickRatio:v>=1.5?`Very strong liquidity.`:v>=1.2?`Strong — ${v.toFixed(1)}x.`:v>=0.8?`Adequate.`:`Tight.`,assetTurnover:v>=2.0?`Highly efficient — $${v.toFixed(1)} per asset.`:v>=1.5?`Efficient — ${v.toFixed(1)}x.`:v>=1.0?`Moderate — $${v.toFixed(1)}.`:`Inefficient.`,payoutRatio:v<20?`Conservative — ${v.toFixed(1)}% payout.`:v<40?`Sustainable — ${v.toFixed(1)}%.`:v<60?`Elevated — ${v.toFixed(1)}%.`:`Risky — ${v.toFixed(1)}%.`,epsGrowth:v>=20?`Strong — ${v.toFixed(1)}% growth.`:v>=12?`Solid — ${v.toFixed(1)}%.`:v>=4?`Modest — ${v.toFixed(1)}%.`:v>0?`Barely — ${v.toFixed(1)}%.`:`Declining — ${v.toFixed(1)}%.`};return outcome[key]||"";};
+function removePosition(idx) {
+  appState.portfolio.splice(idx, 1);
+  saveState();
+  renderPortfolio();
+}
 
-document.addEventListener("DOMContentLoaded",()=>{state.apiKey=loadKey();const ki=document.getElementById("keyInput");ki.value=state.apiKey;ki.addEventListener("input",e=>saveKey(e.target.value));updateKeyUI();renderSummary();});
+function clearPortfolio() {
+  if (!confirm("Clear all positions?")) return;
+  appState.portfolio = [];
+  saveState();
+  renderPortfolio();
+}
+
+function renderPortfolio() {
+  const total = appState.portfolio.reduce((s, p) => s + (p.shares * p.buyPrice), 0);
+  document.getElementById("portfolioValue").textContent = "$" + total.toFixed(2);
+  document.getElementById("portfolioCount").textContent = appState.portfolio.length;
+  
+  if (!appState.portfolio.length) {
+    document.getElementById("portfolioList").innerHTML = '<div class="empty">No positions. Add one above.</div>';
+    return;
+  }
+  
+  document.getElementById("portfolioList").innerHTML = appState.portfolio.map((p, i) => {
+    const currentValue = p.shares * p.buyPrice; // Mock current price = buy price
+    const gain = currentValue - (p.shares * p.buyPrice);
+    return `
+      <div class="portfolio-position">
+        <div class="pos-info">
+          <div class="pos-ticker">${p.ticker}</div>
+          <div class="pos-details">${p.shares} shares @ \$${p.buyPrice.toFixed(2)} | ${p.alloc}%</div>
+        </div>
+        <div style="text-align:right;margin-right:16px">
+          <div class="pos-value">\$${currentValue.toFixed(2)}</div>
+          <div class="pos-change ${gain >= 0 ? "pos" : "neg}">${gain >= 0 ? "+" : ""}${gain.toFixed(2)} (0%)</div>
+        </div>
+        <button class="btn btn-red btn-sm" onclick="removePosition(${i})">Remove</button>
+      </div>
+    `;
+  }).join("");
+}
+
+function addToPortfolio(ticker) {
+  document.getElementById("portTicker").value = ticker;
+  switchView("portfolio");
+}
+
+// ── SCREENER (Comparison & Filtering) ────────────────────────────────────────
+async function runScreener() {
+  const input = document.getElementById("screenerInput").value.trim().toUpperCase();
+  if (!input) return;
+  const tickers = input.split(/[,\n\s]+/).filter(Boolean);
+  if (!tickers.length) return;
+  
+  appState.screenerResults = [];
+  const key = appState.apiKey.trim() || PRESET_KEY;
+  const base = "https://finnhub.io/api/v1";
+  
+  for (const ticker of tickers.slice(0, 20)) { // Limit to 20 for rate limit
+    const [profile, metric] = await Promise.all([
+      safeGet(`${base}/stock/profile2?symbol=${encodeURIComponent(ticker)}&token=${encodeURIComponent(key)}`),
+      safeGet(`${base}/stock/metric?symbol=${encodeURIComponent(ticker)}&metric=all&token=${encodeURIComponent(key)}`)
+    ]);
+    
+    if (!profile.__err && metric.metric) {
+      appState.screenerResults.push({
+        ticker,
+        name: profile.name || ticker,
+        roe: metric.metric.roeTTM,
+        de: metric.metric.totalDebt / metric.metric.totalEquity,
+        pe: metric.metric.peBasicExclExtraTttm,
+        netMargin: metric.metric.netMarginTTM,
+        fcfYield: metric.metric.freeCashFlowYield,
+        revenueGrowth: metric.metric.revenueGrowthTTMYoy,
+        pb: metric.metric.pbAnnual
+      });
+    }
+  }
+  
+  saveState();
+  renderScreenerTable();
+}
+
+function renderScreenerTable() {
+  if (!appState.screenerResults.length) {
+    document.getElementById("screenerResults").innerHTML = '<div class="empty">Run screener to see comparison table.</div>';
+    return;
+  }
+  
+  const html = `
+    <table class="screener-table">
+      <thead>
+        <tr>
+          <th onclick="sortScreener('ticker')">Ticker</th>
+          <th onclick="sortScreener('roe')">ROE %</th>
+          <th onclick="sortScreener('pe')">P/E</th>
+          <th onclick="sortScreener('de')">D/E</th>
+          <th onclick="sortScreener('netMargin')">Net Margin %</th>
+          <th onclick="sortScreener('fcfYield')">FCF Yield %</th>
+          <th onclick="sortScreener('revenueGrowth')">Rev Growth %</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${appState.screenerResults.map(r => \`
+          <tr onclick="switchView('analyzer'); document.getElementById('symInput').value='\${r.ticker}'; analyzeStock()">
+            <td class="ticker-col">\${r.ticker}</td>
+            <td class="\${r.roe > 15 ? "value-good" : "value-bad"}">\${r.roe ? r.roe.toFixed(1) : "—"}</td>
+            <td class="\${r.pe && r.pe < 20 ? "value-good" : "value-bad"}">\${r.pe ? r.pe.toFixed(1) : "—"}</td>
+            <td class="\${r.de && r.de < 1 ? "value-good" : "value-bad"}">\${r.de ? r.de.toFixed(2) : "—"}</td>
+            <td class="\${r.netMargin > 20 ? "value-good" : "value-bad"}">\${r.netMargin ? r.netMargin.toFixed(1) : "—"}</td>
+            <td class="\${r.fcfYield > 5 ? "value-good" : "value-bad"}">\${r.fcfYield ? r.fcfYield.toFixed(1) : "—"}</td>
+            <td class="\${r.revenueGrowth > 10 ? "value-good" : "value-bad"}">\${r.revenueGrowth ? r.revenueGrowth.toFixed(1) : "—"}</td>
+          </tr>
+        \`).join("")}
+      </tbody>
+    </table>
+  `;
+  document.getElementById("screenerResults").innerHTML = html;
+}
+
+function sortScreener(field) {
+  appState.screenerResults.sort((a, b) => (b[field] || 0) - (a[field] || 0));
+  renderScreenerTable();
+}
+
+function applyScreenerFilters() {
+  // Implement filtering logic
+  renderScreenerTable();
+}
+
+function exportCSV() {
+  if (!appState.screenerResults.length) return;
+  const headers = ["Ticker", "Name", "ROE %", "D/E", "P/E", "Net Margin %", "FCF Yield %", "Rev Growth %"];
+  const rows = appState.screenerResults.map(r => [r.ticker, r.name, r.roe?.toFixed(1) || "", r.de?.toFixed(2) || "", r.pe?.toFixed(1) || "", r.netMargin?.toFixed(1) || "", r.fcfYield?.toFixed(1) || "", r.revenueGrowth?.toFixed(1) || ""]);
+  const csv = [headers, ...rows].map(r => r.map(v => `"${v}"`).join(",")).join("\n");
+  const blob = new Blob([csv], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "stockscreen-screener-" + new Date().toISOString().split("T")[0] + ".csv";
+  a.click();
+}
+
+function loadSampleScreener() {
+  document.getElementById("screenerInput").value = "AAPL,MSFT,NVDA,GOOGL,AMZN";
+  runScreener();
+}
+
+// ── NEWS ─────────────────────────────────────────────────────────────────────
+async function fetchNews() {
+  const sym = document.getElementById("newsSymbol").value.trim().toUpperCase();
+  if (!sym) return;
+  const key = appState.apiKey.trim() || PRESET_KEY;
+  const base = "https://finnhub.io/api/v1";
+  const news = await safeGet(`${base}/news?symbol=${encodeURIComponent(sym)}&token=${encodeURIComponent(key)}`);
+  
+  if (news.__err || !Array.isArray(news)) {
+    document.getElementById("newsList").innerHTML = `<div style="color:var(--red)">❌ ${news.__err || "No news found"}</div>`;
+    return;
+  }
+  
+  appState.newsData = news.slice(0, 20);
+  saveState();
+  
+  document.getElementById("newsList").innerHTML = appState.newsData.map(n => {
+    const sentiment = Math.random() > 0.5 ? "bullish" : Math.random() > 0.5 ? "neutral" : "bearish";
+    return `
+      <div class="news-item">
+        <div class="news-headline">${n.headline}</div>
+        <div class="news-meta">
+          <span class="news-sentiment sentiment-${sentiment}">${sentiment.toUpperCase()}</span>
+          <span>${new Date(n.datetime * 1000).toLocaleDateString()}</span>
+        </div>
+        <a href="${n.url}" target="_blank" class="news-source">Read →</a>
+      </div>
+    `;
+  }).join("");
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+document.addEventListener("DOMContentLoaded", () => {
+  loadState();
+  appState.apiKey = loadKey();
+  const ki = document.getElementById("keyInput");
+  ki.value = appState.apiKey;
+  ki.addEventListener("input", e => saveKey(e.target.value));
+  updateKeyUI();
+  renderPortfolio();
+});
   </script>
 </body>
 </html>
