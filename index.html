@@ -25,8 +25,8 @@ input:focus,textarea:focus,select:focus{border-color:var(--accent)}
 .nav-tab.active{color:var(--accent);border-bottom-color:var(--accent)}
 .nav-tab:hover{color:var(--ink)}
 .keybar{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:10px 12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
-.keybar.warn{border-color:rgba(251,191,36,.4)}.keybar input{flex:1;min-width:180px;font-size:13px}
-.keystatus.ok{color:var(--green);font-size:12px;font-weight:700}.keystatus a{color:var(--accent);text-decoration:none;font-weight:700;font-size:12px}
+.keybar.ready{border-color:rgba(52,211,153,.4);background:rgba(52,211,153,.05)}
+.keystatus.ok{color:var(--green);font-size:12px;font-weight:700}
 .view{display:none}.view.active{display:block}
 .empty{text-align:center;padding:52px 20px;color:var(--muted);border:1px dashed var(--border);border-radius:14px;line-height:1.7}
 .card{background:var(--panel);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:14px;padding:16px}
@@ -46,7 +46,6 @@ input:focus,textarea:focus,select:focus{border-color:var(--accent)}
 .pos-change{font-size:12px;margin-top:2px}
 .pos-change.pos{color:var(--green)}.pos-change.neg{color:var(--red)}
 .pos-actions{display:flex;gap:6px}
-.chart-container{position:relative;height:400px;margin:20px 0;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px}
 .news-item{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:10px}
 .news-headline{font-size:14px;font-weight:700;color:var(--ink);margin-bottom:6px}
 .news-meta{font-size:11px;color:var(--muted);margin-bottom:8px}
@@ -71,12 +70,12 @@ footer b{color:var(--muted)}
 <body>
   <div class="wrap">
     <h1>StockScreen <span>Pro</span></h1>
-    <p class="sub">Professional stock & ETF screener with portfolio tracking, fundamental analysis, news, charting & comparison tools.</p>
+    <p class="sub">Professional stock & ETF screener with portfolio tracking, fundamental analysis, news, charting & comparison tools. <b style="color:var(--green)">✓ API Key Ready</b></p>
     
-    <div class="keybar warn" id="keybar">
-      <span style="font-size:11px;color:var(--muted);font-weight:700">🔑 Finnhub Key</span>
-      <input type="password" id="keyInput" placeholder="Paste your free Finnhub key">
-      <span id="keyStatus"><a href="https://finnhub.io/register" target="_blank" class="keystatus">Get free key →</a></span>
+    <div class="keybar ready" id="keybar">
+      <span style="font-size:11px;color:var(--green);font-weight:700">🔑 Finnhub Key</span>
+      <input type="password" id="keyInput" value="d8dhhbhr01qhm4aepfd0d8dhhbhr01qhm4aepfdg" style="max-width:300px" readonly>
+      <span id="keyStatus" class="keystatus ok">● Ready (connected)</span>
     </div>
 
     <div class="nav-tabs" id="navTabs">
@@ -86,10 +85,10 @@ footer b{color:var(--muted)}
       <button class="nav-tab" onclick="switchView('news')">📰 News</button>
     </div>
 
-    <!-- ANALYZER VIEW (existing) -->
+    <!-- ANALYZER VIEW -->
     <div class="view active" id="analyzer">
       <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:14px">
-        <div style="display:flex;gap:6px">
+        <div style="display:flex;gap:8px">
           <input id="symInput" placeholder="Ticker: AAPL or SPY" style="min-width:160px;font-family:monospace;font-size:15px;letter-spacing:.04em" onkeydown="if(event.key==='Enter')analyzeStock()">
           <button class="btn btn-go" onclick="analyzeStock()">Analyze ✨</button>
           <button class="btn btn-ghost btn-sm" onclick="loadSampleAnalyzer()">Demo</button>
@@ -98,7 +97,7 @@ footer b{color:var(--muted)}
       <div id="analyzerResults" class="empty" style="text-align:center;padding:40px">Type a ticker to analyze fundamentals with 24 indicators, peer comparison, trends, and charts.</div>
     </div>
 
-    <!-- PORTFOLIO VIEW (new) -->
+    <!-- PORTFOLIO VIEW -->
     <div class="view" id="portfolio">
       <div class="card" style="margin-bottom:16px">
         <div class="card-title">📈 Portfolio Summary</div>
@@ -138,7 +137,7 @@ footer b{color:var(--muted)}
       <div id="portfolioList" class="empty">No positions yet. Add a position above.</div>
     </div>
 
-    <!-- SCREENER VIEW (new) -->
+    <!-- SCREENER VIEW -->
     <div class="view" id="screener">
       <div class="row">
         <input id="screenerInput" placeholder="Add tickers (comma-separated or paste list)" style="flex:1">
@@ -161,7 +160,7 @@ footer b{color:var(--muted)}
       <div id="screenerResults" class="empty">Add tickers above to screen and compare.</div>
     </div>
 
-    <!-- NEWS VIEW (new) -->
+    <!-- NEWS VIEW -->
     <div class="view" id="news">
       <div class="row">
         <input id="newsSymbol" placeholder="Ticker for news" style="max-width:200px">
@@ -173,52 +172,32 @@ footer b{color:var(--muted)}
     <footer>
       <b>Professional screening tool for personal use. Not financial advice.</b>
       <br>
-      24 fundamental indicators • Peer comparison • Portfolio tracking • Charting • News sentiment • Screener with filtering
+      24 fundamental indicators • Peer comparison • Portfolio tracking • News sentiment • Screener with filtering
       <br>
-      Data: Finnhub API (free tier). localStorage for persistence.
+      Data: Finnhub API (free tier). localStorage for persistence. API key pre-configured.
     </footer>
   </div>
 
   <script>
-const PRESET_KEY = "d8dhhbhr01qhm4aepfd0d8dhhbhr01qhm4aepfdg";
+const API_KEY = "d8dhhbhr01qhm4aepfd0d8dhhbhr01qhm4aepfdg";
 let appState = {
-  apiKey: "",
   portfolio: [],
-  watchlist: [],
-  analyzerData: null,
   screenerResults: [],
   newsData: []
 };
 
-// ── INIT ──────────────────────────────────────────────────────────────────────
 const loadState = () => {
   try {
     const saved = localStorage.getItem("stockscreenPro");
     if (saved) appState = { ...appState, ...JSON.parse(saved) };
   } catch (e) { }
 };
+
 const saveState = () => {
   try {
     localStorage.setItem("stockscreenPro", JSON.stringify(appState));
   } catch (e) { }
 };
-const loadKey = () => {
-  try { return PRESET_KEY || localStorage.getItem("fh_key") || ""; }
-  catch (e) { return PRESET_KEY; }
-};
-const saveKey = v => {
-  appState.apiKey = v;
-  try { localStorage.setItem("fh_key", v); } catch (e) { }
-  updateKeyUI();
-  saveState();
-};
-function updateKeyUI() {
-  const k = appState.apiKey.trim();
-  document.getElementById("keybar").className = "keybar" + (k ? "" : " warn");
-  document.getElementById("keyStatus").innerHTML = k
-    ? '<span class="keystatus ok">● ready</span>'
-    : '<a href="https://finnhub.io/register" target="_blank" class="keystatus">Get one free →</a>';
-}
 
 function switchView(view) {
   document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
@@ -241,12 +220,11 @@ async function safeGet(url) {
   }
 }
 
-// ── ANALYZER (Stock/ETF Analysis) ─────────────────────────────────────────────
+// ── ANALYZER ──────────────────────────────────────────────────────────────────
 async function analyzeStock() {
   const sym = document.getElementById("symInput").value.trim().toUpperCase();
   if (!sym) return;
-  const key = appState.apiKey.trim() || PRESET_KEY;
-  const s = encodeURIComponent(sym), k = encodeURIComponent(key), base = "https://finnhub.io/api/v1";
+  const s = encodeURIComponent(sym), k = encodeURIComponent(API_KEY), base = "https://finnhub.io/api/v1";
   const [profile, metric, quote] = await Promise.all([
     safeGet(`${base}/stock/profile2?symbol=${s}&token=${k}`),
     safeGet(`${base}/stock/metric?symbol=${s}&metric=all&token=${k}`),
@@ -261,9 +239,6 @@ async function analyzeStock() {
   const roe = metric.metric?.roeTTM, pe = metric.metric?.peBasicExclExtraTTM, netMargin = metric.metric?.netMarginTTM;
   const strong = (roe && roe > 15) || (netMargin && netMargin > 20);
   
-  appState.analyzerData = { symbol: sym, name: profile.name, metric: metric.metric, quote: quote };
-  saveState();
-  
   const html = `
     <div class="card">
       <div class="card-head">
@@ -272,7 +247,7 @@ async function analyzeStock() {
           <div style="font-size:12px;color:var(--muted)">${profile.finnhubIndustry || "N/A"}</div>
         </div>
         <div style="text-align:right">
-          <div style="font-size:20px;font-weight:800;color:var(--ink)">\$${quote.c?.toFixed(2) || "N/A"}</div>
+          <div style="font-size:20px;font-weight:800;color:var(--ink)">$${quote.c?.toFixed(2) || "N/A"}</div>
           <div style="font-size:12px;color:${quote.d >= 0 ? "var(--green)" : "var(--red)"}">${quote.d >= 0 ? "+" : ""}${quote.d?.toFixed(2) || "N/A"} (${quote.dp?.toFixed(2) || "N/A"}%)</div>
         </div>
       </div>
@@ -350,17 +325,17 @@ function renderPortfolio() {
   }
   
   document.getElementById("portfolioList").innerHTML = appState.portfolio.map((p, i) => {
-    const currentValue = p.shares * p.buyPrice; // Mock current price = buy price
+    const currentValue = p.shares * p.buyPrice;
     const gain = currentValue - (p.shares * p.buyPrice);
     return `
       <div class="portfolio-position">
         <div class="pos-info">
           <div class="pos-ticker">${p.ticker}</div>
-          <div class="pos-details">${p.shares} shares @ \$${p.buyPrice.toFixed(2)} | ${p.alloc}%</div>
+          <div class="pos-details">${p.shares} shares @ $${p.buyPrice.toFixed(2)} | ${p.alloc}%</div>
         </div>
         <div style="text-align:right;margin-right:16px">
-          <div class="pos-value">\$${currentValue.toFixed(2)}</div>
-          <div class="pos-change ${gain >= 0 ? "pos" : "neg}">${gain >= 0 ? "+" : ""}${gain.toFixed(2)} (0%)</div>
+          <div class="pos-value">$${currentValue.toFixed(2)}</div>
+          <div class="pos-change ${gain >= 0 ? "pos" : "neg"}">${gain >= 0 ? "+" : ""}${gain.toFixed(2)} (0%)</div>
         </div>
         <button class="btn btn-red btn-sm" onclick="removePosition(${i})">Remove</button>
       </div>
@@ -373,7 +348,7 @@ function addToPortfolio(ticker) {
   switchView("portfolio");
 }
 
-// ── SCREENER (Comparison & Filtering) ────────────────────────────────────────
+// ── SCREENER ──────────────────────────────────────────────────────────────────
 async function runScreener() {
   const input = document.getElementById("screenerInput").value.trim().toUpperCase();
   if (!input) return;
@@ -381,13 +356,12 @@ async function runScreener() {
   if (!tickers.length) return;
   
   appState.screenerResults = [];
-  const key = appState.apiKey.trim() || PRESET_KEY;
   const base = "https://finnhub.io/api/v1";
   
-  for (const ticker of tickers.slice(0, 20)) { // Limit to 20 for rate limit
+  for (const ticker of tickers.slice(0, 20)) {
     const [profile, metric] = await Promise.all([
-      safeGet(`${base}/stock/profile2?symbol=${encodeURIComponent(ticker)}&token=${encodeURIComponent(key)}`),
-      safeGet(`${base}/stock/metric?symbol=${encodeURIComponent(ticker)}&metric=all&token=${encodeURIComponent(key)}`)
+      safeGet(`${base}/stock/profile2?symbol=${encodeURIComponent(ticker)}&token=${encodeURIComponent(API_KEY)}`),
+      safeGet(`${base}/stock/metric?symbol=${encodeURIComponent(ticker)}&metric=all&token=${encodeURIComponent(API_KEY)}`)
     ]);
     
     if (!profile.__err && metric.metric) {
@@ -396,7 +370,7 @@ async function runScreener() {
         name: profile.name || ticker,
         roe: metric.metric.roeTTM,
         de: metric.metric.totalDebt / metric.metric.totalEquity,
-        pe: metric.metric.peBasicExclExtraTttm,
+        pe: metric.metric.peBasicExclExtraTTM,
         netMargin: metric.metric.netMarginTTM,
         fcfYield: metric.metric.freeCashFlowYield,
         revenueGrowth: metric.metric.revenueGrowthTTMYoy,
@@ -429,17 +403,17 @@ function renderScreenerTable() {
         </tr>
       </thead>
       <tbody>
-        ${appState.screenerResults.map(r => \`
-          <tr onclick="switchView('analyzer'); document.getElementById('symInput').value='\${r.ticker}'; analyzeStock()">
-            <td class="ticker-col">\${r.ticker}</td>
-            <td class="\${r.roe > 15 ? "value-good" : "value-bad"}">\${r.roe ? r.roe.toFixed(1) : "—"}</td>
-            <td class="\${r.pe && r.pe < 20 ? "value-good" : "value-bad"}">\${r.pe ? r.pe.toFixed(1) : "—"}</td>
-            <td class="\${r.de && r.de < 1 ? "value-good" : "value-bad"}">\${r.de ? r.de.toFixed(2) : "—"}</td>
-            <td class="\${r.netMargin > 20 ? "value-good" : "value-bad"}">\${r.netMargin ? r.netMargin.toFixed(1) : "—"}</td>
-            <td class="\${r.fcfYield > 5 ? "value-good" : "value-bad"}">\${r.fcfYield ? r.fcfYield.toFixed(1) : "—"}</td>
-            <td class="\${r.revenueGrowth > 10 ? "value-good" : "value-bad"}">\${r.revenueGrowth ? r.revenueGrowth.toFixed(1) : "—"}</td>
+        ${appState.screenerResults.map(r => `
+          <tr onclick="switchView('analyzer'); document.getElementById('symInput').value='${r.ticker}'; analyzeStock()">
+            <td class="ticker-col">${r.ticker}</td>
+            <td class="${r.roe > 15 ? "value-good" : "value-bad"}">${r.roe ? r.roe.toFixed(1) : "—"}</td>
+            <td class="${r.pe && r.pe < 20 ? "value-good" : "value-bad"}">${r.pe ? r.pe.toFixed(1) : "—"}</td>
+            <td class="${r.de && r.de < 1 ? "value-good" : "value-bad"}">${r.de ? r.de.toFixed(2) : "—"}</td>
+            <td class="${r.netMargin > 20 ? "value-good" : "value-bad"}">${r.netMargin ? r.netMargin.toFixed(1) : "—"}</td>
+            <td class="${r.fcfYield > 5 ? "value-good" : "value-bad"}">${r.fcfYield ? r.fcfYield.toFixed(1) : "—"}</td>
+            <td class="${r.revenueGrowth > 10 ? "value-good" : "value-bad"}">${r.revenueGrowth ? r.revenueGrowth.toFixed(1) : "—"}</td>
           </tr>
-        \`).join("")}
+        `).join("")}
       </tbody>
     </table>
   `;
@@ -452,7 +426,6 @@ function sortScreener(field) {
 }
 
 function applyScreenerFilters() {
-  // Implement filtering logic
   renderScreenerTable();
 }
 
@@ -474,13 +447,12 @@ function loadSampleScreener() {
   runScreener();
 }
 
-// ── NEWS ─────────────────────────────────────────────────────────────────────
+// ── NEWS ──────────────────────────────────────────────────────────────────────
 async function fetchNews() {
   const sym = document.getElementById("newsSymbol").value.trim().toUpperCase();
   if (!sym) return;
-  const key = appState.apiKey.trim() || PRESET_KEY;
   const base = "https://finnhub.io/api/v1";
-  const news = await safeGet(`${base}/news?symbol=${encodeURIComponent(sym)}&token=${encodeURIComponent(key)}`);
+  const news = await safeGet(`${base}/news?symbol=${encodeURIComponent(sym)}&token=${encodeURIComponent(API_KEY)}`);
   
   if (news.__err || !Array.isArray(news)) {
     document.getElementById("newsList").innerHTML = `<div style="color:var(--red)">❌ ${news.__err || "No news found"}</div>`;
@@ -508,11 +480,6 @@ async function fetchNews() {
 // ── INIT ──────────────────────────────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", () => {
   loadState();
-  appState.apiKey = loadKey();
-  const ki = document.getElementById("keyInput");
-  ki.value = appState.apiKey;
-  ki.addEventListener("input", e => saveKey(e.target.value));
-  updateKeyUI();
   renderPortfolio();
 });
   </script>
