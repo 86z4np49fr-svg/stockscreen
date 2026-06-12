@@ -212,19 +212,60 @@ async function analyzeStock() {
     const score = Math.round((data.roe ? (data.roe/15)*12 : 0) + (data.roce ? (data.roce/15)*12 : 0) + (data.de ? (1-Math.min(data.de/1,1))*10 : 0) + (data.netMargin ? (data.netMargin/20)*8 : 0) + (data.revenueGrowth ? Math.min(data.revenueGrowth/15, 1)*10 : 0) + (data.fcfYield ? Math.min(data.fcfYield/5, 1)*10 : 0) + (data.pe ? Math.max(0, 10-data.pe/3) : 0) + (data.currentRatio ? Math.min(data.currentRatio/2, 1)*7 : 0) + (data.quickRatio ? Math.min(data.quickRatio/1.2, 1)*5 : 0) + (data.operatingMargin ? Math.min(data.operatingMargin/15, 1)*8 : 0));
     const grade = score >= 85 ? 'A' : score >= 70 ? 'B' : score >= 55 ? 'C' : score >= 40 ? 'D' : 'F';
     
+    // Identify strengths and weaknesses
+    const strengths = [];
+    const weaknesses = [];
+    if (data.roe && data.roe > 15) strengths.push('Strong ROE (' + data.roe + '%)');
+    if (data.roe && data.roe < 8) weaknesses.push('Weak ROE (' + data.roe + '%)');
+    if (data.de && data.de < 0.5) strengths.push('Low debt levels');
+    if (data.de && data.de > 1.0) weaknesses.push('High debt levels');
+    if (data.revenueGrowth && data.revenueGrowth > 10) strengths.push('Strong revenue growth');
+    if (data.revenueGrowth && data.revenueGrowth < 0) weaknesses.push('Declining revenue');
+    if (data.pe && data.pe < 15) strengths.push('Reasonable valuation');
+    if (data.pe && data.pe > 25) weaknesses.push('High valuation');
+    if (data.netMargin && data.netMargin > 20) strengths.push('Excellent margins');
+    if (data.netMargin && data.netMargin < 5) weaknesses.push('Thin margins');
+    if (data.fcfYield && data.fcfYield > 5) strengths.push('Strong cash generation');
+    if (data.currentRatio && data.currentRatio < 1) weaknesses.push('Liquidity concerns');
+    if (data.epsGrowth && data.epsGrowth > 12) strengths.push('Strong earnings growth');
+    
+    const verdict = score >= 70 ? { icon: '💪', title: 'Looks Strong', color: 'var(--green)' } : score >= 50 ? { icon: '🤔', title: 'Just Okay', color: '#fbbf24' } : { icon: '🚩', title: 'Be Careful', color: 'var(--red)' };
+    
+    let peerHtml = '<button style="width:100%;padding:10px;background:var(--card);border:1px solid var(--border);color:var(--accent);border-radius:8px;cursor:pointer;font-weight:700" id="peerBtn">📊 Compare to peers</button>';
+    
     const html = `
       <div class="card">
         <div style="display:flex;gap:16px;align-items:flex-start;margin-bottom:16px">
-          <div style="font-size:48px;font-weight:800;color:var(--${grade==='A'||grade==='B'?'green':'red'})">${grade}</div>
+          <div style="font-size:48px;font-weight:800;color:${verdict.color}">${grade}</div>
           <div style="flex:1">
             <div style="font-size:18px;font-weight:800">${profile.name}</div>
             <div style="font-size:12px;color:var(--muted);margin-top:4px">${profile.finnhubIndustry || 'N/A'}</div>
           </div>
         </div>
         
-        <div style="margin-bottom:16px;padding:12px;background:var(--card);border-radius:8px;border-left:3px solid var(--${score>=70?'green':score>=50?'accent':'red'})">
-          <div style="font-size:13px;font-weight:800">Score: ${Math.round(score)}/100</div>
-          <div style="font-size:12px;color:var(--muted);margin-top:6px">${score>=70?'Strong fundamentals':score>=50?'Mixed outlook':'Concerns present'}</div>
+        <div style="margin-bottom:16px;padding:12px;background:var(--card);border-radius:8px;border-left:3px solid ${verdict.color}">
+          <div style="font-size:16px;font-weight:800;color:${verdict.color}">${verdict.icon} ${verdict.title}</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:6px">Score: ${Math.round(score)}/100 – ${score>=70?'Strong fundamentals':score>=50?'Mixed signals':'Red flags present'}</div>
+        </div>
+        
+        <div style="margin-bottom:16px">
+          <div style="font-size:13px;font-weight:800;margin-bottom:8px">💪 What's Working</div>
+          <div style="font-size:12px;color:var(--muted);line-height:1.6">${strengths.length ? strengths.map(s => '✓ ' + s).join('<br>') : 'No clear strengths'}</div>
+        </div>
+        
+        <div style="margin-bottom:16px">
+          <div style="font-size:13px;font-weight:800;margin-bottom:8px">⚠️ Potential Concerns</div>
+          <div style="font-size:12px;color:var(--muted);line-height:1.6">${weaknesses.length ? weaknesses.map(w => '✗ ' + w).join('<br>') : 'No major concerns'}</div>
+        </div>
+        
+        <div style="margin-bottom:16px">
+          <div style="font-size:13px;font-weight:800;margin-bottom:8px">📈 Analyst Summary</div>
+          <div style="font-size:12px;color:var(--muted);line-height:1.6">
+            <div style="margin-bottom:6px"><b>Valuation:</b> ${data.pe ? (data.pe < 15 ? 'Trading at a discount' : data.pe < 25 ? 'Fair valuation' : 'Expensive') : 'Insufficient data'}</div>
+            <div style="margin-bottom:6px"><b>Quality:</b> ${data.roe && data.roe > 15 ? 'Strong profitability' : data.roe && data.roe > 8 ? 'Decent returns' : 'Weak returns'}</div>
+            <div style="margin-bottom:6px"><b>Growth:</b> ${data.revenueGrowth && data.revenueGrowth > 10 ? 'Expanding rapidly' : data.revenueGrowth && data.revenueGrowth > 0 ? 'Growing steadily' : 'Stagnating or declining'}</div>
+            <div><b>Safety:</b> ${data.de && data.de < 1 ? 'Solid balance sheet' : data.de && data.de < 1.5 ? 'Manageable debt' : 'High leverage'}</div>
+          </div>
         </div>
         
         <div style="margin-bottom:16px">
@@ -257,11 +298,46 @@ async function analyzeStock() {
           <div class="stat-grid">${indicator('Dividend Yield %','dividendYield',data.dividendYield)}${indicator('ROA %','roa',data.roa)}</div>
         </div>
         
-        <button style="width:100%;padding:10px;background:var(--card);border:1px solid var(--border);color:var(--accent);border-radius:8px;cursor:pointer;font-weight:700;margin-top:12px" onclick="alert('Peer comparison coming soon!')">📊 Compare to peers</button>
+        <div id="peerContainer">${peerHtml}</div>
       </div>
     `;
     
     output.innerHTML = html;
+    
+    // Peer comparison
+    document.getElementById('peerBtn').addEventListener('click', async () => {
+      const peerContainer = document.getElementById('peerContainer');
+      peerContainer.innerHTML = '<div style="color:var(--accent)">⟳ Loading peers...</div>';
+      
+      try {
+        const peers = await fetch(base + '/stock/peers?symbol=' + ticker + '&token=' + API_KEY).then(r => r.json());
+        if (!Array.isArray(peers) || peers.length === 0) {
+          peerContainer.innerHTML = '<div style="color:var(--red)">No peers found</div>';
+          return;
+        }
+        
+        const valid = peers.filter(p => p !== ticker).slice(0, 5);
+        const metrics = await Promise.all(valid.map(p => fetch(base + '/stock/metric?symbol=' + p + '&metric=all&token=' + API_KEY).then(r => r.json())));
+        
+        const rows = [
+          '<tr style="background:var(--card)"><td style="font-weight:700">' + ticker + ' (You)</td><td>' + (data.roe || '—') + '</td><td>' + (data.de || '—') + '</td><td>' + (data.pe || '—') + '</td><td>' + (data.netMargin || '—') + '</td></tr>'
+        ];
+        
+        metrics.forEach((m, i) => {
+          if (m.metric) {
+            const roe = m.metric.roeTTM?.toFixed(1) || '—';
+            const de = m.metric.totalDebt && m.metric.totalEquity ? (m.metric.totalDebt/m.metric.totalEquity).toFixed(2) : '—';
+            const pe = m.metric.peBasicExclExtraTTM?.toFixed(1) || '—';
+            const nm = m.metric.netMarginTTM?.toFixed(1) || '—';
+            rows.push('<tr><td style="font-weight:700">' + valid[i] + '</td><td>' + roe + '</td><td>' + de + '</td><td>' + pe + '</td><td>' + nm + '</td></tr>');
+          }
+        });
+        
+        peerContainer.innerHTML = '<div style="font-size:13px;font-weight:800;margin-bottom:10px">📊 Sector Comparison</div><table class="screener-table"><thead><tr><th>Company</th><th>ROE %</th><th>D/E</th><th>P/E</th><th>Net Margin %</th></tr></thead><tbody>' + rows.join('') + '</tbody></table>';
+      } catch(e) {
+        peerContainer.innerHTML = '<div style="color:var(--red)">Error loading peers</div>';
+      }
+    });
   } catch(e) {
     output.innerHTML = '<div style="color:var(--red)">❌ Error: ' + e.message + '</div>';
   }
