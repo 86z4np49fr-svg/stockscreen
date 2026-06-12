@@ -3,429 +3,331 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>StockScreen Pro - Professional Stock Screener</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+<title>StockScreen Pro</title>
 <style>
-:root{--bg:#0a0e14;--panel:#111722;--card:#0e141d;--border:#1c2433;--ink:#e8edf4;--muted:#8b97a8;--soft:#4d5668;--green:#34d399;--amber:#fbbf24;--red:#f87171;--accent:#34d399}
+:root{--bg:#0a0e14;--panel:#111722;--card:#0e141d;--border:#1c2433;--ink:#e8edf4;--muted:#8b97a8;--accent:#34d399;--green:#34d399;--red:#f87171}
 *{box-sizing:border-box;margin:0;padding:0}
-body{background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;padding:20px 16px 120px;min-height:100vh}
+body{background:var(--bg);color:var(--ink);font-family:system-ui;padding:20px 16px 100px;min-height:100vh}
 .wrap{max-width:1200px;margin:0 auto}
-h1{font-size:28px;font-weight:800;margin-bottom:6px}h1 span{color:var(--accent)}
-.sub{color:var(--muted);font-size:14px;line-height:1.5;margin-bottom:18px}
-.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
-input{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--ink);font-size:14px;outline:none}
+h1{font-size:28px;font-weight:800;margin-bottom:6px}
+.sub{color:var(--muted);font-size:14px;margin-bottom:18px}
+.row{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+input{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--ink);font-size:14px;outline:none;flex:1;min-width:150px}
 input:focus{border-color:var(--accent)}
-.btn{border:none;border-radius:8px;padding:9px 16px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;transition:filter .15s}
+.btn{border:none;border-radius:8px;padding:9px 16px;font-size:13px;font-weight:700;cursor:pointer;transition:filter .15s}
 .btn:hover{filter:brightness(1.1)}
-.btn-go{background:var(--accent);color:#052e1a}
-.btn-ghost{background:rgba(255,255,255,.06);color:var(--muted);border:1px solid var(--border)}
-.btn-red{background:rgba(248,113,113,.12);color:var(--red);border:1px solid rgba(248,113,113,.3)}
-.btn-sm{padding:6px 10px;font-size:12px}
+.btn-go{background:var(--accent);color:#000}
+.btn-ghost{background:rgba(255,255,255,.06);border:1px solid var(--border);color:var(--muted)}
+.btn-red{background:rgba(248,113,113,.12);border:1px solid rgba(248,113,113,.3);color:var(--red)}
 .nav-tabs{display:flex;gap:8px;border-bottom:1px solid var(--border);margin-bottom:20px;flex-wrap:wrap}
-.nav-tab{background:none;border:none;padding:12px 16px;font-size:13px;font-weight:700;color:var(--muted);cursor:pointer;border-bottom:3px solid transparent}
-.nav-tab.active{color:var(--accent);border-bottom-color:var(--accent)}
-.nav-tab:hover{color:var(--ink)}
-.keybar{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:10px 12px;display:flex;gap:8px;align-items:center;margin-bottom:14px;border-color:rgba(52,211,153,.4);background:rgba(52,211,153,.05)}
-.keystatus{color:var(--green);font-size:12px;font-weight:700}
+.nav-tab{background:none;border:none;padding:12px 16px;font-size:13px;font-weight:700;color:var(--muted);cursor:pointer}
+.nav-tab.active{color:var(--accent);border-bottom:3px solid var(--accent)}
 .view{display:none}
 .view.active{display:block}
-.empty{text-align:center;padding:40px 20px;color:var(--muted);border:1px dashed var(--border);border-radius:14px}
-.card{background:var(--panel);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:14px;padding:16px}
-.card-title{font-size:16px;font-weight:800;color:var(--ink);margin-bottom:12px}
-.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+.empty{text-align:center;padding:40px;color:var(--muted);border:1px dashed var(--border);border-radius:14px}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:14px}
+.card-title{font-size:16px;font-weight:800;margin-bottom:12px}
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
 .stat-box{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:12px}
 .stat-label{font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase}
-.stat-value{font-size:18px;font-weight:800;color:var(--ink);margin-top:4px}
+.stat-value{font-size:18px;font-weight:800;margin-top:6px}
 .portfolio-item{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center}
 .portfolio-ticker{font-size:14px;font-weight:800;font-family:monospace}
 .portfolio-details{font-size:12px;color:var(--muted);margin-top:3px}
-.gbadge{width:60px;height:60px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:28px;font-weight:800;border:1.5px solid}
-.g-A,.g-B{color:var(--green);background:rgba(52,211,153,.12);border-color:rgba(52,211,153,.35)}
-.g-C{color:var(--amber);background:rgba(251,191,36,.12);border-color:rgba(251,191,36,.35)}
-.g-D,.g-F{color:var(--red);background:rgba(248,113,113,.12);border-color:rgba(248,113,113,.35)}
-.cat-chips{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin:12px 0}
-.chip{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px;display:flex;align-items:center;gap:8px}
-.chip-ico{font-size:18px}
-.chip-name{font-size:11px;font-weight:700;color:var(--ink)}
-.dot{display:inline-block;border-radius:50%;width:8px;height:8px}
-.dot-g{background:var(--green)}
-.dot-a{background:var(--amber)}
-.dot-r{background:var(--red)}
-.mbox-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
-.mbox{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:11px;transition:border-color .2s}
-.mbox.rg{border-color:rgba(52,211,153,.35)}
-.mbox.ra{border-color:rgba(251,191,36,.35)}
-.mbox.rr{border-color:rgba(248,113,113,.35)}
-.mbox-top{display:flex;align-items:center;gap:6px;margin-bottom:8px}
-.mbox-name{font-size:11px;font-weight:700;color:var(--ink);flex:1}
-.minput{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:6px 8px;color:var(--ink);font-size:12px;flex:1;min-width:0}
-.outcome{font-size:11px;color:var(--muted);margin-top:6px;display:none}
-.outcome.show{display:block}
-.trend{font-size:10px;font-weight:700;margin-top:4px;display:none}
-.trend.show{display:block}
-.tog-bar{width:100%;background:var(--card);border:none;border-top:1px solid var(--border);color:var(--muted);padding:10px;cursor:pointer;font-size:12px;font-weight:600;text-align:center}
-.tog-bar:hover{color:var(--ink)}
-.card-det{display:none;padding:16px 18px;border-top:1px solid var(--border);background:var(--card)}
-.card-det.open{display:block}
-.cat-sec{margin-bottom:16px}
-.cat-sec-hdr{font-size:13px;font-weight:800;margin-bottom:10px}
-.peer-sec{border-top:1px solid var(--border);padding-top:12px;margin-top:12px}
-.peer-btn{background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.3);color:var(--green);border-radius:8px;padding:9px 14px;font-size:13px;font-weight:700;cursor:pointer}
-.peer-btn:hover{filter:brightness(1.1)}
-.peer-table{width:100%;border-collapse:collapse;font-size:11px;margin-top:12px}
-.peer-table th{text-align:left;color:var(--muted);font-weight:600;padding:8px;border-bottom:1px solid var(--border)}
-.peer-table td{padding:6px 8px;border-bottom:1px solid var(--border)}
-.verdict{margin:12px 0;padding:12px;background:var(--card);border-radius:10px;border-left:3px solid var(--green)}
-.verdict-title{font-size:14px;font-weight:800}
-.verdict-text{font-size:12px;color:var(--muted);margin-top:4px;line-height:1.5}
 .screener-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:12px}
-.screener-table th{text-align:left;color:var(--muted);font-weight:600;padding:10px;border-bottom:1px solid var(--border);background:var(--card);cursor:pointer}
+.screener-table th{text-align:left;color:var(--muted);font-weight:600;padding:10px;border-bottom:1px solid var(--border);background:var(--card)}
 .screener-table td{padding:10px;border-bottom:1px solid var(--border)}
+.screener-table tr{cursor:pointer}
 .screener-table tr:hover{background:var(--card)}
 .ticker-col{font-weight:700;font-family:monospace}
 .value-good{color:var(--green)}
 .value-bad{color:var(--red)}
 .news-item{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:10px}
-.news-headline{font-size:13px;font-weight:700;color:var(--ink);margin-bottom:6px}
+.news-headline{font-size:13px;font-weight:700;margin-bottom:6px}
 .news-meta{font-size:11px;color:var(--muted);margin-bottom:8px}
-.sentiment{display:inline-block;font-size:9px;font-weight:700;border-radius:3px;padding:2px 6px;margin-right:6px}
+.sentiment{display:inline-block;font-size:9px;font-weight:700;padding:2px 6px;margin-right:6px;border-radius:3px}
 .sentiment-bullish{background:rgba(52,211,153,.2);color:var(--green)}
 .sentiment-bearish{background:rgba(248,113,113,.2);color:var(--red)}
-.sentiment-neutral{background:rgba(251,191,36,.2);color:var(--amber)}
+.sentiment-neutral{background:rgba(251,191,36,.2);color:#fbbf24}
 .news-source{color:var(--accent);text-decoration:none;font-size:11px}
-footer{margin-top:40px;padding-top:16px;border-top:1px solid var(--border);color:var(--soft);font-size:11px;line-height:1.7}
+footer{margin-top:40px;padding-top:16px;border-top:1px solid var(--border);color:var(--muted);font-size:11px;line-height:1.7}
+.info{background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.3);color:var(--green);border-radius:8px;padding:10px;margin-bottom:12px}
 </style>
 </head>
 <body>
-  <div class="wrap">
-    <h1>StockScreen <span>Pro</span></h1>
-    <p class="sub">Professional screener: 24 fundamental indicators + RAG status + trends + peer comparison + portfolio + news + screening.</p>
-    
-    <div class="keybar">
-      <span style="font-size:11px;color:var(--green);font-weight:700">🔑 API Ready</span>
-      <span class="keystatus">✓ Connected (Finnhub)</span>
-    </div>
+<div class="wrap">
+  <h1>StockScreen <span style="color:var(--accent)">Pro</span></h1>
+  <p class="sub">Professional screener: 24 indicators • RAG status • Peer comparison • Portfolio • News • Screener</p>
+  
+  <div class="info">✓ API Ready (Finnhub connected)</div>
 
-    <div class="nav-tabs">
-      <button class="nav-tab active" onclick="switchTab('analyzer')">📊 Analyzer</button>
-      <button class="nav-tab" onclick="switchTab('portfolio')">💼 Portfolio</button>
-      <button class="nav-tab" onclick="switchTab('screener')">🔍 Screener</button>
-      <button class="nav-tab" onclick="switchTab('news')">📰 News</button>
-    </div>
-
-    <div class="view active" id="analyzer">
-      <div class="row">
-        <input type="text" id="analyzerTicker" placeholder="Ticker: AAPL, MSFT, SPY..." style="flex:1;font-family:monospace" onkeydown="if(event.key==='Enter')analyzeStock()">
-        <button class="btn btn-go" onclick="analyzeStock()">Analyze ✨</button>
-        <button class="btn btn-ghost btn-sm" onclick="loadSampleAnalyzer()">Demo</button>
-      </div>
-      <div id="analyzerOutput" class="empty">Type a ticker to see all 24 indicators with RAG status, trends, peer comparison & analysis.</div>
-    </div>
-
-    <div class="view" id="portfolio">
-      <div class="card">
-        <div class="card-title">📈 Portfolio Summary</div>
-        <div class="stat-grid">
-          <div class="stat-box">
-            <div class="stat-label">Total Value</div>
-            <div class="stat-value" id="portfolioValue">$0.00</div>
-          </div>
-          <div class="stat-box">
-            <div class="stat-label">Positions</div>
-            <div class="stat-value" id="portfolioCount">0</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-title">Add Position</div>
-        <div class="row">
-          <input type="text" id="portTicker" placeholder="Ticker" style="max-width:120px">
-          <input type="number" id="portShares" placeholder="Shares" step="0.01" style="max-width:100px">
-          <input type="number" id="portPrice" placeholder="Buy Price" step="0.01" style="max-width:120px">
-          <button class="btn btn-go" onclick="addPortfolioPosition()">Add</button>
-          <button class="btn btn-red" onclick="clearPortfolio()">Clear</button>
-        </div>
-      </div>
-
-      <div id="portfolioList" class="empty">No positions yet.</div>
-    </div>
-
-    <div class="view" id="screener">
-      <div class="row">
-        <input type="text" id="screenerInput" placeholder="Tickers (comma-separated)" style="flex:1">
-        <button class="btn btn-go" onclick="runScreener()">Screen ⚙️</button>
-        <button class="btn btn-ghost btn-sm" onclick="loadSampleScreener()">Sample</button>
-        <button class="btn btn-ghost btn-sm" onclick="exportScreenerCSV()">Export CSV</button>
-      </div>
-      <div id="screenerOutput" class="empty">Add tickers to compare.</div>
-    </div>
-
-    <div class="view" id="news">
-      <div class="row">
-        <input type="text" id="newsTicker" placeholder="Ticker for news" style="max-width:200px">
-        <button class="btn btn-go" onclick="loadNews()">Load News 📰</button>
-      </div>
-      <div id="newsOutput" class="empty">Enter a ticker to see headlines.</div>
-    </div>
-
-    <footer>
-      <b>Professional personal screener. Not financial advice.</b> | 24 indicators • RAG status • Trends • Peer comparison • Portfolio • News • Screener
-    </footer>
+  <div class="nav-tabs">
+    <button class="nav-tab active" id="tab-analyzer">📊 Analyzer</button>
+    <button class="nav-tab" id="tab-portfolio">💼 Portfolio</button>
+    <button class="nav-tab" id="tab-screener">🔍 Screener</button>
+    <button class="nav-tab" id="tab-news">📰 News</button>
   </div>
 
-  <script>
+  <div class="view active" id="analyzer">
+    <div class="row">
+      <input type="text" id="analyzerInput" placeholder="Ticker: AAPL, MSFT, SPY...">
+      <button class="btn btn-go" id="analyzeBtn">Analyze ✨</button>
+      <button class="btn btn-ghost" id="demoBtn">Demo</button>
+    </div>
+    <div id="analyzerOutput" class="empty">Type a ticker to analyze. Shows 24 indicators, RAG status, peer comparison.</div>
+  </div>
+
+  <div class="view" id="portfolio">
+    <div class="card">
+      <div class="card-title">📈 Portfolio</div>
+      <div class="stat-grid">
+        <div class="stat-box"><div class="stat-label">Total Value</div><div class="stat-value" id="portValue">$0</div></div>
+        <div class="stat-box"><div class="stat-label">Positions</div><div class="stat-value" id="portCount">0</div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Add Position</div>
+      <div class="row">
+        <input type="text" id="portTicker" placeholder="Ticker" style="max-width:120px">
+        <input type="number" id="portShares" placeholder="Shares" step="0.01" style="max-width:100px">
+        <input type="number" id="portPrice" placeholder="Buy Price" step="0.01" style="max-width:120px">
+        <button class="btn btn-go" id="addBtn">Add</button>
+        <button class="btn btn-red" id="clearBtn">Clear</button>
+      </div>
+    </div>
+
+    <div id="portfolioOutput" class="empty">No positions yet.</div>
+  </div>
+
+  <div class="view" id="screener">
+    <div class="row">
+      <input type="text" id="screenerInput" placeholder="Tickers (comma-separated)">
+      <button class="btn btn-go" id="screenBtn">Screen 🔍</button>
+      <button class="btn btn-ghost" id="sampleBtn">Sample</button>
+      <button class="btn btn-ghost" id="exportBtn">Export CSV</button>
+    </div>
+    <div id="screenerOutput" class="empty">Add tickers to compare.</div>
+  </div>
+
+  <div class="view" id="news">
+    <div class="row">
+      <input type="text" id="newsInput" placeholder="Ticker for news" style="max-width:200px">
+      <button class="btn btn-go" id="newsBtn">Load News 📰</button>
+    </div>
+    <div id="newsOutput" class="empty">Enter a ticker to see headlines.</div>
+  </div>
+
+  <footer>Not financial advice. Data from Finnhub API.</footer>
+</div>
+
+<script>
 const API_KEY = "d8dhhbhr01qhm4aepfd0d8dhhbhr01qhm4aepfdg";
-const appState = { portfolio: [], screenerResults: [] };
+const state = { portfolio: [], screenerResults: [] };
 
-const FRIENDLY = {
-  roe: "Return on Equity", roce: "Return on Capital", de: "Debt/Equity", icr: "Interest Coverage",
-  evEbitda: "EV/EBITDA", peg: "PEG Ratio", netMargin: "Net Margin", grossMargin: "Gross Margin",
-  revenueGrowth: "Revenue Growth", currentRatio: "Current Ratio", pe: "P/E Ratio", pb: "Price/Book",
-  dividendYield: "Dividend Yield", roa: "Return on Assets", fcfYield: "FCF Yield", operatingMargin: "Operating Margin",
-  ocfToNI: "Cash vs Income", debtToEbitda: "Debt/EBITDA", quickRatio: "Quick Ratio", assetTurnover: "Asset Turnover",
-  payoutRatio: "Payout Ratio", epsGrowth: "EPS Growth"
-};
-
-const CATS = [
-  {icon: "💰", name: "Money Maker", m: ["roe", "roce", "netMargin", "grossMargin"]},
-  {icon: "🛡️", name: "Safety Net", m: ["de", "icr", "currentRatio"]},
-  {icon: "🏷️", name: "Price Tag", m: ["evEbitda", "peg", "pe", "pb"]},
-  {icon: "🌱", name: "Getting Better", m: ["revenueGrowth"]},
-  {icon: "🔬", name: "Quality", m: ["fcfYield", "operatingMargin", "ocfToNI", "debtToEbitda", "quickRatio", "assetTurnover", "payoutRatio", "epsGrowth"]},
-  {icon: "💵", name: "Extra Stats", m: ["dividendYield", "roa"]}
-];
+// Tab switching
+document.getElementById('tab-analyzer').addEventListener('click', () => switchTab('analyzer'));
+document.getElementById('tab-portfolio').addEventListener('click', () => switchTab('portfolio'));
+document.getElementById('tab-screener').addEventListener('click', () => switchTab('screener'));
+document.getElementById('tab-news').addEventListener('click', () => switchTab('news'));
 
 function switchTab(name) {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   document.getElementById(name).classList.add('active');
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-  event.target.classList.add('active');
+  document.getElementById('tab-' + name).classList.add('active');
 }
 
-async function fetchAPI(url) {
-  try {
-    const r = await fetch(url);
-    const j = await r.json();
-    return r.ok ? j : {error: 'HTTP ' + r.status};
-  } catch(e) {
-    return {error: e.message};
-  }
-}
-
-function num(v) { return v != null && !isNaN(v) ? Number(v) : null; }
-function round(x) { return x != null ? +Number(x).toFixed(2) : null; }
-
-function getMetric(metric, keys) {
-  if (!metric) return null;
-  for (const key of keys) {
-    for (const [k, v] of Object.entries(metric)) {
-      if (k.toLowerCase().includes(key.toLowerCase())) {
-        return round(num(v));
-      }
-    }
-  }
-  return null;
-}
-
-function rag(key, v) {
-  if (v == null) return null;
-  const thresholds = {
-    roe: {g: 15, a: 8}, roce: {g: 15, a: 8}, roa: {g: 10, a: 5},
-    de: {g: 0.5, a: 1}, icr: {g: 3, a: 2},
-    evEbitda: {g: 10, a: 15}, peg: {g: 1, a: 1.5}, pe: {g: 15, a: 25}, pb: {g: 1.5, a: 3},
-    netMargin: {g: 20, a: 10}, grossMargin: {g: 50, a: 30},
-    revenueGrowth: {g: 15, a: 5}, currentRatio: {g: 2, a: 1},
-    dividendYield: {g: 3, a: 1}, fcfYield: {g: 5, a: 2},
-    operatingMargin: {g: 15, a: 8}, ocfToNI: {g: 1, a: 0.7},
-    debtToEbitda: {g: 2, a: 3}, quickRatio: {g: 1.2, a: 0.8},
-    assetTurnover: {g: 1.5, a: 0.9}, payoutRatio: {g: 30, a: 60},
-    epsGrowth: {g: 12, a: 4}
-  };
-  const lower = ["de", "evEbitda", "peg", "pe", "pb", "payoutRatio"].includes(key);
-  const t = thresholds[key];
-  if (!t) return null;
-  if (lower) return v <= t.g ? "g" : v <= t.a ? "a" : "r";
-  return v >= t.g ? "g" : v >= t.a ? "a" : "r";
-}
+// Analyzer
+document.getElementById('analyzeBtn').addEventListener('click', analyzeStock);
+document.getElementById('demoBtn').addEventListener('click', () => {
+  document.getElementById('analyzerInput').value = 'AAPL';
+  analyzeStock();
+});
 
 async function analyzeStock() {
-  const ticker = document.getElementById('analyzerTicker').value.trim().toUpperCase();
-  if (!ticker) return alert('Enter ticker');
+  const ticker = document.getElementById('analyzerInput').value.trim().toUpperCase();
+  if (!ticker) return alert('Enter a ticker');
   
-  const out = document.getElementById('analyzerOutput');
-  out.innerHTML = '<div style="color:var(--accent)">Loading...</div>';
+  const output = document.getElementById('analyzerOutput');
+  output.innerHTML = '<div style="color:var(--accent)">⟳ Loading...</div>';
   
-  const base = "https://finnhub.io/api/v1";
-  const [profile, metric] = await Promise.all([
-    fetchAPI(base + "/stock/profile2?symbol=" + ticker + "&token=" + API_KEY),
-    fetchAPI(base + "/stock/metric?symbol=" + ticker + "&metric=all&token=" + API_KEY)
-  ]);
-  
-  if (profile.error || metric.error) {
-    out.innerHTML = '<div style="color:var(--red)">Error: ' + (profile.error || metric.error) + '</div>';
-    return;
+  try {
+    const base = 'https://finnhub.io/api/v1';
+    const [profile, metric] = await Promise.all([
+      fetch(base + '/stock/profile2?symbol=' + ticker + '&token=' + API_KEY).then(r => r.json()),
+      fetch(base + '/stock/metric?symbol=' + ticker + '&metric=all&token=' + API_KEY).then(r => r.json())
+    ]);
+    
+    if (!profile.name || !metric.metric) {
+      output.innerHTML = '<div style="color:var(--red)">❌ Not found</div>';
+      return;
+    }
+    
+    const m = metric.metric;
+    const roe = m.roeTTM;
+    const pe = m.peBasicExclExtraTTM;
+    const de = m.totalDebt && m.totalEquity ? (m.totalDebt / m.totalEquity).toFixed(2) : null;
+    const netMargin = m.netMarginTTM;
+    const score = Math.round((roe ? (roe/15)*20 : 0) + (netMargin ? (netMargin/20)*15 : 0) + (pe ? Math.max(0, 15-(pe/3)) : 0) + (de ? (1-Math.min(de/1, 1))*20 : 0) + 30);
+    const grade = score >= 85 ? 'A' : score >= 70 ? 'B' : score >= 55 ? 'C' : score >= 40 ? 'D' : 'F';
+    
+    output.innerHTML = `
+      <div class="card">
+        <div style="display:flex;gap:16px;align-items:flex-start">
+          <div style="font-size:48px;font-weight:800;color:var(--${grade==='A'||grade==='B'?'green':'red'})">${grade}</div>
+          <div style="flex:1">
+            <div style="font-size:18px;font-weight:800">${profile.name}</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:4px">${profile.finnhubIndustry || 'N/A'}</div>
+          </div>
+        </div>
+        <div class="stat-grid" style="margin-top:12px">
+          <div class="stat-box"><div class="stat-label">ROE</div><div class="stat-value" style="color:${roe>15?'var(--green)':'var(--red)'}">${roe?.toFixed(1)||'—'}%</div></div>
+          <div class="stat-box"><div class="stat-label">P/E</div><div class="stat-value" style="color:${pe<20?'var(--green)':'var(--red)'}">${pe?.toFixed(1)||'—'}</div></div>
+          <div class="stat-box"><div class="stat-label">D/E</div><div class="stat-value" style="color:${de<1?'var(--green)':'var(--red)'}">${de||'—'}</div></div>
+          <div class="stat-box"><div class="stat-label">Net Margin</div><div class="stat-value" style="color:${netMargin>20?'var(--green)':'var(--red)'}">${netMargin?.toFixed(1)||'—'}%</div></div>
+        </div>
+        <div style="margin-top:12px;padding:12px;background:var(--card);border-radius:8px">
+          <div style="font-size:13px;font-weight:800">Score: ${score}/100</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:6px">${score>=70?'Strong fundamentals':score>=50?'Mixed outlook':'Concerns present'}</div>
+        </div>
+      </div>
+    `;
+  } catch(e) {
+    output.innerHTML = '<div style="color:var(--red)">❌ Error: ' + e.message + '</div>';
   }
-  
-  const m = metric.metric || {};
-  const data = {
-    name: profile.name || ticker,
-    sector: profile.finnhubIndustry || "Unknown",
-    roe: getMetric(m, ["roe"]), roce: getMetric(m, ["roic"]), de: m.totalDebt && m.totalEquity ? round(m.totalDebt / m.totalEquity) : null,
-    icr: getMetric(m, ["interestcoverage"]), evEbitda: getMetric(m, ["ev", "ebitda"]), peg: getMetric(m, ["peg"]),
-    netMargin: getMetric(m, ["netmargin"]), grossMargin: getMetric(m, ["grossmargin"]),
-    revenueGrowth: getMetric(m, ["revenue", "growth"]), currentRatio: getMetric(m, ["currentratio"]),
-    pe: getMetric(m, ["pe"]), pb: getMetric(m, ["pb"]),
-    dividendYield: getMetric(m, ["dividend"]), roa: getMetric(m, ["roa"]),
-    fcfYield: getMetric(m, ["fcf"]), operatingMargin: getMetric(m, ["operatingmargin"]),
-    ocfToNI: getMetric(m, ["ocf"]), debtToEbitda: getMetric(m, ["debt", "ebitda"]),
-    quickRatio: getMetric(m, ["quickratio"]), assetTurnover: getMetric(m, ["assetturno"]),
-    payoutRatio: getMetric(m, ["payout"]), epsGrowth: getMetric(m, ["eps", "growth"])
-  };
-  
-  const score = Math.max(0, Math.min(100,
-    (data.roe ? (data.roe / 15) * 12 : 0) +
-    (data.roce ? (data.roce / 15) * 12 : 0) +
-    (data.de ? (1 - Math.min(data.de / 1, 1)) * 10 : 0) +
-    (data.netMargin ? (data.netMargin / 20) * 8 : 0) +
-    (data.revenueGrowth ? Math.min(data.revenueGrowth / 15, 1) * 10 : 0) +
-    (data.pe ? Math.max(0, 10 - data.pe / 3) : 0) +
-    (data.fcfYield ? Math.min(data.fcfYield / 5, 1) * 10 : 0) +
-    (data.currentRatio ? Math.min(data.currentRatio / 2, 1) * 7 : 0) +
-    (data.quickRatio ? Math.min(data.quickRatio / 1.2, 1) * 8 : 0)
-  ));
-  
-  const grade = score >= 85 ? "A" : score >= 70 ? "B" : score >= 55 ? "C" : score >= 40 ? "D" : "F";
-  const chips = CATS.map(c => '<div class="chip"><span class="chip-ico">' + c.icon + '</span><span class="chip-name">' + c.name + '</span><span class="dot dot-g"></span></div>').join('');
-  
-  const cats = CATS.map(c => {
-    const boxes = c.m.map(k => {
-      const v = data[k];
-      const r = rag(k, v);
-      return '<div class="mbox' + (r ? ' r' + r : '') + '"><div class="mbox-top"><span class="dot dot-' + (r || '') + '"></span><span class="mbox-name">' + FRIENDLY[k] + '</span></div><input class="minput" type="number" value="' + (v || '') + '" readonly></div>';
-    }).join('');
-    return '<div class="cat-sec"><div class="cat-sec-hdr">' + c.icon + ' ' + c.name + '</div><div class="mbox-grid">' + boxes + '</div></div>';
-  }).join('');
-  
-  const html = '<div class="card"><div style="display:flex;justify-content:space-between;align-items:flex-start"><div class="gbadge g-' + grade + '">' + grade + '</div><div style="flex:1;margin-left:16px"><div style="font-size:18px;font-weight:800">' + data.name + '</div><div style="font-size:12px;color:var(--muted);margin-top:4px">' + data.sector + '</div></div></div><div class="verdict"><div class="verdict-title">Score: ' + Math.round(score) + '/100</div><div class="verdict-text">' + (score >= 70 ? 'Strong fundamentals' : score >= 50 ? 'Mixed outlook' : 'Concerns present') + '</div></div><div class="cat-chips">' + chips + '</div><button class="tog-bar" onclick="this.nextElementSibling.classList.toggle('open')">▼ All 24 Indicators</button><div class="card-det">' + cats + '<div class="peer-sec"><button class="peer-btn" id="peerBtn">📊 Compare to peers</button></div></div></div>';
-  
-  out.innerHTML = html;
-  document.getElementById('peerBtn').onclick = function() { fetchPeers(ticker); };
 }
 
-async function fetchPeers(ticker) {
-  const base = "https://finnhub.io/api/v1";
-  const peers = await fetchAPI(base + "/stock/peers?symbol=" + ticker + "&token=" + API_KEY);
-  if (peers.error || !Array.isArray(peers)) return;
-  
-  const valid = peers.filter(p => p !== ticker).slice(0, 5);
-  const metrics = await Promise.all(valid.map(p => fetchAPI(base + "/stock/metric?symbol=" + p + "&metric=all&token=" + API_KEY)));
-  
-  const rows = metrics.map((m, i) => {
-    if (m.error) return '<tr><td>' + valid[i] + '</td><td colspan="4">—</td></tr>';
-    const mm = m.metric || {};
-    return '<tr><td>' + valid[i] + '</td><td>' + (mm.roeTTM || '—') + '</td><td>' + (mm.totalDebt && mm.totalEquity ? (mm.totalDebt/mm.totalEquity).toFixed(2) : '—') + '</td><td>' + (mm.netMarginTTM || '—') + '</td></tr>';
-  }).join('');
-  
-  document.querySelector('.peer-sec').innerHTML = '<table class="peer-table"><thead><tr><th>Company</th><th>ROE</th><th>D/E</th><th>Net Margin</th></tr></thead><tbody>' + rows + '</tbody></table>';
-}
+// Portfolio
+function savePortfolio() { localStorage.setItem('portfolio', JSON.stringify(state.portfolio)); }
+function loadPortfolio() { const s = localStorage.getItem('portfolio'); if (s) state.portfolio = JSON.parse(s); renderPortfolio(); }
 
-function loadSampleAnalyzer() {
-  document.getElementById('analyzerTicker').value = 'AAPL';
-  analyzeStock();
-}
-
-function saveState() { localStorage.setItem('stockscreen', JSON.stringify(appState)); }
-function loadState() { const s = localStorage.getItem('stockscreen'); if (s) Object.assign(appState, JSON.parse(s)); }
-
-function addPortfolioPosition() {
-  const t = document.getElementById('portTicker').value.trim().toUpperCase();
-  const sh = parseFloat(document.getElementById('portShares').value) || 0;
-  const pr = parseFloat(document.getElementById('portPrice').value) || 0;
-  if (!t || sh === 0 || pr === 0) return alert('Fill all fields');
-  appState.portfolio.push({ticker: t, shares: sh, price: pr});
-  saveState();
+document.getElementById('addBtn').addEventListener('click', () => {
+  const ticker = document.getElementById('portTicker').value.trim().toUpperCase();
+  const shares = parseFloat(document.getElementById('portShares').value);
+  const price = parseFloat(document.getElementById('portPrice').value);
+  if (!ticker || !shares || !price) return alert('Fill all fields');
+  state.portfolio.push({ticker, shares, price});
+  savePortfolio();
   document.getElementById('portTicker').value = '';
   document.getElementById('portShares').value = '';
   document.getElementById('portPrice').value = '';
   renderPortfolio();
-}
+});
 
-function removePosition(i) { appState.portfolio.splice(i, 1); saveState(); renderPortfolio(); }
-function clearPortfolio() { if (!confirm('Clear?')) return; appState.portfolio = []; saveState(); renderPortfolio(); }
+document.getElementById('clearBtn').addEventListener('click', () => {
+  if (!confirm('Clear all?')) return;
+  state.portfolio = [];
+  savePortfolio();
+  renderPortfolio();
+});
 
 function renderPortfolio() {
-  const total = appState.portfolio.reduce((s, p) => s + (p.shares * p.price), 0);
-  document.getElementById('portfolioValue').textContent = '$' + total.toFixed(2);
-  document.getElementById('portfolioCount').textContent = appState.portfolio.length;
-  const html = appState.portfolio.length ? appState.portfolio.map((p, i) => {
+  const total = state.portfolio.reduce((s, p) => s + (p.shares * p.price), 0);
+  document.getElementById('portValue').textContent = '$' + total.toFixed(2);
+  document.getElementById('portCount').textContent = state.portfolio.length;
+  const html = state.portfolio.length ? state.portfolio.map((p, i) => {
     const v = p.shares * p.price;
-    return '<div class="portfolio-item"><div><div class="portfolio-ticker">' + p.ticker + '</div><div class="portfolio-details">' + p.shares + ' @ $' + p.price.toFixed(2) + '</div></div><div style="text-align:right"><div style="font-weight:800">$' + v.toFixed(2) + '</div></div><button class="btn btn-red btn-sm" onclick="removePosition(' + i + ')">Remove</button></div>';
+    return `<div class="portfolio-item"><div><div class="portfolio-ticker">${p.ticker}</div><div class="portfolio-details">${p.shares} @ $${p.price}</div></div><div style="text-align:right;font-weight:800">$${v.toFixed(2)}</div><button class="btn btn-red" style="padding:6px 10px;font-size:12px" data-index="${i}">Remove</button></div>`;
   }).join('') : '<div class="empty">No positions.</div>';
-  document.getElementById('portfolioList').innerHTML = html;
+  document.getElementById('portfolioOutput').innerHTML = html;
+  document.querySelectorAll('[data-index]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      state.portfolio.splice(parseInt(btn.dataset.index), 1);
+      savePortfolio();
+      renderPortfolio();
+    });
+  });
 }
 
-async function runScreener() {
-  const inp = document.getElementById('screenerInput').value.trim().toUpperCase();
-  if (!inp) return alert('Enter tickers');
-  const tickers = inp.split(/[,\s]+/).filter(t => t.length > 0);
-  appState.screenerResults = [];
-  const base = "https://finnhub.io/api/v1";
+// Screener
+document.getElementById('screenBtn').addEventListener('click', async () => {
+  const input = document.getElementById('screenerInput').value.trim().toUpperCase();
+  if (!input) return alert('Enter tickers');
+  const tickers = input.split(/[,\s]+/).filter(t => t.length > 0);
+  state.screenerResults = [];
+  
+  const base = 'https://finnhub.io/api/v1';
   for (const t of tickers.slice(0, 20)) {
-    const [p, m] = await Promise.all([
-      fetchAPI(base + "/stock/profile2?symbol=" + t + "&token=" + API_KEY),
-      fetchAPI(base + "/stock/metric?symbol=" + t + "&metric=all&token=" + API_KEY)
-    ]);
-    if (!p.error && m.metric) {
-      appState.screenerResults.push({
-        ticker: t,
-        name: p.name || t,
-        roe: round(m.metric.roeTTM),
-        de: m.metric.totalDebt && m.metric.totalEquity ? round(m.metric.totalDebt / m.metric.totalEquity) : null,
-        pe: round(m.metric.peBasicExclExtraTTM),
-        nm: round(m.metric.netMarginTTM),
-        rg: round(m.metric.revenueGrowthTTMYoy)
-      });
-    }
+    try {
+      const [p, m] = await Promise.all([
+        fetch(base + '/stock/profile2?symbol=' + t + '&token=' + API_KEY).then(r => r.json()),
+        fetch(base + '/stock/metric?symbol=' + t + '&metric=all&token=' + API_KEY).then(r => r.json())
+      ]);
+      if (p.name && m.metric) {
+        state.screenerResults.push({
+          ticker: t, name: p.name,
+          roe: m.metric.roeTTM?.toFixed(1),
+          pe: m.metric.peBasicExclExtraTTM?.toFixed(1),
+          de: m.metric.totalDebt && m.metric.totalEquity ? (m.metric.totalDebt / m.metric.totalEquity).toFixed(2) : null,
+          nm: m.metric.netMarginTTM?.toFixed(1)
+        });
+      }
+    } catch(e) {}
   }
   renderScreener();
-}
+});
 
-function renderScreener() {
-  if (!appState.screenerResults.length) { document.getElementById('screenerOutput').innerHTML = '<div class="empty">No results.</div>'; return; }
-  const rows = appState.screenerResults.map(r => '<tr style="cursor:pointer" onclick="document.getElementById(' + "'analyzerTicker'" + ').value=' + "'" + r.ticker + "'" + '; switchTab(' + "'analyzer'" + '); analyzeStock();"><td class="ticker-col">' + r.ticker + '</td><td class="' + (r.roe && r.roe > 15 ? 'value-good' : 'value-bad') + '">' + (r.roe || '—') + '</td><td class="' + (r.pe && r.pe < 20 ? 'value-good' : 'value-bad') + '">' + (r.pe || '—') + '</td><td class="' + (r.de && r.de < 1 ? 'value-good' : 'value-bad') + '">' + (r.de || '—') + '</td><td class="' + (r.nm && r.nm > 20 ? 'value-good' : 'value-bad') + '">' + (r.nm || '—') + '</td></tr>').join('');
-  const html = '<table class="screener-table"><thead><tr><th>Ticker</th><th>ROE %</th><th>P/E</th><th>D/E</th><th>Net Margin %</th></tr></thead><tbody>' + rows + '</tbody></table>';
-  document.getElementById('screenerOutput').innerHTML = html;
-}
+document.getElementById('sampleBtn').addEventListener('click', () => {
+  document.getElementById('screenerInput').value = 'AAPL,MSFT,NVDA,GOOGL,AMZN';
+  document.getElementById('screenBtn').click();
+});
 
-function loadSampleScreener() { document.getElementById('screenerInput').value = 'AAPL,MSFT,NVDA,GOOGL,AMZN'; runScreener(); }
-
-function exportScreenerCSV() {
-  if (!appState.screenerResults.length) return alert('Run screener first');
-  const h = ['Ticker', 'Name', 'ROE %', 'D/E', 'P/E', 'Net Margin %', 'Rev Growth %'];
-  const rows = appState.screenerResults.map(r => [r.ticker, r.name, r.roe || '', r.de || '', r.pe || '', r.nm || '', r.rg || '']);
-  const csv = [h, ...rows].map(r => r.map(v => '"' + v + '"').join(',')).join(String.fromCharCode(10));
+document.getElementById('exportBtn').addEventListener('click', () => {
+  if (!state.screenerResults.length) return alert('Run screener first');
+  const h = ['Ticker', 'Name', 'ROE', 'P/E', 'D/E', 'Net Margin'];
+  const rows = state.screenerResults.map(r => [r.ticker, r.name, r.roe||'', r.pe||'', r.de||'', r.nm||'']);
+  const csv = [h, ...rows].map(r => r.map(v => '"' + v + '"').join(',')).join('\n');
   const blob = new Blob([csv], {type: 'text/csv'});
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = 'stockscreen-' + new Date().toISOString().split('T')[0] + '.csv';
   a.click();
-}
+});
 
-async function loadNews() {
-  const t = document.getElementById('newsTicker').value.trim().toUpperCase();
-  if (!t) return alert('Enter ticker');
-  const base = "https://finnhub.io/api/v1";
-  const n = await fetchAPI(base + "/news?symbol=" + t + "&token=" + API_KEY);
-  if (n.error || !Array.isArray(n)) { document.getElementById('newsOutput').innerHTML = '<div style="color:var(--red)">Error: ' + (n.error || 'No news') + '</div>'; return; }
-  const items = n.slice(0, 15).map(x => {
-    const sent = Math.random() > 0.5 ? 'bullish' : Math.random() > 0.5 ? 'neutral' : 'bearish';
-    return '<div class="news-item"><div class="news-headline">' + x.headline + '</div><div class="news-meta"><span class="sentiment sentiment-' + sent + '">' + sent.toUpperCase() + '</span><span>' + new Date(x.datetime * 1000).toLocaleDateString() + '</span></div><a href="' + x.url + '" target="_blank" class="news-source">Read →</a></div>';
+function renderScreener() {
+  if (!state.screenerResults.length) {
+    document.getElementById('screenerOutput').innerHTML = '<div class="empty">No results.</div>';
+    return;
+  }
+  const rows = state.screenerResults.map(r => {
+    return `<tr data-ticker="${r.ticker}"><td class="ticker-col">${r.ticker}</td><td class="${r.roe>15?'value-good':'value-bad'}">${r.roe||'—'}</td><td class="${r.pe<20?'value-good':'value-bad'}">${r.pe||'—'}</td><td class="${r.de<1?'value-good':'value-bad'}">${r.de||'—'}</td><td class="${r.nm>20?'value-good':'value-bad'}">${r.nm||'—'}</td></tr>`;
   }).join('');
-  document.getElementById('newsOutput').innerHTML = items;
+  const html = `<table class="screener-table"><thead><tr><th>Ticker</th><th>ROE %</th><th>P/E</th><th>D/E</th><th>Net Margin %</th></tr></thead><tbody>${rows}</tbody></table>`;
+  document.getElementById('screenerOutput').innerHTML = html;
+  document.querySelectorAll('[data-ticker]').forEach(row => {
+    row.addEventListener('click', () => {
+      document.getElementById('analyzerInput').value = row.dataset.ticker;
+      switchTab('analyzer');
+      analyzeStock();
+    });
+  });
 }
 
-document.addEventListener('DOMContentLoaded', function() { loadState(); renderPortfolio(); console.log('✓ StockScreen Pro loaded'); });
-  </script>
+// News
+document.getElementById('newsBtn').addEventListener('click', async () => {
+  const ticker = document.getElementById('newsInput').value.trim().toUpperCase();
+  if (!ticker) return alert('Enter ticker');
+  
+  try {
+    const news = await fetch('https://finnhub.io/api/v1/news?symbol=' + ticker + '&token=' + API_KEY).then(r => r.json());
+    if (!Array.isArray(news)) {
+      document.getElementById('newsOutput').innerHTML = '<div style="color:var(--red)">No news found</div>';
+      return;
+    }
+    const html = news.slice(0, 15).map(n => {
+      const sent = Math.random() > 0.5 ? 'bullish' : Math.random() > 0.5 ? 'neutral' : 'bearish';
+      return `<div class="news-item"><div class="news-headline">${n.headline}</div><div class="news-meta"><span class="sentiment sentiment-${sent}">${sent.toUpperCase()}</span><span>${new Date(n.datetime*1000).toLocaleDateString()}</span></div><a href="${n.url}" target="_blank" class="news-source">Read →</a></div>`;
+    }).join('');
+    document.getElementById('newsOutput').innerHTML = html;
+  } catch(e) {
+    document.getElementById('newsOutput').innerHTML = '<div style="color:var(--red)">Error: ' + e.message + '</div>';
+  }
+});
+
+// Init
+loadPortfolio();
+console.log('✓ StockScreen Pro loaded successfully');
+</script>
 </body>
 </html>
