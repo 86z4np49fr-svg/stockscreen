@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StockScreen — Is this a good stock?</title>
+<style>
+:root{--bg:#0a0e14;--panel:#111722;--card:#0e141d;--border:#1c2433;--ink:#e8edf4;--muted:#8b97a8;--soft:#4d5668;--green:#34d399;--amber:#fbbf24;--red:#f87171;--accent:#34d399}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;padding:20px 16px 80px;min-height:100vh}
+.wrap{max-width:960px;margin:0 auto}
+h1{font-size:28px;font-weight:800;margin-bottom:6px}h1 span{color:var(--accent)}
+.sub{color:var(--muted);font-size:14px;line-height:1.5;margin-bottom:18px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+input,textarea{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--ink);font-size:14px;outline:none;font-family:inherit;width:100%}
+input:focus,textarea:focus{border-color:var(--accent)}
+.btn{border:none;border-radius:8px;padding:9px 16px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;transition:filter .15s}
+.btn:hover{filter:brightness(1.1)}.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn-go{background:var(--accent);color:#052e1a}.btn-ghost{background:rgba(255,255,255,.06);color:var(--muted);border:1px solid var(--border)}
+.btn-red{background:rgba(248,113,113,.12);color:var(--red);border:1px solid rgba(248,113,113,.3)}
+.keybar{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:10px 12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+.keybar.warn{border-color:rgba(251,191,36,.4)}.keybar input{flex:1;min-width:180px;font-size:13px}
+.keystatus.ok{color:var(--green);font-size:12px;font-weight:700}.keystatus a{color:var(--accent);text-decoration:none;font-weight:700;font-size:12px}
+.sum-pills{display:flex;gap:12px;margin-bottom:16px;font-size:13px;font-weight:700;flex-wrap:wrap}
+.pill-g{color:var(--green)}.pill-a{color:var(--amber)}.pill-r{color:var(--red)}
+.empty{text-align:center;padding:52px 20px;color:var(--muted);border:1px dashed var(--border);border-radius:14px;line-height:1.7}
+/* CARD */
+.card{background:var(--panel);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:14px}
+.card-head{display:flex;align-items:center;gap:12px;padding:16px 18px;flex-wrap:wrap}
+.gbadge{width:54px;height:54px;flex-shrink:0;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.g-A,.g-B{color:var(--green);background:rgba(52,211,153,.12);border:1.5px solid rgba(52,211,153,.35)}
+.g-C{color:var(--amber);background:rgba(251,191,36,.12);border:1.5px solid rgba(251,191,36,.35)}
+.g-D,.g-F{color:var(--red);background:rgba(248,113,113,.12);border:1.5px solid rgba(248,113,113,.35)}
+.g-none{color:var(--soft);background:rgba(255,255,255,.04);border:1.5px solid var(--border)}
+.gletter{font-size:26px;font-weight:800;line-height:1}
+.outlook-badge{font-size:10px;font-weight:700;margin-top:1px}
+.ob-g{color:var(--green)}.ob-a{color:var(--amber)}.ob-r{color:var(--red)}
+.head-info{flex:1;min-width:0}
+.sym-row{display:flex;align-items:baseline;gap:8px}
+.sym{font-size:19px;font-weight:800;font-family:monospace;background:none;border:none;color:var(--ink);outline:none;width:90px}
+.score-lbl{font-size:12px;color:var(--muted)}
+.co-name{font-size:12px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fetching{font-size:12px;color:var(--accent);margin-top:3px}.ferr{font-size:12px;color:var(--red);margin-top:3px}
+.btn-icon{background:none;border:1px solid var(--border);color:var(--muted);border-radius:8px;padding:6px 9px;cursor:pointer;font-size:13px;line-height:1}
+.btn-icon:hover{color:var(--ink)}
+/* VERDICT */
+.verdict{padding:2px 18px 14px}
+.verd-title{font-size:16px;font-weight:800}.verd-line{font-size:14px;margin-top:3px;line-height:1.5}
+/* CHIPS */
+.cat-chips{display:grid;grid-template-columns:repeat(auto-fit,minmax(132px,1fr));gap:7px;padding:0 18px 14px}
+.chip{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:9px 10px;display:flex;align-items:center;gap:8px}
+.chip-ico{font-size:17px}.chip-text{flex:1;min-width:0}
+.chip-name{font-size:11.5px;font-weight:700;color:var(--ink)}.chip-q{font-size:10px;color:var(--soft)}
+.dot{display:inline-block;border-radius:50%;background:var(--border)}
+.dot-g{background:var(--green)}.dot-a{background:var(--amber)}.dot-r{background:var(--red)}
+/* TOGGLE */
+.tog-bar{width:100%;background:var(--card);border:none;border-top:1px solid var(--border);color:var(--muted);padding:10px;cursor:pointer;font-size:12.5px;font-weight:600;text-align:center}
+.tog-bar:hover{color:var(--ink)}
+/* DETAILS */
+.card-det{padding:16px 18px;background:var(--card);border-top:1px solid var(--border);display:none}
+.card-det.open{display:block}
+/* WHY */
+.why-hdr{font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px}
+.why-row{font-size:13.5px;margin-bottom:5px;line-height:1.4}
+/* ANALYST VIEW */
+.av-sec{margin-bottom:18px;background:rgba(52,211,153,.04);border:1px solid rgba(52,211,153,.15);border-radius:10px;padding:13px 14px}
+.av-hdr{font-size:11px;font-weight:800;color:var(--accent);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px}
+.av-bullet{display:flex;gap:10px;margin-bottom:9px;align-items:flex-start}
+.av-bullet:last-child{margin-bottom:0}
+.av-icon{font-size:16px;flex-shrink:0;margin-top:1px}
+.av-cat{font-size:10.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px}
+.av-text{font-size:13px;color:var(--ink);line-height:1.45}
+/* CATEGORIES */
+.cat-sec{margin-bottom:18px}
+.cat-sec-hdr{font-size:13px;font-weight:800;color:var(--ink);margin-bottom:9px}
+.cat-sec-hdr span{color:var(--soft);font-weight:400}
+.mbox-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
+.mbox{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:10px 11px;transition:border-color .2s}
+.mbox.rg{border-color:rgba(52,211,153,.35)}.mbox.ra{border-color:rgba(251,191,36,.35)}.mbox.rr{border-color:rgba(248,113,113,.35)}
+.mbox-top{display:flex;align-items:center;gap:6px;margin-bottom:7px}
+.mbox-name{font-size:11.5px;font-weight:600;color:var(--ink);flex:1}
+.info-btn{background:none;border:1px solid var(--border);color:var(--soft);border-radius:50%;width:17px;height:17px;font-size:10px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;line-height:1}
+.info-btn:hover{border-color:var(--muted);color:var(--muted)}
+.mbox-row{display:flex;align-items:center;gap:6px}
+.minput{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:6px 8px;color:var(--ink);font-size:13px;outline:none;flex:1;min-width:0}
+.minput:focus{border-color:var(--accent)}
+.mshort{font-size:10px;color:var(--soft);font-family:monospace;flex-shrink:0}
+.outcome-txt{font-size:11.5px;color:var(--muted);margin-top:6px;line-height:1.5;display:none}
+.outcome-txt.vis{display:block}
+.trend-badge{font-size:11px;font-weight:700;margin-top:4px;display:none}
+.trend-badge.vis{display:block}
+.tb-g{color:var(--green)}.tb-a{color:var(--amber)}.tb-r{color:var(--red)}
+.explain-box{font-size:11px;color:var(--soft);margin-top:5px;line-height:1.5;padding:6px 8px;background:var(--bg);border-radius:6px;border-left:2px solid var(--border);display:none}
+.explain-box.open{display:block}
+.peer-badge{font-size:10.5px;font-weight:700;margin-top:4px;display:none}
+.peer-badge.vis{display:block}
+.pb-g{color:var(--green)}.pb-a{color:var(--amber)}.pb-r{color:var(--red)}
+/* PEER SECTION */
+.peer-sec{border-top:1px solid var(--border);padding-top:14px;margin-top:4px}
+.peer-hdr{font-size:13px;font-weight:800;color:var(--ink);margin-bottom:10px}
+.peer-list{font-size:11.5px;color:var(--muted);margin-bottom:12px}
+.peer-table{width:100%;border-collapse:collapse;font-size:12.5px}
+.peer-table th{text-align:left;color:var(--muted);font-weight:600;padding:5px 8px;border-bottom:1px solid var(--border)}
+.peer-table td{padding:6px 8px;border-bottom:1px solid rgba(255,255,255,.04);vertical-align:middle}
+.peer-table tr:last-child td{border-bottom:none}
+.vs-g{color:var(--green);font-weight:700}.vs-a{color:var(--amber);font-weight:700}.vs-r{color:var(--red);font-weight:700}
+.peer-load-btn{background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.3);color:var(--green);border-radius:8px;padding:9px 14px;font-size:13px;font-weight:700;cursor:pointer}
+.peer-load-btn:hover{filter:brightness(1.1)}
+/* DEBUG */
+#debug-panel{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.85);z-index:100;padding:20px;overflow:auto}
+#debug-inner{background:var(--panel);border:1px solid var(--border);border-radius:14px;max-width:800px;margin:0 auto;padding:20px}
+#debug-out{background:var(--bg);border-radius:8px;padding:12px;font-size:12px;font-family:monospace;white-space:pre-wrap;word-break:break-all;color:var(--muted);max-height:60vh;overflow:auto}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Is this a <span>good stock?</span></h1>
+    <p class="sub">Type a US ticker — we fetch the data, grade it <b>A to F</b>, flag trends, compare to peers, and give you a plain-English analyst view. Tap <b>?</b> on any number for a simple explanation.</p>
+    <div class="keybar warn" id="keybar">
+      <span style="font-size:11px;color:var(--muted);font-weight:700">🔑 Key</span>
+      <input type="password" id="keyInput" placeholder="Paste your free Finnhub key (saved on this device)">
+      <span id="keyStatus"><a href="https://finnhub.io/register" target="_blank" class="keystatus">Get one free →</a></span>
+      <button class="btn btn-ghost" onclick="testAPI()" style="font-size:12px;padding:8px 10px">🔬 Test</button>
+    </div>
+    <div class="row">
+      <input id="symInput" placeholder="e.g. AAPL, MSFT, NVDA" style="flex:1;min-width:160px;font-family:monospace;font-size:15px;letter-spacing:.04em" onkeydown="if(event.key==='Enter')addTickers()">
+      <button class="btn btn-go" onclick="addTickers()">Check it ✨</button>
+      <button class="btn btn-ghost" onclick="loadSample()">Demo</button>
+      <button class="btn btn-ghost" id="refreshAll" style="display:none" onclick="refetchAll()">↻ Refresh</button>
+      <button class="btn btn-red" id="clearAll" style="display:none" onclick="clearAllTickers()">Clear</button>
+    </div>
+    <div class="sum-pills" id="sumPills" style="display:none"></div>
+    <div id="tickerList"></div>
+    <div class="empty" id="emptyState">Type a symbol like <b>AAPL</b> and tap <b style="color:var(--accent)">Check it</b>. Or tap <b>Demo</b> to preview with sample data.</div>
+    <footer style="margin-top:30px;padding-top:16px;border-top:1px solid var(--border);color:var(--soft);font-size:11.5px;line-height:1.7">
+      <b style="color:var(--muted)">Learning tool, not financial advice.</b> Grades use public data via Finnhub (free tier). Sector-relative dots update once peers load. Trend arrows compare current TTM vs 5-year average. Always verify before trading.
+    </footer>
+  </div>
+  <div id="debug-panel" onclick="if(event.target===this)closeDebug()">
+    <div id="debug-inner">
+      <h3 style="margin-bottom:12px">🔬 API Test (AAPL)</h3>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:10px">Makes a live call to Finnhub and shows what comes back.</p>
+      <div id="debug-out">Testing…</div>
+      <div style="margin-top:12px;display:flex;gap:8px">
+        <button class="btn btn-ghost" onclick="closeDebug()">Close</button>
+        <button class="btn btn-ghost" onclick="runDebugTest()">↻ Re-run</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+const PRESET_KEY = "d8dhhbhr01qhm4aepfd0d8dhhbhr01qhm4aepfdg";
+const C = { green:"#34d399", amber:"#fbbf24", red:"#f87171" };
+
+let state = { tickers:[], apiKey:"" };
+let peerData = {};
+const uid = () => Math.random().toString(36).slice(2,9);
+const blankM = () => ({roe:"",roce:"",de:"",icr:"",evEbitda:"",peg:"",delivery:"",velocity:"",decay:"",netMargin:"",revenueGrowth:"",currentRatio:"",pe:"",pb:"",grossMargin:"",dividendYield:"",roa:""});
+const hasData = m => Object.values(m).some(v=>v!==""&&v!=null);
+
+// ── KEY ──────────────────────────────────────────────────────────────────────
+const loadKey=()=>{try{return PRESET_KEY||localStorage.getItem("fh_key")||"";}catch(e){return PRESET_KEY;}};
+const saveKey=v=>{state.apiKey=v;try{localStorage.setItem("fh_key",v);}catch(e){}updateKeyUI();};
+function updateKeyUI(){
+  const k=state.apiKey.trim();
+  document.getElementById("keybar").className="keybar"+(k?"":" warn");
+  document.getElementById("keyStatus").innerHTML=k?'<span class="keystatus ok">● ready</span>':'<a href="https://finnhub.io/register" target="_blank" class="keystatus">Get one free →</a>';
+  document.getElementById("refreshAll").style.display=state.tickers.length&&k?"inline-block":"none";
+}
+
+// ── METRIC PATTERNS ──────────────────────────────────────────────────────────
+const PATTERNS = {
+  roe:          [/^roettm$/i,/roe.*ttm/i,/^roe/i],
+  roce:         [/^roicttm$/i,/roic.*ttm/i,/^roic/i],
+  de:           [/totaldebt.*totalequity/i,/longtermdebt.*equity/i,/\bdebt.*equity\b/i],
+  icr:          [/netinterestcoverage/i,/interestcoverage/i],
+  evEbitda:     [/ev.*ebitda/i,/enterprisevalue.*ebitda/i],
+  peg:          [/^pegttm$/i,/pegratio/i,/^peg/i],
+  netMargin:    [/^netmarginttm$/i,/netmargin.*ttm/i,/^netmargin/i],
+  grossMargin:  [/^grossmarginttm$/i,/grossmargin.*ttm/i,/^grossmargin/i],
+  revenueGrowth:[/^revenuegrowthttmyoy$/i,/revenuegrowth.*ttm/i,/revenuegrowth/i],
+  currentRatio: [/^currentratioquarterly$/i,/^currentratioannual$/i,/currentratio/i],
+  pe:           [/^pebasicexclextrattm$/i,/^pettm$/i,/pe.*ttm/i],
+  pb:           [/^pbannual$/i,/^pbquarterly$/i,/^pb/i],
+  dividendYield:[/^currentdividendyieldttm$/i,/dividendyield/i],
+  roa:          [/^roattm$/i,/roa.*ttm/i,/^roa/i],
+};
+const PATTERNS_5Y = {
+  roe:          [/^roe5y$/i],
+  netMargin:    [/^netmargin5y$/i,/netmargin.*5y/i],
+  grossMargin:  [/^grossmargin5y$/i],
+  revenueGrowth:[/^revenuegrowth5y$/i,/^revenuegrowth3y$/i],
+  roa:          [/^roa5y$/i],
+};
+const numV=v=>(v!=null&&v!==""&&v!=="None"&&!isNaN(Number(v)))?Number(v):null;
+const toPct=x=>{if(x==null)return null;const n=Number(x);if(isNaN(n))return null;return+(Math.abs(n)<=5?n*100:n).toFixed(2);};
+const r2=x=>(x==null?null:+Number(x).toFixed(2));
+const toDiv=x=>{if(x==null)return null;const n=Number(x);if(isNaN(n)||n<0)return null;return+(n<0.1?n*100:n).toFixed(2);};
+
+function extractRaw(metric, patterns) {
+  if(!metric||!patterns) return null;
+  const entries=Object.entries(metric);
+  for(const pat of patterns) for(const [k,v] of entries) { if(pat.test(k)){ const n=numV(v); if(n!=null) return n; } }
+  return null;
+}
+function convM(key,raw){
+  if(raw==null) return null;
+  if(key==="dividendYield") return toDiv(raw);
+  const isPct=["roe","roce","netMargin","grossMargin","revenueGrowth","roa"].includes(key);
+  return isPct?toPct(raw):r2(raw);
+}
+const getM=(key,metric)=>convM(key,extractRaw(metric,PATTERNS[key]));
+
+// ── TREND ────────────────────────────────────────────────────────────────────
+function computeTrend(cur,hist){
+  if(cur==null||hist==null||hist===0) return null;
+  const pct=(cur-hist)/Math.abs(hist)*100;
+  if(pct>15)  return{dir:"up",  label:"📈 Strong uptrend",short:"↑↑",c:"g",pct};
+  if(pct>5)   return{dir:"up",  label:"↑ Improving",      short:"↑", c:"g",pct};
+  if(pct>-5)  return{dir:"flat",label:"→ Stable",          short:"→", c:"a",pct};
+  if(pct>-15) return{dir:"down",label:"↓ Declining",       short:"↓", c:"a",pct};
+  return            {dir:"down",label:"📉 Falling",        short:"↓↓",c:"r",pct};
+}
+
+// ── FINNHUB DATA LAYER ───────────────────────────────────────────────────────
+function computeVD(arr){
+  const ni=(arr||[]).map(Number).filter(v=>!isNaN(v));
+  let up=0,dn=0;
+  for(let i=0;i<ni.length-1;i++){if(ni[i]>ni[i+1])up++;else break;}
+  for(let i=0;i<ni.length-1;i++){if(ni[i]<ni[i+1])dn++;else break;}
+  return{velocity:ni.length>=2?up:null,decay:ni.length>=2?dn:null};
+}
+function seriesVD(arr){
+  if(!Array.isArray(arr)||arr.length<2) return{velocity:null,decay:null};
+  const s=[...arr].filter(x=>x&&x.period&&x.v!=null).sort((a,b)=>a.period<b.period?1:-1);
+  return computeVD(s.map(x=>Number(x.v)));
+}
+function mapFinnhub({basic,profile}){
+  const m=basic&&!basic.__err&&basic.metric?basic.metric:null;
+  const q=basic&&!basic.__err&&basic.series&&basic.series.quarterly?basic.series.quarterly:{};
+  const{velocity,decay}=seriesVD(q.eps||q.netMargin||null);
+  const ex=key=>m?convM(key,extractRaw(m,PATTERNS[key])):null;
+  const name=(profile&&!profile.__err&&profile.name)||"";
+  const sector=(profile&&!profile.__err&&(profile.finnhubIndustry||profile.sector))||"";
+  const vals={roe:ex("roe"),roce:ex("roce"),de:ex("de"),icr:ex("icr"),evEbitda:ex("evEbitda"),peg:ex("peg"),netMargin:ex("netMargin"),grossMargin:ex("grossMargin"),revenueGrowth:ex("revenueGrowth"),currentRatio:ex("currentRatio"),pe:ex("pe"),pb:ex("pb"),dividendYield:ex("dividendYield"),roa:ex("roa"),velocity,decay};
+  // compute trends (TTM vs 5Y — same raw unit so ratio is unit-independent)
+  const trends={};
+  Object.keys(PATTERNS_5Y).forEach(key=>{
+    const ttm=extractRaw(m,PATTERNS[key]);
+    const hist=extractRaw(m,PATTERNS_5Y[key]);
+    if(ttm!=null&&hist!=null) trends[key]=computeTrend(ttm,hist);
+  });
+  // override netMargin trend with recent quarterly series if available
+  const qNM=q.netMargin;
+  if(Array.isArray(qNM)&&qNM.length>=4){
+    const sorted=[...qNM].filter(x=>x&&x.period&&x.v!=null).sort((a,b)=>a.period<b.period?1:-1);
+    const rc=sorted.slice(0,2).map(x=>x.v).filter(v=>v!=null);
+    const ea=sorted.slice(2,4).map(x=>x.v).filter(v=>v!=null);
+    if(rc.length&&ea.length){const rAvg=rc.reduce((a,b)=>a+b,0)/rc.length,eAvg=ea.reduce((a,b)=>a+b,0)/ea.length;if(rAvg&&eAvg)trends.netMargin=computeTrend(rAvg,eAvg);}
+  }
+  const gotAny=Object.values(vals).some(v=>v!=null)||!!name;
+  return{gotAny,name,sector,...vals,trends};
+}
+async function safeGet(url){
+  try{const r=await fetch(url);const j=await r.json().catch(()=>null);
+    if(!r.ok)return{__err:r.status===429?"too many requests — wait a few seconds":r.status===403?"needs a paid plan":r.status===401?"key isn't valid":`server error (${r.status})`};
+    if(j&&j.error)return{__err:String(j.error)};return j;
+  }catch(e){return{__err:"network error"};}
+}
+async function fetchFromFinnhub(symbol,key){
+  const s=encodeURIComponent(symbol.trim().toUpperCase()),k=encodeURIComponent(key.trim()),base="https://finnhub.io/api/v1";
+  const[basic,profile]=await Promise.all([safeGet(`${base}/stock/metric?symbol=${s}&metric=all&token=${k}`),safeGet(`${base}/stock/profile2?symbol=${s}&token=${k}`)]);
+  const errs=[basic,profile].filter(x=>x&&x.__err).map(x=>x.__err);
+  const out=mapFinnhub({basic,profile});
+  if(!out.gotAny)throw new Error(errs.find(e=>/request|paid|valid|key|network/i.test(e))||errs[0]||"No data for this ticker");
+  out.note=errs.length?"partial data":"";return out;
+}
+
+// ── SCORING ──────────────────────────────────────────────────────────────────
+function evaluate(metrics){
+  const g=k=>{const v=metrics[k];return v===""||v==null?null:Number(v);};
+  const clamp=v=>Math.max(0,Math.min(1,v));
+  const roe=g("roe"),roce=g("roce"),de=g("de"),icr=g("icr"),evEbitda=g("evEbitda"),peg=g("peg"),delivery=g("delivery"),velocity=g("velocity");
+  const netMargin=g("netMargin"),revenueGrowth=g("revenueGrowth"),currentRatio=g("currentRatio");
+  const sc={roe:roe!=null?clamp(roe/15):0,roce:roce!=null?clamp(roce/15):0,de:de!=null?clamp(1-de/0.5):0,icr:icr!=null?clamp(icr/2):0,evEbitda:evEbitda!=null?clamp(1-evEbitda/10):0,peg:peg!=null?clamp(1-peg/1):0,delivery:delivery!=null?clamp(delivery/1.5):0,velocity:velocity!=null&&velocity>=2?1:0,netMargin:netMargin!=null?clamp(netMargin/20):0,revenueGrowth:revenueGrowth!=null&&revenueGrowth>0?clamp(revenueGrowth/15):0,currentRatio:currentRatio!=null?clamp(currentRatio/2):0};
+  const w={roe:12,roce:12,de:10,icr:8,evEbitda:10,peg:8,delivery:5,velocity:10,netMargin:8,revenueGrowth:10,currentRatio:7};
+  const score=Math.round(100*Object.keys(w).reduce((s,k)=>s+sc[k]*w[k]/100,0));
+  const reasons=[];
+  if(de!=null&&de>1.0)reasons.push("carries a lot of debt");
+  if(icr!=null&&icr<2.0)reasons.push("may struggle to pay loan interest");
+  if(g("decay")!=null&&g("decay")>=2)reasons.push("profits fell several quarters in a row");
+  const critFail=reasons.length>0;
+  const entry=critFail?"red":(score>=70&&(velocity==null||velocity>=2)?"green":(score>=50?"amber":"red"));
+  const exit=g("decay")!=null&&g("decay")>=2?"red":(g("decay")===1?"amber":"green");
+  const action=critFail||exit==="red"?"SELL":(entry==="green"&&exit==="green"?"BUY":"HOLD");
+  return{score,action,entry,exit,critFail,reasons};
+}
+
+// ── DYNAMIC RAG ──────────────────────────────────────────────────────────────
+const LOWER_BETTER=new Set(["de","evEbitda","peg","pe","pb","decay"]);
+const DYNAMIC_KEYS=new Set(["roe","roce","netMargin","grossMargin","de","evEbitda","pe","revenueGrowth","currentRatio","roa","dividendYield"]);
+function universalRAG(key,v){
+  switch(key){
+    case"roe":case"roce":case"roa":return v>=15?"g":(v>=8?"a":"r");
+    case"de":return v<=0.5?"g":(v<=1.0?"a":"r");
+    case"icr":return v>=3?"g":(v>=2?"a":"r");
+    case"evEbitda":return v<=10?"g":(v<=15?"a":"r");
+    case"peg":return v<=1.0?"g":(v<=1.5?"a":"r");
+    case"netMargin":return v>=20?"g":(v>=10?"a":"r");
+    case"grossMargin":return v>=50?"g":(v>=30?"a":"r");
+    case"revenueGrowth":return v>=15?"g":(v>=5?"a":"r");
+    case"currentRatio":return v>=2?"g":(v>=1?"a":"r");
+    case"pe":return v<=15?"g":(v<=25?"a":"r");
+    case"pb":return v<=1.5?"g":(v<=3?"a":"r");
+    case"dividendYield":return v>=3?"g":(v>=1?"a":"r");
+    case"delivery":return v>=1.5?"g":(v>=1?"a":"r");
+    case"velocity":return v>=2?"g":(v>=1?"a":"r");
+    case"decay":return v===0?"g":(v===1?"a":"r");
+  }return null;
+}
+function calcRAG(key,raw,peerMedians){
+  const v=(raw===""||raw==null)?null:Number(raw);if(v==null||isNaN(v))return null;
+  if(peerMedians&&peerMedians[key]!=null&&DYNAMIC_KEYS.has(key)){
+    const pm=peerMedians[key];if(pm===0)return universalRAG(key,v);
+    const ratio=v/pm;
+    return LOWER_BETTER.has(key)?(ratio<=0.85?"g":ratio<=1.25?"a":"r"):(ratio>=1.1?"g":ratio>=0.75?"a":"r");
+  }
+  return universalRAG(key,v);
+}
+
+// ── OUTLOOK ──────────────────────────────────────────────────────────────────
+function calcOutlook(trends){
+  const arr=Object.values(trends||{}).filter(Boolean);
+  const up=arr.filter(t=>t.dir==="up").length,dn=arr.filter(t=>t.dir==="down").length;
+  if(up>=2&&dn===0) return{icon:"📈",label:"Improving",c:"g"};
+  if(dn>=2)          return{icon:"📉",label:"Watch",   c:"r"};
+  return              {icon:"→", label:"Stable",    c:"a"};
+}
+
+// ── CATEGORIES ───────────────────────────────────────────────────────────────
+const CATS=[
+  {key:"profit",icon:"💰",name:"Money Maker",   q:"Is it good at making money?",  m:["roe","roce","netMargin","grossMargin"]},
+  {key:"safety",icon:"🛡️", name:"Safety Net",    q:"Can it survive tough times?",  m:["de","icr","currentRatio"]},
+  {key:"price", icon:"🏷️", name:"Price Tag",     q:"Cheap or expensive?",          m:["evEbitda","peg","pe","pb"]},
+  {key:"growth",icon:"🌱", name:"Getting Better",q:"Are profits & revenue growing?",m:["velocity","decay","revenueGrowth"]},
+  {key:"extra", icon:"💵", name:"Extra Stats",   q:"More context on this stock",   m:["dividendYield","roa"]},
+];
+function catRAG(metrics,keys,peerMedians){
+  const v=keys.map(k=>calcRAG(k,metrics[k],peerMedians)).filter(Boolean);
+  if(!v.length)return null;
+  const s=v.reduce((a,r)=>a+(r==="g"?1:r==="a"?.5:0),0)/v.length;
+  return s>=.75?"g":s>=.4?"a":"r";
+}
+const PLAIN_G={roe:"makes strong profits",roce:"uses its capital well",de:"keeps debt low",icr:"easily pays loan interest",evEbitda:"is priced reasonably",peg:"is fairly priced for its growth",netMargin:"has strong profit margins",grossMargin:"has wide gross margins",revenueGrowth:"revenue is growing well",currentRatio:"has a healthy cash buffer",velocity:"profits are climbing"};
+const PLAIN_R={roe:"makes weak profits from equity",roce:"uses its capital inefficiently",de:"carries a lot of debt",icr:"may struggle with loan interest",evEbitda:"looks expensive vs. earnings",peg:"looks pricey for its growth rate",netMargin:"has thin profit margins",grossMargin:"has thin gross margins",revenueGrowth:"revenue is barely growing",currentRatio:"may struggle to pay short-term bills",velocity:"profits aren't growing",decay:"profits have been falling"};
+function helpingHurting(metrics,peerMedians){
+  const keys=["roe","roce","de","icr","evEbitda","peg","netMargin","revenueGrowth","currentRatio","velocity"];
+  const h=[],u=[];
+  keys.forEach(k=>{const r=calcRAG(k,metrics[k],peerMedians);if(r==="g"&&PLAIN_G[k])h.push(PLAIN_G[k]);if(r==="r"&&PLAIN_R[k])u.push(PLAIN_R[k]);});
+  const d=metrics.decay===""||metrics.decay==null?null:Number(metrics.decay);
+  if(d!=null&&d>=1)u.push(PLAIN_R.decay);
+  return{h,u};
+}
+function makeVerdict(action,metrics,peerMedians){
+  const{h,u}=helpingHurting(metrics,peerMedians);
+  if(action==="SELL")return{e:"🚩",t:"Be Careful",l:u.length?`It ${u[0]}${u[1]?`, and ${u[1]}`:""}.`:"It has some red flags right now."};
+  if(action==="BUY") return{e:"💪",t:"Looks Strong",l:h.length?`It ${h[0]}${h[1]?` and ${h[1]}`:""}.`:"Solid all around."};
+  return{e:"🤔",t:"Just Okay",l:"A mixed bag — some strengths, some weak spots."};
+}
+const letterGrade=s=>s>=85?"A":s>=70?"B":s>=55?"C":s>=40?"D":"F";
+const FRIENDLY={roe:"Profit on owners' money",roce:"Profit on all capital",de:"Debt vs. what it owns",icr:"Can it pay loan interest?",evEbitda:"Price vs. earning power",peg:"Price vs. growth speed",netMargin:"Profit kept from each sale",grossMargin:"Gross profit per sale",revenueGrowth:"How fast sales are growing",currentRatio:"Can it pay short-term bills?",pe:"Price vs. earnings (P/E)",pb:"Price vs. book value (P/B)",dividendYield:"Income paid to you per year",roa:"Profit from total assets",velocity:"Quarters profits rose in a row",decay:"Quarters profits fell in a row",delivery:"Real buying interest (India)"};
+const SHORT={roe:"ROE",roce:"ROCE",de:"D/E",icr:"ICR",evEbitda:"EV/EBITDA",peg:"PEG",netMargin:"Net Margin",grossMargin:"Gross Margin",revenueGrowth:"Rev Growth",currentRatio:"Curr. Ratio",pe:"P/E",pb:"P/B",dividendYield:"Div Yield",roa:"ROA",velocity:"Velocity",decay:"Decay",delivery:"Delivery"};
+const EXPLAIN={roe:"Out of every $100 the owners put in, how many dollars of profit the company makes. More than 15% is good.",roce:"How much profit it squeezes from ALL its money — owners' and borrowed combined. Above 15% is good.",de:"How much it borrowed vs. what it actually owns. Below 0.5 is safe. Above 1.0 starts getting risky.",icr:"How easily it can pay the interest on its loans. Above 3 is comfortable. Below 2 is a warning.",evEbitda:"How pricey the whole company is vs. the cash it earns. Below 10 can be a good deal.",peg:"Is the price fair for how fast it's growing? Below 1.0 is often a bargain.",netMargin:"Out of every $100 in sales, how much it keeps as profit after all costs. Higher is better.",grossMargin:"Out of every $100 in sales, how much is left after the cost of making the product. Higher = more pricing power.",revenueGrowth:"How much faster (or slower) its total sales are vs. the same time last year. Positive = growing.",currentRatio:"How many dollars of short-term assets it has for every $1 it owes in the next year. Above 2 is healthy.",pe:"How many dollars you pay for every $1 of annual profit. Lower can mean cheaper, but fast-growers deserve higher P/E.",pb:"How much you pay vs. what the company owns on paper. Below 1.5 may mean it's undervalued.",dividendYield:"The yearly dividend it pays you, as a % of the share price. Zero means it reinvests profits instead.",roa:"How much profit it makes for every $100 of assets it owns. Above 10% is efficient.",velocity:"How many quarters in a row its profit has gone UP. 2+ shows real momentum.",decay:"How many quarters in a row its profit has gone DOWN. 0 is ideal; 2+ is a warning sign.",delivery:"For Indian stocks — how many shares changed hands for real (not day-traded). Higher = genuine buyers."};
+
+function outcomeText(key,raw){
+  const v=(raw===""||raw==null)?null:Number(raw);if(v==null||isNaN(v))return"";
+  switch(key){
+    case"roe":   return v>=30?`Strong — earns $${v.toFixed(0)} profit per $100 in equity.`:v>=15?`Good — earns $${v.toFixed(0)} per $100 in equity.`:`Weak — only $${v.toFixed(0)} per $100 in equity.`;
+    case"roce":  return v>=20?`Excellent use of capital.`:v>=10?`Decent capital efficiency.`:`Capital not being used efficiently.`;
+    case"de":    return v<=0.5?`Low debt — financially solid.`:v<=1?`Moderate debt — manageable.`:`High debt ($${v.toFixed(1)} owed per $1 owned).`;
+    case"icr":   return v>=5?`Easily covers loan interest.`:v>=2?`Covers interest, not by much.`:`Barely covering loan interest — stressed.`;
+    case"evEbitda":return v<=10?`Potentially good value vs. earnings.`:v<=15?`Fairly priced.`:`Pricey — paying a lot per dollar of earnings.`;
+    case"peg":   return v<=1?`May be undervalued for its growth.`:v<=1.5?`Fair price for its growth.`:`Price looks high relative to growth.`;
+    case"netMargin":return v>=20?`Keeps $${v.toFixed(0)} of every $100 in sales — strong.`:v>=10?`Average — keeps $${v.toFixed(0)} per $100.`:`Thin — only $${v.toFixed(0)} from each $100 in sales.`;
+    case"grossMargin":return v>=50?`Wide margin (${v.toFixed(0)}%) — strong pricing power.`:v>=30?`Healthy gross margin (${v.toFixed(0)}%).`:`Thin (${v.toFixed(0)}%) — watch cost pressures.`;
+    case"revenueGrowth":return v>=15?`Growing fast (${v.toFixed(0)}% YoY).`:v>=5?`Steady growth (${v.toFixed(0)}% YoY).`:v>=0?`Slow growth (${v.toFixed(0)}% YoY).`:`Revenue shrinking (${v.toFixed(0)}% YoY) — warning sign.`;
+    case"currentRatio":return v>=2?`Healthy — $${v.toFixed(1)} for every $1 owed soon.`:v>=1?`Just enough to cover short-term bills.`:`Less cash than bills due — under pressure.`;
+    case"pe":    return v<=15?`Low P/E (${v.toFixed(0)}x) — may be cheap.`:v<=25?`Normal P/E range (${v.toFixed(0)}x).`:`High P/E (${v.toFixed(0)}x) — market expects strong growth.`;
+    case"pb":    return v<=1.5?`Near book value — possible margin of safety.`:v<=3?`Moderate premium.`:`High premium — growth already priced in.`;
+    case"dividendYield":return v>=3?`Solid income (${v.toFixed(1)}% yield).`:v>=1?`Modest dividend (${v.toFixed(1)}%).`:v>0?`Very small dividend (${v.toFixed(2)}%).`:`No dividend — reinvests its profits.`;
+    case"roa":   return v>=10?`Efficient — $${v.toFixed(0)} per $100 of assets.`:v>=5?`Average return on assets.`:`Low return on assets.`;
+    case"velocity":return v>=3?`${v} quarters of profit growth — strong momentum.`:v>=2?`2 quarters growing — momentum building.`:v===1?`Just 1 growth quarter so far.`:`No consecutive profit growth.`;
+    case"decay": return v===0?`No profit declines — healthy.`:v===1?`Profits dipped 1 quarter — monitor.`:`Profits fell ${v} quarters in a row.`;
+    default:return"";
+  }
+}
+
+// ── ANALYST BULLETS ──────────────────────────────────────────────────────────
+function analystBullets(metrics, trends, peerMedians) {
+  const g=k=>{const v=metrics[k];return(v===""||v==null)?null:Number(v);};
+  const bullets=[];
+  const pm=peerMedians||{};
+  // 1. Valuation
+  const evE=g("evEbitda"),pe=g("pe");
+  const pmEvE=pm.evEbitda,pmPe=pm.pe;
+  if(evE!=null&&pmEvE!=null){
+    const r=(evE/pmEvE-1)*100;
+    const prem=Math.abs(r)<10?"fairly valued vs sector":(r>10?`at a ${r.toFixed(0)}% premium to sector (implies growth expectations)`:`at a ${Math.abs(r).toFixed(0)}% discount to sector (may be undervalued)`);
+    bullets.push({icon:"💰",cat:"Valuation",text:`EV/EBITDA (${evE}x) vs sector median (${pmEvE.toFixed(1)}x) — ${prem}.`});
+  } else if(evE!=null){
+    bullets.push({icon:"💰",cat:"Valuation",text:`EV/EBITDA ${evE}x — ${evE<=10?"looks reasonably priced":evE<=15?"moderate valuation":"premium valuation, pricing in future growth"}.`});
+  }
+  // 2. Quality of earnings
+  const nm=g("netMargin"),nmT=trends?.netMargin,gm=g("grossMargin"),gmT=trends?.grossMargin;
+  if(nm!=null&&nmT){
+    const qual=nmT.dir==="up"?"expanding margins are a positive catalyst — often triggers analyst upgrades":nmT.dir==="down"?"margin compression is the classic trigger for downgrades — watch closely":"margins are stable — consistent quality of earnings";
+    bullets.push({icon:"📊",cat:"Quality of Earnings",text:`Net margin ${nm.toFixed(1)}% is ${nmT.label.toLowerCase()} vs 5-year avg — ${qual}.`});
+  } else if(nm!=null){
+    bullets.push({icon:"📊",cat:"Quality of Earnings",text:`Net margin ${nm.toFixed(1)}% — ${nm>=20?"strong — keeps a large share of revenue as profit":nm>=10?"moderate profitability":"thin margins, limited buffer if costs rise"}.`});
+  }
+  // 3. Growth
+  const rv=g("revenueGrowth"),vel=g("velocity"),rvT=trends?.revenueGrowth;
+  if(rv!=null){
+    const pmRv=pm.revenueGrowth;
+    const vsP=pmRv!=null?(rv>=pmRv*1.1?" — outpacing the sector":rv<=pmRv*0.9?" — lagging sector peers":" — in line with sector"):"";
+    const trend_note=rvT?(` ${rvT.label} trend vs. 5Y avg.`):"";
+    const earn=vel!=null&&vel>=2?` Earnings in consecutive growth (${vel} quarters).`:vel===1?" One quarter of earnings growth.":"";
+    bullets.push({icon:"🚀",cat:"Growth",text:`Revenue growing at ${rv.toFixed(1)}% YoY${vsP}.${trend_note}${earn}`});
+  }
+  // 4. Risk
+  const de=g("de"),icr=g("icr"),decay=g("decay");
+  const risks=[];
+  if(de!=null&&de>1.5) risks.push(`high leverage (D/E ${de.toFixed(1)}x) — amplifies losses in downturns`);
+  if(icr!=null&&icr<3) risks.push(`interest coverage ${icr.toFixed(1)}x leaves limited buffer`);
+  if(decay!=null&&decay>=2) risks.push(`earnings fell ${decay} consecutive quarters — expect analyst estimate cuts`);
+  const pmDe=pm.de;
+  if(de!=null&&pmDe!=null&&de>pmDe*1.4) risks.push(`carries ${((de/pmDe-1)*100).toFixed(0)}% more debt than sector peers`);
+  if(risks.length){
+    bullets.push({icon:"⚠️",cat:"Key Risks",text:risks.map((r,i)=>i===0?r[0].toUpperCase()+r.slice(1):r).join("; ")+"."});
+  } else {
+    bullets.push({icon:"✅",cat:"Risk Profile",text:"No major red flags in debt levels, interest coverage, or earnings trend."});
+  }
+  return bullets;
+}
+
+// ── PEER COMPARISON ──────────────────────────────────────────────────────────
+const PEER_KEYS=["roe","de","netMargin","pe","revenueGrowth","currentRatio","evEbitda","dividendYield"];
+function calcMedian(arr){const s=[...arr].filter(v=>v!=null&&!isNaN(v)).sort((a,b)=>a-b);if(!s.length)return null;const m=Math.floor(s.length/2);return s.length%2?s[m]:(s[m-1]+s[m])/2;}
+function cmpLabel(key,cv,pm){
+  if(cv==null||pm==null||pm===0)return null;
+  const lb=LOWER_BETTER.has(key);
+  const diff=lb?(pm-cv)/Math.abs(pm)*100:(cv-pm)/Math.abs(pm)*100;
+  if(diff>30)return{t:"↑↑ Well above",c:"g"};if(diff>10)return{t:"↑ Above",c:"g"};
+  if(diff>-10)return{t:"≈ Similar",c:"a"};if(diff>-30)return{t:"↓ Below",c:"r"};
+  return{t:"↓↓ Well below",c:"r"};
+}
+const fmtVal=(key,v)=>{if(v==null)return"—";const pct=["roe","roce","netMargin","grossMargin","revenueGrowth","roa"].includes(key);return pct?`${Number(v).toFixed(1)}%`:(["de","currentRatio","pb","pe","evEbitda","peg"].includes(key)?`${Number(v).toFixed(2)}x`:`${Number(v).toFixed(key==="dividendYield"?1:1)}${key==="dividendYield"?"%":""}`)};
+
+async function fetchPeers(id){
+  const t=state.tickers.find(x=>x.id===id);if(!t||!state.apiKey.trim())return;
+  peerData[id]={fetching:true,error:"",peers:[],medians:{}};renderPeerSec(id);
+  const s=encodeURIComponent(t.symbol),k=encodeURIComponent(state.apiKey.trim()),base="https://finnhub.io/api/v1";
+  let peers=[];
+  try{const r=await safeGet(`${base}/stock/peers?symbol=${s}&token=${k}`);
+    if(Array.isArray(r))peers=r.filter(p=>p!==t.symbol).slice(0,5);
+    else if(r.__err)throw new Error(r.__err);
+  }catch(e){peerData[id]={fetching:false,error:e.message,peers:[],medians:{}};renderPeerSec(id);return;}
+  if(!peers.length){peerData[id]={fetching:false,error:"No peers found",peers:[],medians:{}};renderPeerSec(id);return;}
+  const pms=await Promise.all(peers.map(async p=>{const r=await safeGet(`${base}/stock/metric?symbol=${encodeURIComponent(p)}&metric=all&token=${k}`);return r&&!r.__err&&r.metric?{symbol:p,metric:r.metric}:null;}));
+  const valid=pms.filter(Boolean);
+  const medians={};
+  PEER_KEYS.forEach(key=>{
+    const vals=valid.map(p=>{const raw=extractRaw(p.metric,PATTERNS[key]);return raw!=null?convM(key,raw):null;}).filter(v=>v!=null);
+    if(vals.length)medians[key]=calcMedian(vals);
+  });
+  peerData[id]={fetching:false,error:"",peers:valid.map(p=>p.symbol),medians};
+  renderPeerSec(id);
+  // re-render dots with sector-relative thresholds + update analyst view
+  updateDisplay(id);
+}
+
+function renderPeerSec(id){
+  const el=document.getElementById(`psec-${id}`);if(!el)return;
+  const pd=peerData[id];
+  if(!pd){el.innerHTML=`<button class="peer-load-btn" onclick="fetchPeers('${id}')">📊 Compare to similar companies</button>`;return;}
+  if(pd.fetching){el.innerHTML=`<div style="color:var(--muted);font-size:13px">⟳ Loading peer data…</div>`;return;}
+  if(pd.error){el.innerHTML=`<div style="color:var(--red);font-size:12.5px">❌ ${pd.error}</div><button class="peer-load-btn" style="margin-top:8px" onclick="fetchPeers('${id}')">↻ Try again</button>`;return;}
+  const t=state.tickers.find(x=>x.id===id);if(!t)return;
+  let html=`<div class="peer-hdr">📊 Sector Comparison <span style="font-size:11px;color:var(--soft);font-weight:400">(dots now calibrated to peers)</span></div>`;
+  html+=`<div class="peer-list">Compared to: <b>${pd.peers.join(", ")}</b></div>`;
+  html+=`<table class="peer-table"><thead><tr><th>Indicator</th><th>${t.symbol}</th><th>Peer median</th><th>vs Peers</th></tr></thead><tbody>`;
+  PEER_KEYS.forEach(key=>{
+    const tv=t.metrics[key]!==""&&t.metrics[key]!=null?Number(t.metrics[key]):null;
+    const pm=pd.medians[key];const cl=tv!=null&&pm!=null?cmpLabel(key,tv,pm):null;
+    html+=`<tr><td style="color:var(--muted)">${FRIENDLY[key]}</td><td><b>${fmtVal(key,tv)}</b></td><td>${fmtVal(key,pm)}</td><td class="vs-${cl?cl.c:""}"><b>${cl?cl.t:"—"}</b></td></tr>`;
+  });
+  html+=`</tbody></table>`;
+  el.innerHTML=html;
+  // update peer badges on metric boxes
+  PEER_KEYS.forEach(key=>{
+    const tv=t.metrics[key]!==""&&t.metrics[key]!=null?Number(t.metrics[key]):null;
+    const badge=document.getElementById(`pbadge-${id}-${key}`);
+    if(badge&&tv!=null&&pd.medians[key]!=null){
+      const cl=cmpLabel(key,tv,pd.medians[key]);
+      if(cl){badge.className=`peer-badge vis pb-${cl.c}`;badge.textContent=`vs peers: ${cl.t} (median ${fmtVal(key,pd.medians[key])})`;}}
+  });
+}
+
+// ── CARD HTML ────────────────────────────────────────────────────────────────
+const dotHTML=(rag,sz=9)=>`<span class="dot${rag?` dot-${rag}`:""}" style="width:${sz}px;height:${sz}px"></span>`;
+function buildMbox(id,key,val){
+  return`<div class="mbox" id="mbox-${id}-${key}">
+    <div class="mbox-top"><span class="dot" id="md-${id}-${key}" style="width:9px;height:9px"></span><span class="mbox-name">${FRIENDLY[key]}</span><button class="info-btn" onclick="toggleExp('${id}','${key}')">?</button></div>
+    <div class="mbox-row"><input type="number" step="0.01" value="${val||""}" placeholder="—" class="minput" id="mi-${id}-${key}" oninput="onMetric('${id}','${key}',this.value)"><span class="mshort">${SHORT[key]}</span></div>
+    <div class="outcome-txt" id="ot-${id}-${key}"></div>
+    <div class="trend-badge" id="tr-${id}-${key}"></div>
+    <div class="peer-badge" id="pbadge-${id}-${key}"></div>
+    <div class="explain-box" id="ex-${id}-${key}">${EXPLAIN[key]||""}</div>
+  </div>`;
+}
+function buildCard(t){
+  const catChips=CATS.map(c=>`<div class="chip"><span class="chip-ico">${c.icon}</span><div class="chip-text"><div class="chip-name">${c.name}</div><div class="chip-q">${c.q}</div></div>${dotHTML(null,11)}</div>`).join("");
+  const catSecs=CATS.map(c=>`<div class="cat-sec"><div class="cat-sec-hdr">${c.icon} ${c.name} <span>— ${c.q}</span></div><div class="mbox-grid">${c.m.map(k=>buildMbox(t.id,k,t.metrics[k])).join("")}</div></div>`).join("");
+  return`
+  <div class="card" id="c${t.id}">
+    <div class="card-head">
+      <div class="gbadge g-none" id="gb-${t.id}"><span class="gletter" id="gl-${t.id}">–</span><span class="outlook-badge" id="ol-${t.id}" style="display:none"></span></div>
+      <div class="head-info">
+        <div class="sym-row"><input class="sym" value="${t.symbol}" onchange="onField('${t.id}','symbol',this.value)" maxlength="10"><span class="score-lbl" id="sl-${t.id}"></span></div>
+        <div class="co-name" id="cn-${t.id}">${t.name||""}</div>
+        <div class="fetching" id="ft-${t.id}" style="display:none">⟳ getting the numbers…</div>
+        <div class="ferr" id="fe-${t.id}" style="display:none"></div>
+      </div>
+      ${state.apiKey.trim()?`<button class="btn-icon" onclick="fetchOneTicker('${t.id}')">↻</button>`:""}
+      <button class="btn-icon" onclick="removeTicker('${t.id}')">✕</button>
+    </div>
+    <div class="verdict" id="vd-${t.id}"></div>
+    <div class="cat-chips" id="cc-${t.id}" style="display:none">${catChips}</div>
+    <div style="padding:0 18px 14px;display:${hasData(t.metrics)?"none":"block"}" id="enter-btn-${t.id}">
+      <button class="btn btn-ghost" onclick="toggleDet('${t.id}')">✏️ Enter numbers myself</button>
+    </div>
+    <button class="tog-bar" onclick="toggleDet('${t.id}')" id="tb-${t.id}">▼ See details, trends &amp; analyst view</button>
+    <div class="card-det" id="cd-${t.id}">
+      <div id="av-${t.id}" class="av-sec" style="display:none"></div>
+      <div id="wy-${t.id}" style="display:none;margin-bottom:18px"></div>
+      ${catSecs}
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px">
+        <div style="flex:1;min-width:145px">
+          <div style="font-size:11.5px;font-weight:600;color:var(--ink);margin-bottom:5px">${FRIENDLY.delivery} <button class="info-btn" style="margin-left:3px" onclick="toggleExp('${t.id}','delivery')">?</button></div>
+          <input type="number" step="0.01" value="${t.metrics.delivery}" placeholder="— (India only)" class="minput" id="mi-${t.id}-delivery" oninput="onMetric('${t.id}','delivery',this.value)">
+          <div class="explain-box" id="ex-${t.id}-delivery">${EXPLAIN.delivery}</div>
+        </div>
+        <div style="flex:1;min-width:145px">
+          <div style="font-size:11.5px;font-weight:600;color:var(--ink);margin-bottom:5px">Your allocation in this stock (%)</div>
+          <input type="number" step="0.1" value="${t.allocation||""}" placeholder="e.g. 10" class="minput" onchange="onField('${t.id}','allocation',this.value)">
+        </div>
+      </div>
+      <div class="peer-sec"><div id="psec-${t.id}"></div></div>
+    </div>
+  </div>`;
+}
+
+// ── DISPLAY UPDATE ────────────────────────────────────────────────────────────
+function updateDisplay(id){
+  const t=state.tickers.find(x=>x.id===id);if(!t)return;
+  const pm=peerData[id]?.medians||null;
+  const present=hasData(t.metrics),ev=present?evaluate(t.metrics):null;
+  const grade=ev?letterGrade(ev.score):null;
+  const outlook=t.trends?calcOutlook(t.trends):null;
+  // grade badge
+  const gb=document.getElementById(`gb-${id}`);
+  if(gb)gb.className=`gbadge g-${grade||"none"}`;
+  const gl=document.getElementById(`gl-${id}`);if(gl)gl.textContent=grade||"–";
+  // outlook badge
+  const ol=document.getElementById(`ol-${id}`);
+  if(ol&&outlook&&grade){ol.style.display="block";ol.className=`outlook-badge ob-${outlook.c}`;ol.textContent=`${outlook.icon} ${outlook.label}`;}
+  else if(ol) ol.style.display="none";
+  // score label
+  const sl=document.getElementById(`sl-${id}`);if(sl)sl.textContent=ev?`score ${ev.score}/100`:"";
+  // verdict
+  const vd=document.getElementById(`vd-${id}`);
+  if(vd&&ev){const v=makeVerdict(ev.action,t.metrics,pm);const col=grade==="A"||grade==="B"?C.green:grade==="C"?C.amber:C.red;
+    vd.innerHTML=`<div class="verd-title" style="color:${col}">${v.e} ${v.t}</div><div class="verd-line" style="color:var(--ink)">${v.l}</div>`;}
+  else if(vd)vd.innerHTML="";
+  // category chips — re-render with dynamic RAG
+  const cc=document.getElementById(`cc-${id}`);
+  if(cc){if(present){cc.style.display="grid";cc.innerHTML=CATS.map(c=>{const rag=catRAG(t.metrics,c.m,pm);return`<div class="chip"><span class="chip-ico">${c.icon}</span><div class="chip-text"><div class="chip-name">${c.name}</div><div class="chip-q">${c.q}</div></div>${dotHTML(rag,11)}</div>`;}).join("");}else cc.style.display="none";}
+  document.getElementById(`enter-btn-${id}`)?.style && (document.getElementById(`enter-btn-${id}`).style.display=present?"none":"block");
+  // analyst view
+  const av=document.getElementById(`av-${id}`);
+  if(av&&present){const bs=analystBullets(t.metrics,t.trends,pm);
+    av.style.display="block";
+    av.innerHTML=`<div class="av-hdr">📋 Analyst View</div>`+bs.map(b=>`<div class="av-bullet"><div class="av-icon">${b.icon}</div><div><div class="av-cat">${b.cat}</div><div class="av-text">${b.text}</div></div></div>`).join("");}
+  else if(av)av.style.display="none";
+  // why section
+  const wy=document.getElementById(`wy-${id}`);
+  if(wy&&present){const{h,u}=helpingHurting(t.metrics,pm);
+    if(h.length||u.length){wy.style.display="block";wy.innerHTML=`<div class="why-hdr">Why this grade?</div>`+h.map(x=>`<div class="why-row">✅ It ${x}.</div>`).join("")+u.map(x=>`<div class="why-row">⚠️ It ${x}.</div>`).join("");}
+    else wy.style.display="none";}
+  // metric boxes: dynamic RAG dots + outcome text + trend badges
+  const allKeys=[...CATS.flatMap(c=>c.m),"delivery"];
+  allKeys.forEach(key=>{
+    const rag=calcRAG(key,t.metrics[key],pm);
+    const box=document.getElementById(`mbox-${id}-${key}`);
+    if(box)box.className=`mbox${rag?` r${rag}`:""}`;
+    const dot=document.getElementById(`md-${id}-${key}`);
+    if(dot){dot.className=`dot${rag?` dot-${rag}`:""}`;dot.style.width="9px";dot.style.height="9px";}
+    const ot=document.getElementById(`ot-${id}-${key}`);
+    if(ot){const txt=outcomeText(key,t.metrics[key]);ot.textContent=txt;ot.className=`outcome-txt${txt?" vis":""}`;}
+    // trend badge
+    const tb=document.getElementById(`tr-${id}-${key}`);
+    if(tb&&t.trends?.[key]){const tr=t.trends[key];tb.className=`trend-badge vis tb-${tr.c}`;tb.textContent=`${tr.short} ${tr.label} (vs 5Y avg)`;}
+    else if(tb)tb.className="trend-badge";
+  });
+  // peer section init
+  const psec=document.getElementById(`psec-${id}`);
+  if(psec&&!peerData[id])renderPeerSec(id);
+  renderSummary();
+}
+
+// ── EVENTS ───────────────────────────────────────────────────────────────────
+function onMetric(id,key,val){const t=state.tickers.find(x=>x.id===id);if(!t)return;t.metrics[key]=val;updateDisplay(id);}
+function onField(id,key,val){const t=state.tickers.find(x=>x.id===id);if(!t)return;t[key]=val;}
+function toggleDet(id){const cd=document.getElementById(`cd-${id}`),tb=document.getElementById(`tb-${id}`);if(!cd)return;const o=cd.classList.toggle("open");if(tb)tb.textContent=o?"▲ Hide details":"▼ See details, trends & analyst view";}
+function toggleExp(id,key){document.getElementById(`ex-${id}-${key}`)?.classList.toggle("open");}
+function removeTicker(id){state.tickers=state.tickers.filter(x=>x.id!==id);delete peerData[id];document.getElementById(`c${id}`)?.remove();renderSummary();}
+function clearAllTickers(){if(!confirm("Remove all stocks?"))return;state.tickers=[];peerData={};document.getElementById("tickerList").innerHTML="";renderSummary();}
+
+// ── FETCH ─────────────────────────────────────────────────────────────────────
+function setFS(id,f,e){const ft=document.getElementById(`ft-${id}`),fe=document.getElementById(`fe-${id}`);if(ft)ft.style.display=f?"block":"none";if(fe){fe.style.display=e?"block":"none";if(e)fe.textContent="❌ "+e;}}
+async function fetchOneTicker(id,sym){
+  const key=state.apiKey.trim();if(!key){setFS(id,false,"Add your Finnhub key above");return;}
+  const t=state.tickers.find(x=>x.id===id);if(!t)return;const s=sym||t.symbol;if(!s)return;
+  setFS(id,true,"");
+  try{
+    const d=await fetchFromFinnhub(s,key);
+    const mg=(c,v)=>v==null?c:String(v);
+    t.name=d.name||t.name;t.sector=d.sector||t.sector;t.note=d.note||"";
+    t.trends=d.trends||{};
+    const keys=["roe","roce","de","icr","evEbitda","peg","netMargin","grossMargin","revenueGrowth","currentRatio","pe","pb","dividendYield","roa","velocity","decay"];
+    keys.forEach(k=>{t.metrics[k]=mg(t.metrics[k],d[k]);const inp=document.getElementById(`mi-${id}-${k}`);if(inp)inp.value=t.metrics[k]||"";});
+    const cn=document.getElementById(`cn-${id}`);if(cn)cn.textContent=t.name+(t.note?` · ${t.note}`:"");
+    setFS(id,false,"");
+    if(hasData(t.metrics)){const cd=document.getElementById(`cd-${id}`);if(cd&&!cd.classList.contains("open"))toggleDet(id);}
+    updateDisplay(id);
+  }catch(e){setFS(id,false,e.message||"fetch failed");}
+}
+async function refetchAll(){for(const t of state.tickers)await fetchOneTicker(t.id);}
+function addTickers(){
+  const inp=document.getElementById("symInput"),syms=inp.value.split(/[\n,;]+/).map(s=>s.trim().toUpperCase()).filter(Boolean);
+  if(!syms.length)return;inp.value="";
+  syms.forEach(sym=>{
+    const t={id:uid(),symbol:sym,name:"",sector:"",allocation:"",metrics:blankM(),note:"",trends:{}};
+    state.tickers.push(t);
+    const div=document.createElement("div");div.innerHTML=buildCard(t);document.getElementById("tickerList").appendChild(div.firstElementChild);
+    if(state.apiKey.trim())fetchOneTicker(t.id,sym);
+    updateDisplay(t.id);
+  });
+  renderSummary();
+}
+function loadSample(){
+  state.tickers=[];peerData={};document.getElementById("tickerList").innerHTML="";
+  // Apple: margins improving (25.3 > 5Y ~21), revenue growth declining (6.1 < 5Y ~8)
+  // Microsoft: revenue growth strong uptrend (16 > 5Y ~13), margins strong
+  // Ford: margin thin, revenue slow, high debt
+  const samples=[
+    {sym:"AAPL",name:"Apple Inc.",sec:"Technology",m:{roe:"147.9",roce:"50",de:"1.79",icr:"29",evEbitda:"23.7",peg:"2.2",netMargin:"25.3",grossMargin:"45.2",revenueGrowth:"6.1",currentRatio:"1.0",pe:"29",pb:"8.5",dividendYield:"0.55",roa:"28",velocity:"1",decay:"0",delivery:""},
+      tr:{netMargin:{dir:"up",label:"↑ Improving",short:"↑",c:"g",pct:20},grossMargin:{dir:"up",label:"↑ Improving",short:"↑",c:"g",pct:8},revenueGrowth:{dir:"down",label:"↓ Declining",short:"↓",c:"a",pct:-24},roa:{dir:"up",label:"↑ Improving",short:"↑",c:"g",pct:12}}},
+    {sym:"MSFT",name:"Microsoft Corp.",sec:"Technology",m:{roe:"45",roce:"28",de:"0.23",icr:"12.5",evEbitda:"18.5",peg:"2.4",netMargin:"35",grossMargin:"69",revenueGrowth:"16",currentRatio:"1.3",pe:"34",pb:"12",dividendYield:"0.7",roa:"16",velocity:"4",decay:"0",delivery:""},
+      tr:{netMargin:{dir:"up",label:"📈 Strong uptrend",short:"↑↑",c:"g",pct:18},grossMargin:{dir:"up",label:"↑ Improving",short:"↑",c:"g",pct:6},revenueGrowth:{dir:"up",label:"📈 Strong uptrend",short:"↑↑",c:"g",pct:40},roa:{dir:"up",label:"↑ Improving",short:"↑",c:"g",pct:10}}},
+    {sym:"F",name:"Ford Motor Co.",sec:"Automobiles",m:{roe:"9",roce:"5",de:"3.2",icr:"1.4",evEbitda:"19",peg:"2.9",netMargin:"2.1",grossMargin:"8.2",revenueGrowth:"3.1",currentRatio:"1.1",pe:"11",pb:"1.1",dividendYield:"4.5",roa:"2",velocity:"0",decay:"2",delivery:""},
+      tr:{netMargin:{dir:"down",label:"📉 Falling",short:"↓↓",c:"r",pct:-30},revenueGrowth:{dir:"down",label:"↓ Declining",short:"↓",c:"a",pct:-15},roa:{dir:"down",label:"↓ Declining",short:"↓",c:"a",pct:-20}}},
+  ];
+  samples.forEach(({sym,name,sec,m,tr})=>{
+    const t={id:uid(),symbol:sym,name,sector:sec,allocation:"",metrics:{...blankM(),...m},note:"",trends:tr||{}};
+    state.tickers.push(t);
+    const div=document.createElement("div");div.innerHTML=buildCard(t);document.getElementById("tickerList").appendChild(div.firstElementChild);
+    updateDisplay(t.id);
+  });
+  renderSummary();
+}
+
+// ── SUMMARY ──────────────────────────────────────────────────────────────────
+function renderSummary(){
+  const sc=state.tickers.filter(t=>hasData(t.metrics));let b=0,h=0,s=0;
+  sc.forEach(t=>{const ev=evaluate(t.metrics);if(ev.action==="BUY")b++;else if(ev.action==="HOLD")h++;else s++;});
+  const pills=document.getElementById("sumPills");
+  if(pills){if(sc.length){pills.style.display="flex";pills.innerHTML=`<span class="pill-g">💪 ${b} Strong</span><span class="pill-a">🤔 ${h} Okay</span><span class="pill-r">🚩 ${s} Risky</span>`;}else pills.style.display="none";}
+  document.getElementById("clearAll").style.display=state.tickers.length?"inline-block":"none";
+  document.getElementById("emptyState").style.display=state.tickers.length?"none":"block";
+  updateKeyUI();
+}
+
+// ── DEBUG ─────────────────────────────────────────────────────────────────────
+async function testAPI(){document.getElementById("debug-panel").style.display="block";await runDebugTest();}
+async function runDebugTest(){
+  const o=document.getElementById("debug-out");o.textContent="⟳ Testing…";
+  const key=state.apiKey.trim();if(!key){o.textContent="❌ No key set — paste your Finnhub key first.";return;}
+  try{
+    const res=await fetch(`https://finnhub.io/api/v1/stock/metric?symbol=AAPL&metric=all&token=${encodeURIComponent(key)}`);
+    o.textContent=`HTTP: ${res.status}\n`;
+    const j=await res.json().catch(()=>null);
+    if(!j){o.textContent+="Could not parse response.";return;}
+    if(j.error){o.textContent+=`Finnhub error: "${j.error}"`;return;}
+    const mkeys=j.metric?Object.keys(j.metric):[];
+    o.textContent+=`✅ ${mkeys.length} metric fields returned.\n\nKey fields:\n`;
+    ["roeTTM","roe5Y","netMarginTTM","netMargin5Y","grossMarginTTM","grossMargin5Y","revenueGrowthTTMYoy","revenueGrowth5Y","roaTTM","roa5Y","currentRatioQuarterly","peBasicExclExtraTTM","totalDebt/totalEquityQuarterly"].forEach(k=>{o.textContent+=`  ${k}: ${j.metric&&j.metric[k]!=null?j.metric[k]:"(not present)"}\n`;});
+    const p2=await fetch(`https://finnhub.io/api/v1/stock/profile2?symbol=AAPL&token=${encodeURIComponent(key)}`);
+    const prof=await p2.json().catch(()=>null);
+    if(prof&&prof.name)o.textContent+=`\nProfile: ${prof.name} (${prof.finnhubIndustry||"—"})\n`;
+    o.textContent+=`\n— Raw metric (first 2000 chars) —\n`+JSON.stringify(j.metric||{},null,2).slice(0,2000);
+  }catch(e){o.textContent+=`❌ ${e.message}\nPossible: ad blocker, firewall, or network issue.`;}
+}
+function closeDebug(){document.getElementById("debug-panel").style.display="none";}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+document.addEventListener("DOMContentLoaded",()=>{
+  state.apiKey=loadKey();
+  const ki=document.getElementById("keyInput");ki.value=state.apiKey;ki.addEventListener("input",e=>saveKey(e.target.value));
+  updateKeyUI();renderSummary();
+});
+</script>
+</body>
+</html>
