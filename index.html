@@ -1525,7 +1525,11 @@ function displayScanResults(results) {
 }
 
 function analyzeFromScanner(ticker) {
-  document.getElementById('analyzerTicker').value = ticker;
+  // Use correct analyzer input element ID
+  const analyzerInput = document.getElementById('analyzerInput');
+  if (analyzerInput) {
+    analyzerInput.value = ticker;
+  }
   analyzeStock();
   switchTab('analyzer');
 }
@@ -1792,7 +1796,7 @@ function displayThematicResults(theme, themeDef, results) {
                 ${stock.reason}
               </div>
               <button class="btn" style="width:100%;padding:6px;font-size:11px;cursor:pointer" 
-                onclick="analyzeFromScanner('${stock.ticker}')">
+                onclick="analyzeThematic('${stock.ticker}')">
                 Analyze
               </button>
             </div>
@@ -1851,6 +1855,23 @@ function resetThematicScanner() {
     <strong>⭐ Earnings Surprise:</strong> Companies beating analyst expectations<br>
     <strong>🔄 Sector Rotation:</strong> Undervalued stocks in currently strong sectors
   `;
+}
+
+// Dedicated thematic analyzer function
+function analyzeThematic(ticker) {
+  const analyzerInput = document.getElementById('analyzerInput');
+  if (!analyzerInput) {
+    alert('Error: Analyzer input not found');
+    return;
+  }
+  
+  analyzerInput.value = ticker.toUpperCase();
+  
+  // Small delay to ensure value is set
+  setTimeout(() => {
+    analyzeStock();
+    switchTab('analyzer');
+  }, 100);
 }
 
 // ===== WATCHLIST =====
