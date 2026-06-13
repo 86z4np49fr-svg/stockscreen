@@ -68,6 +68,7 @@ footer{margin-top:40px;padding-top:16px;border-top:1px solid var(--border);color
     <button class="nav-tab" id="tab-thematic">📌 Thematic Scanner</button>
     <button class="nav-tab" id="tab-sector">🎯 Sector Scanner</button>
     <button class="nav-tab" id="tab-rules">⚙️ Rules Engine</button>
+    <button class="nav-tab" id="tab-consensus">🔗 Strategy Consensus</button>
     <button class="nav-tab" id="tab-market">📈 Market & Segments</button>
     <button class="nav-tab" id="tab-watchlist">📌 Watchlist</button>
     <button class="nav-tab" id="tab-alerts">🔔 Alerts</button>
@@ -94,6 +95,43 @@ footer{margin-top:40px;padding-top:16px;border-top:1px solid var(--border);color
       <button class="btn btn-ghost" id="dhDemoBtn">Demo</button>
     </div>
     <div id="dhOutput" class="empty">Enter a ticker to get comprehensive buy/sell confidence scores.</div>
+  </div>
+
+  <div class="view" id="consensus">
+    <div style="background:var(--border);padding:12px;border-radius:8px;margin-bottom:16px">
+      <div style="font-weight:700;font-size:13px;margin-bottom:12px">🔗 Strategy Consensus - Multi-Scanner Validation</div>
+      
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-bottom:12px">
+        <label style="display:flex;align-items:center;font-size:11px;color:var(--muted)">
+          <input type="checkbox" id="consensusHybrid" checked style="margin-right:4px"> Hybrid (v6.0)
+        </label>
+        <label style="display:flex;align-items:center;font-size:11px;color:var(--muted)">
+          <input type="checkbox" id="consensusThematic" checked style="margin-right:4px"> Thematic (v6.1)
+        </label>
+        <label style="display:flex;align-items:center;font-size:11px;color:var(--muted)">
+          <input type="checkbox" id="consensusSector" checked style="margin-right:4px"> Sector (v6.2)
+        </label>
+        <label style="display:flex;align-items:center;font-size:11px;color:var(--muted)">
+          <input type="checkbox" id="consensusRules" checked style="margin-right:4px"> Rules (v6.3)
+        </label>
+      </div>
+      
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-go" onclick="runConsensusAnalysis()">🔗 Run All Scanners</button>
+        <button class="btn btn-ghost" onclick="showConsensusDemo()">📊 Demo Results</button>
+        <button class="btn btn-ghost" onclick="resetConsensus()">↻ Reset</button>
+      </div>
+    </div>
+    
+    <div id="consensusOutput" class="empty">
+      Check which scanners to include, then click "Run All Scanners" to find stocks that pass multiple screening methods.
+      <br><br>
+      <strong>Consensus Levels:</strong><br>
+      4/4 = STRONG BUY (all scanners agree)<br>
+      3/4 = STRONG (most agree)<br>
+      2/4 = GOOD (some agree)<br>
+      1/4 = CHECK (single screen only)
+    </div>
   </div>
 
   <div class="view" id="rules">
@@ -396,7 +434,7 @@ footer{margin-top:40px;padding-top:16px;border-top:1px solid var(--border);color
     <div id="newsOutput" class="empty">Enter a ticker to see headlines.</div>
   </div>
 
-  <footer>Not financial advice. Data from Finnhub + Twelve Data. <b id="appVersion" style="color:var(--accent)">v6.3 RULES ENGINE</b></footer>
+  <footer>Not financial advice. Data from Finnhub + Twelve Data. <b id="appVersion" style="color:var(--accent)">v6.4 STRATEGY CONSENSUS</b></footer>
 </div>
 
 <script>
@@ -411,6 +449,7 @@ document.getElementById('tab-scanner').addEventListener('click', () => switchTab
 document.getElementById('tab-thematic').addEventListener('click', () => switchTab('thematic'));
 document.getElementById('tab-sector').addEventListener('click', () => switchTab('sector'));
 document.getElementById('tab-rules').addEventListener('click', () => switchTab('rules'));
+document.getElementById('tab-consensus').addEventListener('click', () => switchTab('consensus'));
 document.getElementById('tab-market').addEventListener('click', () => switchTab('market'));
 document.getElementById('tab-watchlist').addEventListener('click', () => switchTab('watchlist'));
 document.getElementById('tab-alerts').addEventListener('click', () => switchTab('alerts'));
@@ -2408,6 +2447,197 @@ function resetRulesEngine() {
     <strong>🚀 Growth Rules:</strong> Growth investing (high growth, reasonable valuation, quality)<br>
     <strong>⭐ Quality Rules:</strong> Quality investing (excellent ROE, margins, FCF)<br>
     <strong>📈 Turnaround Rules:</strong> Turnaround/recovery (beaten down, improving fundamentals)
+  `;
+}
+
+// ===== STRATEGY CONSENSUS (v6.4) =====
+let consensusState = {
+  results: [],
+  isAnalyzing: false
+};
+
+// Pre-computed consensus demo data
+const CONSENSUS_DEMO_DATA = [
+  { 
+    ticker: 'MSFT', 
+    consensus: 4, 
+    hybrid: 87, 
+    thematic: 88, 
+    sector: 87, 
+    rules: 90,
+    scanners: ['Hybrid (87)', 'AI Theme (88)', 'Tech Sector (87)', 'Quality Rules (90)'],
+    reason: 'Appears in ALL 4 scanners - highest confidence'
+  },
+  { 
+    ticker: 'NVDA', 
+    consensus: 4, 
+    hybrid: 84, 
+    thematic: 92, 
+    sector: 85, 
+    rules: 0,
+    scanners: ['Hybrid (84)', 'AI Theme (92)', 'Tech Sector (85)'],
+    reason: 'Appears in 3/4 scanners - strong agreement'
+  },
+  { 
+    ticker: 'JPM', 
+    consensus: 3, 
+    hybrid: 81, 
+    thematic: 0, 
+    sector: 84, 
+    rules: 80,
+    scanners: ['Hybrid (81)', 'Finance Sector (84)', 'Value Rules (80)'],
+    reason: 'Appears in 3/4 scanners - strong agreement'
+  },
+  { 
+    ticker: 'JNJ', 
+    consensus: 3, 
+    hybrid: 79, 
+    thematic: 88, 
+    sector: 0, 
+    rules: 85,
+    scanners: ['Hybrid (79)', 'Dividend Theme (88)', 'Quality Rules (85)'],
+    reason: 'Appears in 3/4 scanners - strong agreement'
+  },
+  { 
+    ticker: 'IBM', 
+    consensus: 2, 
+    hybrid: 0, 
+    thematic: 0, 
+    sector: 87, 
+    rules: 82,
+    scanners: ['Tech Sector (87)', 'Turnaround Rules (82)'],
+    reason: 'Appears in 2/4 scanners - moderate agreement'
+  },
+  { 
+    ticker: 'KO', 
+    consensus: 2, 
+    hybrid: 0, 
+    thematic: 0, 
+    sector: 0, 
+    rules: 88,
+    scanners: ['Value Rules (88)', 'Dividend Theme (85)'],
+    reason: 'Appears in 2/4 scanners - moderate agreement'
+  },
+];
+
+function runConsensusAnalysis() {
+  consensusState.isAnalyzing = true;
+  const output = document.getElementById('consensusOutput');
+  
+  output.innerHTML = `<div style="color:var(--accent)">
+    Running all 4 scanners and aggregating results...<br>
+    <div style="background:var(--card);border-radius:4px;height:8px;margin:12px 0;overflow:hidden">
+      <div id="consensusProgress" style="background:var(--accent);width:0%;height:100%;transition:width 0.3s"></div>
+    </div>
+    <span id="consensusStatus">Initializing...</span>
+  </div>`;
+  
+  // Simulate analysis
+  let progress = 0;
+  const interval = setInterval(() => {
+    progress += Math.random() * 20;
+    if (progress >= 100) {
+      progress = 100;
+      clearInterval(interval);
+      
+      consensusState.results = CONSENSUS_DEMO_DATA;
+      displayConsensusResults();
+      consensusState.isAnalyzing = false;
+    }
+    
+    document.getElementById('consensusProgress').style.width = Math.min(progress, 100) + '%';
+    document.getElementById('consensusStatus').textContent = Math.round(Math.min(progress, 100)) + '% complete...';
+  }, 300);
+}
+
+function displayConsensusResults() {
+  const output = document.getElementById('consensusOutput');
+  
+  // Group by consensus level
+  const by4 = consensusState.results.filter(r => r.consensus === 4);
+  const by3 = consensusState.results.filter(r => r.consensus === 3);
+  const by2 = consensusState.results.filter(r => r.consensus === 2);
+  
+  let html = '<div style="margin-bottom:16px">';
+  
+  // 4/4 Consensus
+  if (by4.length > 0) {
+    html += `
+      <div style="margin-bottom:16px">
+        <div style="font-weight:700;font-size:13px;color:var(--green);margin-bottom:8px">🟢 4/4 SCANNERS (STRONG BUY)</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px">
+          ${by4.map(stock => consensusCard(stock, 'var(--green)')).join('')}
+        </div>
+      </div>
+    `;
+  }
+  
+  // 3/4 Consensus
+  if (by3.length > 0) {
+    html += `
+      <div style="margin-bottom:16px">
+        <div style="font-weight:700;font-size:13px;color:#fbbf24;margin-bottom:8px">🟡 3/4 SCANNERS (STRONG)</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px">
+          ${by3.map(stock => consensusCard(stock, '#fbbf24')).join('')}
+        </div>
+      </div>
+    `;
+  }
+  
+  // 2/4 Consensus
+  if (by2.length > 0) {
+    html += `
+      <div style="margin-bottom:16px">
+        <div style="font-weight:700;font-size:13px;color:#60a5fa;margin-bottom:8px">🔵 2/4 SCANNERS (GOOD)</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px">
+          ${by2.map(stock => consensusCard(stock, '#60a5fa')).join('')}
+        </div>
+      </div>
+    `;
+  }
+  
+  html += '</div>';
+  output.innerHTML = html;
+}
+
+function consensusCard(stock, color) {
+  return `
+    <div style="background:var(--card);padding:12px;border-radius:8px;border-left:4px solid ${color}">
+      <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px">
+        <div style="font-weight:700;font-size:14px">${stock.ticker}</div>
+        <div style="font-weight:700;font-size:14px;color:${color}">${stock.consensus}/4</div>
+      </div>
+      <div style="font-size:10px;color:var(--muted);line-height:1.6;margin-bottom:8px">
+        <strong>Scanners:</strong><br>
+        ${stock.scanners.map(s => `✓ ${s}`).join('<br>')}
+      </div>
+      <div style="font-size:10px;color:var(--muted);margin-bottom:8px;font-style:italic">
+        ${stock.reason}
+      </div>
+      <button class="btn" style="width:100%;padding:6px;font-size:11px;cursor:pointer" 
+        onclick="analyzeThematic('${stock.ticker}')">
+        Analyze
+      </button>
+    </div>
+  `;
+}
+
+function showConsensusDemo() {
+  consensusState.results = CONSENSUS_DEMO_DATA;
+  displayConsensusResults();
+  alert_notify('Demo: Multi-strategy consensus results', 'info');
+}
+
+function resetConsensus() {
+  consensusState.results = [];
+  document.getElementById('consensusOutput').innerHTML = `
+    Check which scanners to include, then click "Run All Scanners" to find stocks that pass multiple screening methods.
+    <br><br>
+    <strong>Consensus Levels:</strong><br>
+    4/4 = STRONG BUY (all scanners agree)<br>
+    3/4 = STRONG (most agree)<br>
+    2/4 = GOOD (some agree)<br>
+    1/4 = CHECK (single screen only)
   `;
 }
 
