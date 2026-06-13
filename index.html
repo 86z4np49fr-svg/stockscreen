@@ -112,6 +112,12 @@ footer{margin-top:40px;padding-top:16px;border-top:1px solid var(--border);color
   </div>
 
   <div class="view" id="technicals">
+    <div class="info" id="tdKeyBar" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <span style="font-size:12px;font-weight:700">🔑 Price data key (Twelve Data):</span>
+      <input type="text" id="tdKeyInput" placeholder="Paste free API key from twelvedata.com" style="flex:1;min-width:200px;font-family:monospace;font-size:12px">
+      <button class="btn btn-go" id="tdKeySaveBtn" style="padding:7px 12px">Save</button>
+      <span style="font-size:11px;color:var(--muted);width:100%">Finnhub's free plan blocks price history, so this tab uses Twelve Data (free: 800 calls/day). Get a key in ~1 min at twelvedata.com → Sign up → API key. Stored only in your browser.</span>
+    </div>
     <div class="row">
       <input type="text" id="techInput" placeholder="Ticker for technical analysis">
       <button class="btn btn-go" id="techBtn">Analyze 📈</button>
@@ -562,26 +568,41 @@ function calcBollinger(closes, period, mult) {
   return { mid, upper, lower };
 }
 
+// --- Twelve Data key management ---
+document.getElementById('tdKeySaveBtn').addEventListener('click', () => {
+  const k = document.getElementById('tdKeyInput').value.trim();
+  if (!k) return alert('Paste your Twelve Data API key first');
+  localStorage.setItem('td_key', k);
+  alert('Key saved! It stays in your browser only.');
+});
+
 async function loadTechnicals() {
   const ticker = document.getElementById('techInput').value.trim().toUpperCase();
   if (!ticker) return alert('Enter a ticker');
   const output = document.getElementById('techOutput');
+
+  const tdKey = localStorage.getItem('td_key');
+  if (!tdKey) {
+    output.innerHTML = '<div class="card"><div style="font-weight:700;margin-bottom:8px">🔑 One-time setup needed</div><div style="font-size:12px;color:var(--muted);line-height:1.7">1. Go to <b>twelvedata.com</b> and sign up (free, ~1 minute)<br>2. Copy your API key from the dashboard<br>3. Paste it in the green bar above and click Save<br><br>Free tier gives 800 requests/day — plenty for personal use. Your key is stored only in this browser.</div></div>';
+    return;
+  }
+
   output.innerHTML = '<div style="color:var(--accent)">⟳ Loading price history...</div>';
 
   try {
-    const to = Math.floor(Date.now() / 1000);
-    const from = to - (420 * 24 * 60 * 60); // ~420 days for SMA200
-    const url = 'https://finnhub.io/api/v1/stock/candle?symbol=' + ticker + '&resolution=D&from=' + from + '&to=' + to + '&token=' + API_KEY;
-    const candles = await fetch(url).then(r => r.json());
+    const url = 'https://api.twelvedata.com/time_series?symbol=' + encodeURIComponent(ticker) + '&interval=1day&outputsize=420&apikey=' + encodeURIComponent(tdKey);
+    const resp = await fetch(url).then(r => r.json());
 
-    if (!candles || candles.s !== 'ok' || !candles.c || candles.c.length < 30) {
-      output.innerHTML = '<div class="card"><div style="color:var(--red);font-weight:700;margin-bottom:8px">❌ Could not load price history for ' + ticker + '</div><div style="font-size:12px;color:var(--muted);line-height:1.6">Finnhub returned: <b>' + (candles && candles.s ? candles.s : (candles && candles.error ? candles.error : 'no data')) + '</b><br><br>Note: Finnhub restricts the candle (price history) endpoint on some free-tier keys. If this keeps failing, we can switch the Technicals tab to a different free data source (e.g. Twelve Data or Alpha Vantage) — fundamentals will keep using Finnhub as before.</div></div>';
+    if (resp.status === 'error' || !resp.values || resp.values.length < 30) {
+      const msg = resp.message || 'No data returned';
+      output.innerHTML = '<div class="card"><div style="color:var(--red);font-weight:700;margin-bottom:8px">❌ Could not load price history for ' + ticker + '</div><div style="font-size:12px;color:var(--muted);line-height:1.6">' + msg + '<br><br>Common causes: invalid API key (re-save it above), rate limit hit (8 calls/min on free tier — wait a minute), or unsupported ticker.</div></div>';
       return;
     }
 
-    const closes = candles.c;
-    const volumes = candles.v || [];
-    const times = candles.t;
+    // Twelve Data returns newest-first; reverse to oldest-first
+    const rows = resp.values.slice().reverse();
+    const closes = rows.map(r => parseFloat(r.close));
+    const volumes = rows.map(r => parseFloat(r.volume) || 0);
     const price = closes[closes.length - 1];
 
     const sma50 = calcSMA(closes, 50);
@@ -734,6 +755,8 @@ document.getElementById('newsBtn').addEventListener('click', async () => {
 
 // Init
 loadPortfolio();
+const savedTdKey = localStorage.getItem('td_key');
+if (savedTdKey) document.getElementById('tdKeyInput').value = savedTdKey;
 console.log('✓ StockScreen Pro loaded successfully');
 </script>
 </body>
