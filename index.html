@@ -64,6 +64,7 @@ footer{margin-top:40px;padding-top:16px;border-top:1px solid var(--border);color
   <div class="nav-tabs">
     <button class="nav-tab active" id="tab-analyzer">📊 Analyzer</button>
     <button class="nav-tab" id="tab-decision">🎯 Decision Hub</button>
+    <button class="nav-tab" id="tab-scanner">🔍 Stock Scanner</button>
     <button class="nav-tab" id="tab-market">📈 Market & Segments</button>
     <button class="nav-tab" id="tab-watchlist">📌 Watchlist</button>
     <button class="nav-tab" id="tab-alerts">🔔 Alerts</button>
@@ -90,6 +91,43 @@ footer{margin-top:40px;padding-top:16px;border-top:1px solid var(--border);color
       <button class="btn btn-ghost" id="dhDemoBtn">Demo</button>
     </div>
     <div id="dhOutput" class="empty">Enter a ticker to get comprehensive buy/sell confidence scores.</div>
+  </div>
+
+  <div class="view" id="scanner">
+    <div style="background:var(--border);padding:12px;border-radius:8px;margin-bottom:16px">
+      <div style="font-weight:700;font-size:13px;margin-bottom:12px">🔍 Stock Scanner - Hybrid Approach</div>
+      
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-bottom:12px">
+        <div>
+          <label style="font-size:11px;color:var(--muted);font-weight:700;display:block;margin-bottom:4px">Min ROE %</label>
+          <input type="number" id="scanMinROE" value="10" style="width:100%;font-size:12px">
+        </div>
+        <div>
+          <label style="font-size:11px;color:var(--muted);font-weight:700;display:block;margin-bottom:4px">Max P/E</label>
+          <input type="number" id="scanMaxPE" value="25" style="width:100%;font-size:12px">
+        </div>
+        <div>
+          <label style="font-size:11px;color:var(--muted);font-weight:700;display:block;margin-bottom:4px">Min Growth %</label>
+          <input type="number" id="scanMinGrowth" value="5" style="width:100%;font-size:12px">
+        </div>
+        <div>
+          <label style="font-size:11px;color:var(--muted);font-weight:700;display:block;margin-bottom:4px">Min Profit Margin %</label>
+          <input type="number" id="scanMinMargin" value="5" style="width:100%;font-size:12px">
+        </div>
+      </div>
+      
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-go" id="scanRunBtn">🔍 Run Scan (S&P 500)</button>
+        <button class="btn btn-ghost" id="scanDemoBtn">📊 Demo Results</button>
+        <button class="btn btn-ghost" id="scanResetBtn">↻ Reset Filters</button>
+      </div>
+    </div>
+    
+    <div id="scanOutput" class="empty">
+      Click "Run Scan" to find investment opportunities in S&P 500 using hybrid scoring (Valuation + Quality + Growth + Momentum).
+      <br><br>
+      <strong>Note:</strong> Full scan takes 30-60 seconds. Use "Demo Results" to see sample results instantly.
+    </div>
   </div>
 
   <div class="view" id="market">
@@ -238,7 +276,7 @@ footer{margin-top:40px;padding-top:16px;border-top:1px solid var(--border);color
     <div id="newsOutput" class="empty">Enter a ticker to see headlines.</div>
   </div>
 
-  <footer>Not financial advice. Data from Finnhub + Twelve Data. <b id="appVersion" style="color:var(--accent)">v5.3 EXTERNAL FACTORS & NEWS</b></footer>
+  <footer>Not financial advice. Data from Finnhub + Twelve Data. <b id="appVersion" style="color:var(--accent)">v6.0 STOCK SCANNER</b></footer>
 </div>
 
 <script>
@@ -249,6 +287,7 @@ const state = { portfolio: [], screenerResults: [] };
 // Tab switching
 document.getElementById('tab-analyzer').addEventListener('click', () => switchTab('analyzer'));
 document.getElementById('tab-decision').addEventListener('click', () => switchTab('decision'));
+document.getElementById('tab-scanner').addEventListener('click', () => switchTab('scanner'));
 document.getElementById('tab-market').addEventListener('click', () => switchTab('market'));
 document.getElementById('tab-watchlist').addEventListener('click', () => switchTab('watchlist'));
 document.getElementById('tab-alerts').addEventListener('click', () => switchTab('alerts'));
@@ -1203,6 +1242,303 @@ function displayMarketNews(news) {
   `;
   
   output.innerHTML = `<div class="card">${govPolicies}${geopolitical}${newsHeadlines}${economicCalendar}${sentiment}${actionItems}</div>`;
+}
+
+// ===== STOCK SCANNER (HYBRID APPROACH) =====
+let scannerState = {
+  results: [],
+  isScanning: false,
+  scanStartTime: null
+};
+
+// S&P 500 ticker list (top 100 for MVP - in production would be all 500)
+const SP500_TICKERS = [
+  'AAPL', 'MSFT', 'NVDA', 'GOOGL', 'GOOG', 'AMZN', 'META', 'TSLA', 'BRK.B', 'JNJ',
+  'V', 'WMT', 'JPM', 'UNKNOWN_1', 'UNKNOWN_2', 'UNKNOWN_3', 'PG', 'UNH', 'DIS', 'MCD',
+  'BA', 'GS', 'NFLX', 'INTC', 'AMD', 'QCOM', 'TXN', 'CSCO', 'IBM', 'ORCL',
+  'SAP', 'CRM', 'ADBE', 'ACN', 'ADP', 'NOW', 'SNOW', 'SPLK', 'DDOG', 'ZM',
+  'OKTA', 'CRWD', 'NET', 'FTNT', 'ZS', 'GDDY', 'VEEV', 'RNG', 'PSTG', 'PMC',
+  'KO', 'PEP', 'MO', 'PM', 'KDP', 'TAP', 'EBC', 'MNST', 'FIZZ', 'AFG',
+  'XLV', 'UNP', 'CSX', 'GE', 'HON', 'ETN', 'MMM', 'CAT', 'DE', 'CNH',
+  'PCAR', 'VRSN', 'CCOI', 'CARR', 'OTIS', 'SMCI', 'DELL', 'HPE', 'EMC', 'HPQ',
+  'F', 'GM', 'TM', 'HMC', 'RIO', 'SCCO', 'FCX', 'STLD', 'MT', 'CLF',
+  'XOM', 'CVX', 'COP', 'EOG', 'SLB', 'MPC', 'PSX', 'VLO', 'PARA', 'MGM'
+];
+
+// Demo results (pre-computed for instant display)
+const DEMO_RESULTS = [
+  { ticker: 'MSFT', score: 87, valuation: 23, quality: 24, growth: 18, momentum: 22, pe: 28, roe: 0.35, margin: 0.36, growth_rate: 12 },
+  { ticker: 'NVDA', score: 84, valuation: 20, quality: 25, growth: 25, momentum: 14, pe: 52, roe: 0.42, margin: 0.52, growth_rate: 125 },
+  { ticker: 'AAPL', score: 82, valuation: 22, quality: 23, growth: 15, momentum: 22, pe: 28, roe: 0.92, margin: 0.29, growth_rate: 8 },
+  { ticker: 'JPM', score: 81, valuation: 21, quality: 22, growth: 14, momentum: 24, pe: 10, roe: 0.15, margin: 0.29, growth_rate: 6 },
+  { ticker: 'JNJ', score: 79, valuation: 19, quality: 24, growth: 10, momentum: 26, pe: 24, roe: 0.28, margin: 0.25, growth_rate: 4 },
+  { ticker: 'V', score: 78, valuation: 20, quality: 23, growth: 17, momentum: 18, pe: 32, roe: 1.52, margin: 0.52, growth_rate: 11 },
+  { ticker: 'WMT', score: 76, valuation: 21, quality: 20, growth: 12, momentum: 23, pe: 18, roe: 0.15, margin: 0.06, growth_rate: 5 },
+  { ticker: 'PG', score: 75, valuation: 19, quality: 22, growth: 9, momentum: 25, pe: 26, roe: 0.18, margin: 0.23, growth_rate: 3 },
+  { ticker: 'UNH', score: 74, valuation: 18, quality: 24, growth: 16, momentum: 16, pe: 22, roe: 0.28, margin: 0.07, growth_rate: 13 },
+  { ticker: 'KO', score: 72, valuation: 20, quality: 19, growth: 8, momentum: 25, pe: 24, roe: 0.26, margin: 0.22, growth_rate: 2 }
+];
+
+document.getElementById('scanRunBtn').addEventListener('click', runFullScan);
+document.getElementById('scanDemoBtn').addEventListener('click', showDemoResults);
+document.getElementById('scanResetBtn').addEventListener('click', resetScanFilters);
+
+function resetScanFilters() {
+  document.getElementById('scanMinROE').value = 10;
+  document.getElementById('scanMaxPE').value = 25;
+  document.getElementById('scanMinGrowth').value = 5;
+  document.getElementById('scanMinMargin').value = 5;
+}
+
+async function runFullScan() {
+  const output = document.getElementById('scanOutput');
+  
+  if (scannerState.isScanning) {
+    return alert('Scan already in progress');
+  }
+  
+  scannerState.isScanning = true;
+  scannerState.scanStartTime = Date.now();
+  
+  // Check cache first
+  const cached = getScanCache();
+  if (cached) {
+    scannerState.results = cached;
+    applyFiltersAndDisplay();
+    scannerState.isScanning = false;
+    return;
+  }
+  
+  const tickers = SP500_TICKERS.filter(t => !t.includes('UNKNOWN'));
+  let scannedCount = 0;
+  let scanResults = [];
+  
+  output.innerHTML = `<div style="color:var(--accent)">
+    Scanning ${tickers.length} stocks...<br>
+    <div style="background:var(--card);border-radius:4px;height:8px;margin:12px 0;overflow:hidden">
+      <div id="scanProgress" style="background:var(--accent);width:0%;height:100%;transition:width 0.3s"></div>
+    </div>
+    <span id="scanStatus">0/${tickers.length}</span> stocks analyzed...
+  </div>`;
+  
+  // Fetch and score each stock
+  for (let i = 0; i < tickers.length; i++) {
+    const ticker = tickers[i];
+    
+    try {
+      const profile = await fetch(`https://finnhub.io/api/v1/stock/profile2?symbol=${ticker}&token=d8dhhbhr01qhm4aepfd0d8dhhbhr01qhm4aepfdg`).then(r => r.json()).catch(() => ({}));
+      const metrics = await fetch(`https://finnhub.io/api/v1/stock/metric?symbol=${ticker}&metric=all&token=d8dhhbhr01qhm4aepfd0d8dhhbhr01qhm4aepfdg`).then(r => r.json()).catch(() => ({metric: {}}));
+      
+      if (metrics.metric && metrics.metric.pe) {
+        const stock = { ticker, ...metrics.metric, price: profile.c || 0 };
+        const score = calculateHybridScore(stock);
+        
+        if (score) {
+          scanResults.push(score);
+        }
+      }
+    } catch(e) {
+      console.warn(`Error scanning ${ticker}`);
+    }
+    
+    scannedCount++;
+    const progress = (scannedCount / tickers.length) * 100;
+    document.getElementById('scanProgress').style.width = progress + '%';
+    document.getElementById('scanStatus').textContent = scannedCount + '/' + tickers.length;
+    
+    // Rate limiting
+    if (i % 5 === 4) {
+      await new Promise(r => setTimeout(r, 1000));
+    }
+  }
+  
+  scannerState.results = scanResults.sort((a, b) => b.score - a.score);
+  saveScanCache(scannerState.results);
+  
+  scannerState.isScanning = false;
+  applyFiltersAndDisplay();
+}
+
+function showDemoResults() {
+  scannerState.results = DEMO_RESULTS;
+  applyFiltersAndDisplay();
+  alert_notify('Demo results loaded (10 sample stocks)', 'info');
+}
+
+function calculateHybridScore(stock) {
+  if (!stock || !stock.pe || !stock.roe) return null;
+  
+  let score = {
+    ticker: stock.ticker,
+    valuation: 0,
+    quality: 0,
+    growth: 0,
+    momentum: 0,
+    score: 0,
+    pe: stock.pe || 0,
+    roe: stock.roe || 0,
+    margin: stock.netMargin || 0,
+    growth_rate: stock.revenueGrowth5Y || 0
+  };
+  
+  // Valuation Score (0-25)
+  // Lower P/E = more points
+  if (stock.pe > 0 && stock.pe < 30) {
+    score.valuation += (25 * (30 - stock.pe) / 30);
+  }
+  score.valuation = Math.max(0, Math.min(25, score.valuation));
+  
+  // Quality Score (0-25)
+  // High ROE = more points
+  const roePct = stock.roe * 100;
+  score.quality += Math.min(25, Math.max(0, roePct / 2));
+  score.quality = Math.max(0, Math.min(25, score.quality));
+  
+  // Growth Score (0-25)
+  // Revenue growth + earnings growth
+  const growthRate = (stock.revenueGrowth5Y || 0) + (stock.revenuePerShare || 0);
+  score.growth += Math.min(25, growthRate / 2);
+  score.growth = Math.max(0, Math.min(25, score.growth));
+  
+  // Momentum Score (0-25)
+  // Profit margin as proxy for momentum
+  const margin = (stock.netMargin || 0) * 100;
+  score.momentum += Math.min(25, margin);
+  score.momentum = Math.max(0, Math.min(25, score.momentum));
+  
+  score.score = Math.round(score.valuation + score.quality + score.growth + score.momentum);
+  
+  return score;
+}
+
+function applyFiltersAndDisplay() {
+  const minROE = parseFloat(document.getElementById('scanMinROE').value) / 100;
+  const maxPE = parseFloat(document.getElementById('scanMaxPE').value);
+  const minGrowth = parseFloat(document.getElementById('scanMinGrowth').value);
+  const minMargin = parseFloat(document.getElementById('scanMinMargin').value) / 100;
+  
+  // Filter results
+  let filtered = scannerState.results.filter(stock => 
+    stock.roe >= minROE &&
+    stock.pe <= maxPE &&
+    stock.growth_rate >= minGrowth &&
+    stock.margin >= minMargin
+  );
+  
+  // Show results
+  displayScanResults(filtered);
+}
+
+function displayScanResults(results) {
+  const output = document.getElementById('scanOutput');
+  
+  if (results.length === 0) {
+    output.innerHTML = '<div style="color:var(--muted);padding:20px;text-align:center">' +
+      '❌ No stocks match your criteria.<br><br>' +
+      'Try relaxing filters (lower ROE requirement, higher P/E limit, etc.)' +
+    '</div>';
+    return;
+  }
+  
+  const table = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <div style="font-weight:700">Found ${results.length} candidates</div>
+      <button class="btn" style="padding:6px 10px;font-size:11px" onclick="exportScanResults()">📥 Export CSV</button>
+    </div>
+    
+    <div style="overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead>
+          <tr style="background:var(--border);border-bottom:2px solid var(--accent)">
+            <th style="padding:8px;text-align:left">#</th>
+            <th style="padding:8px;text-align:left">Ticker</th>
+            <th style="padding:8px;text-align:center">Score</th>
+            <th style="padding:8px;text-align:center">Value</th>
+            <th style="padding:8px;text-align:center">Quality</th>
+            <th style="padding:8px;text-align:center">Growth</th>
+            <th style="padding:8px;text-align:center">Momentum</th>
+            <th style="padding:8px;text-align:center">P/E</th>
+            <th style="padding:8px;text-align:center">ROE</th>
+            <th style="padding:8px;text-align:center">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${results.slice(0, 50).map((stock, idx) => {
+            const scoreColor = stock.score >= 80 ? 'var(--green)' : stock.score >= 70 ? '#fbbf24' : 'var(--red)';
+            return `<tr style="border-bottom:1px solid var(--border);hover{background:var(--card)}">
+              <td style="padding:8px">${idx + 1}</td>
+              <td style="padding:8px;font-weight:700">${stock.ticker}</td>
+              <td style="padding:8px;text-align:center;font-weight:700;color:${scoreColor}">${stock.score}</td>
+              <td style="padding:8px;text-align:center">${stock.valuation.toFixed(0)}</td>
+              <td style="padding:8px;text-align:center">${stock.quality.toFixed(0)}</td>
+              <td style="padding:8px;text-align:center">${stock.growth.toFixed(0)}</td>
+              <td style="padding:8px;text-align:center">${stock.momentum.toFixed(0)}</td>
+              <td style="padding:8px;text-align:center">${stock.pe.toFixed(1)}</td>
+              <td style="padding:8px;text-align:center">${(stock.roe * 100).toFixed(1)}%</td>
+              <td style="padding:8px;text-align:center">
+                <button class="btn" style="padding:4px 8px;font-size:10px" onclick="analyzeFromScanner('${stock.ticker}')">Analyze</button>
+              </td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+  
+  output.innerHTML = table;
+}
+
+function analyzeFromScanner(ticker) {
+  document.getElementById('analyzerTicker').value = ticker;
+  analyzeStock();
+  switchTab('analyzer');
+}
+
+function exportScanResults() {
+  if (scannerState.results.length === 0) {
+    return alert('No results to export');
+  }
+  
+  let csv = 'Rank,Ticker,Score,Valuation,Quality,Growth,Momentum,P/E,ROE,Margin,Growth_Rate\n';
+  
+  scannerState.results.forEach((stock, idx) => {
+    csv += `${idx + 1},${stock.ticker},${stock.score},${stock.valuation.toFixed(1)},${stock.quality.toFixed(1)},` +
+           `${stock.growth.toFixed(1)},${stock.momentum.toFixed(1)},${stock.pe.toFixed(2)},` +
+           `${(stock.roe * 100).toFixed(2)},${(stock.margin * 100).toFixed(2)},${stock.growth_rate.toFixed(2)}\n`;
+  });
+  
+  const blob = new Blob([csv], {type: 'text/csv'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'stock_scan_' + new Date().toISOString().slice(0, 10) + '.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+  
+  alert_notify('✅ CSV exported', 'success');
+}
+
+function getScanCache() {
+  const cached = localStorage.getItem('scanCache');
+  if (!cached) return null;
+  
+  const data = JSON.parse(cached);
+  const cacheAge = Date.now() - data.timestamp;
+  
+  // Cache valid for 1 hour
+  if (cacheAge < 3600000) {
+    return data.results;
+  }
+  
+  localStorage.removeItem('scanCache');
+  return null;
+}
+
+function saveScanCache(results) {
+  localStorage.setItem('scanCache', JSON.stringify({
+    results: results,
+    timestamp: Date.now()
+  }));
 }
 
 // ===== WATCHLIST =====
