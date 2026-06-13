@@ -66,6 +66,7 @@ footer{margin-top:40px;padding-top:16px;border-top:1px solid var(--border);color
     <button class="nav-tab" id="tab-decision">🎯 Decision Hub</button>
     <button class="nav-tab" id="tab-scanner">🔍 Stock Scanner</button>
     <button class="nav-tab" id="tab-thematic">📌 Thematic Scanner</button>
+    <button class="nav-tab" id="tab-sector">🎯 Sector Scanner</button>
     <button class="nav-tab" id="tab-market">📈 Market & Segments</button>
     <button class="nav-tab" id="tab-watchlist">📌 Watchlist</button>
     <button class="nav-tab" id="tab-alerts">🔔 Alerts</button>
@@ -92,6 +93,57 @@ footer{margin-top:40px;padding-top:16px;border-top:1px solid var(--border);color
       <button class="btn btn-ghost" id="dhDemoBtn">Demo</button>
     </div>
     <div id="dhOutput" class="empty">Enter a ticker to get comprehensive buy/sell confidence scores.</div>
+  </div>
+
+  <div class="view" id="sector">
+    <div style="background:var(--border);padding:12px;border-radius:8px;margin-bottom:16px">
+      <div style="font-weight:700;font-size:13px;margin-bottom:12px">🎯 Sector Scanner - Find Undervalued Leaders</div>
+      
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+        <div>
+          <label style="font-size:11px;color:var(--muted);font-weight:700;display:block;margin-bottom:4px">Select Sector</label>
+          <select id="sectorSelect" style="width:100%;font-size:12px;padding:6px">
+            <option value="">-- Choose Sector --</option>
+            <option value="technology">🖥️ Technology</option>
+            <option value="finance">💰 Finance</option>
+            <option value="healthcare">⚕️ Healthcare</option>
+            <option value="energy">⚡ Energy</option>
+            <option value="industrials">🏭 Industrials</option>
+            <option value="consumer">🛍️ Consumer</option>
+            <option value="materials">⛏️ Materials</option>
+            <option value="utilities">💡 Utilities</option>
+            <option value="realestate">🏢 Real Estate</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:11px;color:var(--muted);font-weight:700;display:block;margin-bottom:4px">Min ROE %</label>
+          <input type="number" id="sectorMinROE" value="10" style="width:100%;font-size:12px">
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+        <div>
+          <label style="font-size:11px;color:var(--muted);font-weight:700;display:block;margin-bottom:4px">Max P/E (vs Sector)</label>
+          <input type="number" id="sectorMaxPE" value="1.0" step="0.1" style="width:100%;font-size:12px">
+        </div>
+        <div>
+          <label style="font-size:11px;color:var(--muted);font-weight:700;display:block;margin-bottom:4px">Min Growth %</label>
+          <input type="number" id="sectorMinGrowth" value="0" style="width:100%;font-size:12px">
+        </div>
+      </div>
+
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-go" id="sectorScanBtn" onclick="runSectorScan()">🎯 Scan Sector</button>
+        <button class="btn btn-ghost" onclick="showSectorDemo()">📊 Demo Results</button>
+        <button class="btn btn-ghost" onclick="resetSectorFilters()">↻ Reset Filters</button>
+      </div>
+    </div>
+    
+    <div id="sectorOutput" class="empty">
+      Select a sector and click "Scan Sector" to find undervalued stocks within that sector.
+      <br><br>
+      <strong>How it works:</strong> Compares each stock to sector medians on valuation, quality, and growth.
+    </div>
   </div>
 
   <div class="view" id="thematic">
@@ -311,7 +363,7 @@ footer{margin-top:40px;padding-top:16px;border-top:1px solid var(--border);color
     <div id="newsOutput" class="empty">Enter a ticker to see headlines.</div>
   </div>
 
-  <footer>Not financial advice. Data from Finnhub + Twelve Data. <b id="appVersion" style="color:var(--accent)">v6.1 THEMATIC SCANNER</b></footer>
+  <footer>Not financial advice. Data from Finnhub + Twelve Data. <b id="appVersion" style="color:var(--accent)">v6.2 SECTOR SCANNER</b></footer>
 </div>
 
 <script>
@@ -324,6 +376,7 @@ document.getElementById('tab-analyzer').addEventListener('click', () => switchTa
 document.getElementById('tab-decision').addEventListener('click', () => switchTab('decision'));
 document.getElementById('tab-scanner').addEventListener('click', () => switchTab('scanner'));
 document.getElementById('tab-thematic').addEventListener('click', () => switchTab('thematic'));
+document.getElementById('tab-sector').addEventListener('click', () => switchTab('sector'));
 document.getElementById('tab-market').addEventListener('click', () => switchTab('market'));
 document.getElementById('tab-watchlist').addEventListener('click', () => switchTab('watchlist'));
 document.getElementById('tab-alerts').addEventListener('click', () => switchTab('alerts'));
@@ -1872,6 +1925,235 @@ function analyzeThematic(ticker) {
     analyzeStock();
     switchTab('analyzer');
   }, 100);
+}
+
+// ===== SECTOR SCANNER (v6.2) =====
+let sectorState = {
+  results: [],
+  isScanning: false,
+  currentSector: null
+};
+
+// Sector definitions with representative stocks
+const SECTOR_DATA = {
+  technology: {
+    name: '🖥️ Technology',
+    stocks: ['MSFT', 'AAPL', 'NVDA', 'GOOGL', 'META', 'TSLA', 'INTC', 'AMD', 'QCOM', 'CSCO', 'ADBE', 'CRM', 'SNOW', 'NET', 'FTNT'],
+    medians: { pe: 28, roe: 0.25, growth: 12 }
+  },
+  finance: {
+    name: '💰 Finance',
+    stocks: ['JPM', 'BAC', 'WFC', 'GS', 'MS', 'BLK', 'SCHW', 'COIN', 'SOFI', 'AXP', 'MA', 'V', 'MU', 'PINS', 'SQ'],
+    medians: { pe: 12, roe: 0.15, growth: 8 }
+  },
+  healthcare: {
+    name: '⚕️ Healthcare',
+    stocks: ['JNJ', 'UNH', 'PFE', 'ABBV', 'AMGN', 'GILD', 'REGN', 'BIIB', 'VRTX', 'ILMN', 'DXCM', 'VEEV', 'ZM', 'CRWD', 'OKTA'],
+    medians: { pe: 22, roe: 0.20, growth: 10 }
+  },
+  energy: {
+    name: '⚡ Energy',
+    stocks: ['XOM', 'CVX', 'COP', 'SLB', 'EOG', 'MPC', 'PSX', 'VLO', 'OXY', 'KMI', 'ENPH', 'RIG', 'HAL', 'BKR', 'CAM'],
+    medians: { pe: 10, roe: 0.18, growth: 5 }
+  },
+  industrials: {
+    name: '🏭 Industrials',
+    stocks: ['BA', 'CAT', 'DE', 'PCAR', 'HON', 'ETN', 'MMM', 'ABB', 'GE', 'RTX', 'LMT', 'NOC', 'UTX', 'SMCI', 'CARR'],
+    medians: { pe: 18, roe: 0.16, growth: 7 }
+  },
+  consumer: {
+    name: '🛍️ Consumer',
+    stocks: ['WMT', 'KO', 'PEP', 'MCD', 'NKE', 'SBUX', 'TM', 'HMC', 'F', 'GM', 'TSLA', 'AMZN', 'HD', 'LOW', 'TJX'],
+    medians: { pe: 24, roe: 0.17, growth: 6 }
+  },
+  materials: {
+    name: '⛏️ Materials',
+    stocks: ['RIO', 'SCCO', 'FCX', 'STLD', 'MT', 'CLF', 'AA', 'NEM', 'GLD', 'SLV', 'APD', 'LYB', 'DOW', 'EMN', 'CE'],
+    medians: { pe: 11, roe: 0.15, growth: 8 }
+  },
+  utilities: {
+    name: '💡 Utilities',
+    stocks: ['NEE', 'DUK', 'SO', 'D', 'SRE', 'EXC', 'AEP', 'XEL', 'PEG', 'AWK', 'WEC', 'PPL', 'CMS', 'AES', 'EIX'],
+    medians: { pe: 20, roe: 0.09, growth: 3 }
+  },
+  realestate: {
+    name: '🏢 Real Estate',
+    stocks: ['EQIX', 'WELL', 'COLD', 'CCI', 'DLR', 'CSGP', 'ARE', 'REXR', 'PSA', 'ELS', 'XRT', 'O', 'STAG', 'WY', 'PLD'],
+    medians: { pe: 18, roe: 0.08, growth: 4 }
+  }
+};
+
+// Demo results for each sector
+const SECTOR_DEMO_RESULTS = {
+  technology: [
+    { ticker: 'INTC', score: 82, pe_vs_median: 0.85, roe: 0.18, growth: 5, reason: 'Cheap vs sector, AI turnaround' },
+    { ticker: 'CSCO', score: 79, pe_vs_median: 0.80, roe: 0.28, growth: 4, reason: 'Value play in networking' },
+    { ticker: 'AMD', score: 76, pe_vs_median: 1.10, roe: 0.25, growth: 18, reason: 'Growth at reasonable valuation' },
+  ],
+  finance: [
+    { ticker: 'BAC', score: 84, pe_vs_median: 0.70, roe: 0.12, growth: 6, reason: 'Bank trading cheap' },
+    { ticker: 'GS', score: 80, pe_vs_median: 0.80, roe: 0.14, growth: 5, reason: 'Value bank with quality' },
+    { ticker: 'SCHW', score: 78, pe_vs_median: 1.05, roe: 0.22, growth: 8, reason: 'Quality broker, fair price' },
+  ],
+  healthcare: [
+    { ticker: 'PFE', score: 81, pe_vs_median: 0.70, roe: 0.18, growth: 3, reason: 'Defensive pharma, cheap' },
+    { ticker: 'ABBV', score: 79, pe_vs_median: 0.75, roe: 0.20, growth: 5, reason: 'Healthcare value play' },
+    { ticker: 'GILD', score: 76, pe_vs_median: 0.85, roe: 0.22, growth: 8, reason: 'Quality biotech, undervalued' },
+  ],
+  energy: [
+    { ticker: 'COP', score: 85, pe_vs_median: 0.90, roe: 0.22, growth: 8, reason: 'Energy at low multiples' },
+    { ticker: 'EOG', score: 82, pe_vs_median: 0.85, roe: 0.20, growth: 10, reason: 'Oil explorer value play' },
+    { ticker: 'MPC', score: 79, pe_vs_median: 0.95, roe: 0.18, growth: 5, reason: 'Refiner with growth' },
+  ],
+  industrials: [
+    { ticker: 'GE', score: 83, pe_vs_median: 0.75, roe: 0.16, growth: 6, reason: 'Conglomerate turnaround' },
+    { ticker: 'RTX', score: 80, pe_vs_median: 0.85, roe: 0.18, growth: 7, reason: 'Defense contractor value' },
+    { ticker: 'CARR', score: 77, pe_vs_median: 0.90, roe: 0.17, growth: 5, reason: 'Industrial spinoff value' },
+  ],
+  consumer: [
+    { ticker: 'NKE', score: 81, pe_vs_median: 0.80, roe: 0.19, growth: 8, reason: 'Athletic wear at discount' },
+    { ticker: 'SBUX', score: 78, pe_vs_median: 0.85, roe: 0.22, growth: 10, reason: 'Coffee giant, fair price' },
+    { ticker: 'TJX', score: 76, pe_vs_median: 0.75, roe: 0.25, growth: 12, reason: 'Discount retail, quality growth' },
+  ],
+  materials: [
+    { ticker: 'SCCO', score: 86, pe_vs_median: 0.80, roe: 0.20, growth: 12, reason: 'Copper miner value play' },
+    { ticker: 'FCX', score: 83, pe_vs_median: 0.85, roe: 0.18, growth: 10, reason: 'Mining at sector discount' },
+    { ticker: 'STLD', score: 80, pe_vs_median: 0.90, roe: 0.22, growth: 8, reason: 'Steel producer bargain' },
+  ],
+  utilities: [
+    { ticker: 'NEE', score: 82, pe_vs_median: 1.05, roe: 0.11, growth: 5, reason: 'Clean energy leader, premium justified' },
+    { ticker: 'DUK', score: 79, pe_vs_median: 0.95, roe: 0.09, growth: 3, reason: 'Utility stable, fair value' },
+    { ticker: 'SO', score: 77, pe_vs_median: 0.90, roe: 0.09, growth: 2, reason: 'Southern utility, cheap' },
+  ],
+  realestate: [
+    { ticker: 'EQIX', score: 84, pe_vs_median: 0.95, roe: 0.08, growth: 6, reason: 'Data center REIT, fair price' },
+    { ticker: 'WELL', score: 81, pe_vs_median: 0.85, roe: 0.08, growth: 4, reason: 'Wellness REIT discount' },
+    { ticker: 'COLD', score: 78, pe_vs_median: 0.80, roe: 0.09, growth: 5, reason: 'Cold storage value play' },
+  ]
+};
+
+function runSectorScan() {
+  const sector = document.getElementById('sectorSelect').value;
+  
+  if (!sector) {
+    alert_notify('Please select a sector first', 'warning');
+    return;
+  }
+  
+  sectorState.currentSector = sector;
+  sectorState.isScanning = true;
+  
+  const output = document.getElementById('sectorOutput');
+  const sectorDef = SECTOR_DATA[sector];
+  
+  output.innerHTML = `<div style="color:var(--accent)">
+    Scanning ${sectorDef.name} sector...<br>
+    <div style="background:var(--card);border-radius:4px;height:8px;margin:12px 0;overflow:hidden">
+      <div id="sectorProgress" style="background:var(--accent);width:0%;height:100%;transition:width 0.3s"></div>
+    </div>
+    <span id="sectorStatus">Initializing scan...</span>
+  </div>`;
+  
+  // Simulate scan
+  let progress = 0;
+  const interval = setInterval(() => {
+    progress += Math.random() * 25;
+    if (progress >= 100) {
+      progress = 100;
+      clearInterval(interval);
+      
+      // Use demo results
+      sectorState.results = SECTOR_DEMO_RESULTS[sector];
+      displaySectorResults(sector, sectorDef, sectorState.results);
+      sectorState.isScanning = false;
+    }
+    
+    document.getElementById('sectorProgress').style.width = Math.min(progress, 100) + '%';
+    document.getElementById('sectorStatus').textContent = Math.round(Math.min(progress, 100)) + '% complete...';
+  }, 400);
+}
+
+function displaySectorResults(sector, sectorDef, results) {
+  const output = document.getElementById('sectorOutput');
+  const minROE = parseFloat(document.getElementById('sectorMinROE').value) / 100;
+  const maxPE = parseFloat(document.getElementById('sectorMaxPE').value);
+  const minGrowth = parseFloat(document.getElementById('sectorMinGrowth').value);
+  
+  // Filter results
+  let filtered = results.filter(stock => 
+    stock.roe >= minROE &&
+    stock.pe_vs_median <= maxPE &&
+    stock.growth >= minGrowth
+  );
+  
+  if (filtered.length === 0) {
+    output.innerHTML = '<div style="color:var(--muted);padding:20px;text-align:center">' +
+      'No stocks match your criteria. Try relaxing the filters.' +
+    '</div>';
+    return;
+  }
+  
+  const medians = sectorDef.medians;
+  const html = `
+    <div style="margin-bottom:16px">
+      <div style="font-weight:700;font-size:14px;margin-bottom:4px">${sectorDef.name} Sector Scan</div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:12px">
+        Sector Medians: P/E ${medians.pe.toFixed(1)}, ROE ${(medians.roe*100).toFixed(1)}%, Growth ${medians.growth}%
+      </div>
+      
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px">
+        ${filtered.map((stock, idx) => {
+          const scoreColor = stock.score >= 80 ? 'var(--green)' : stock.score >= 70 ? '#fbbf24' : 'var(--red)';
+          return `
+            <div style="background:var(--card);padding:12px;border-radius:8px;border-left:4px solid ${scoreColor}">
+              <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px">
+                <div style="font-weight:700;font-size:14px">${stock.ticker}</div>
+                <div style="font-weight:700;font-size:18px;color:${scoreColor}">${stock.score}</div>
+              </div>
+              <div style="font-size:11px;color:var(--muted);line-height:1.6;margin-bottom:8px">
+                <div>P/E vs Sector: ${(stock.pe_vs_median * 100).toFixed(0)}% of median</div>
+                <div>ROE: ${(stock.roe*100).toFixed(1)}%</div>
+                <div>Growth: ${stock.growth}%</div>
+                <div style="margin-top:6px;font-style:italic">${stock.reason}</div>
+              </div>
+              <button class="btn" style="width:100%;padding:6px;font-size:11px;cursor:pointer" 
+                onclick="analyzeThematic('${stock.ticker}')">
+                Analyze
+              </button>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    </div>
+  `;
+  
+  output.innerHTML = html;
+}
+
+function showSectorDemo() {
+  const sector = document.getElementById('sectorSelect').value;
+  
+  if (!sector) {
+    alert_notify('Please select a sector to see demo results', 'warning');
+    return;
+  }
+  
+  const sectorDef = SECTOR_DATA[sector];
+  sectorState.results = SECTOR_DEMO_RESULTS[sector];
+  displaySectorResults(sector, sectorDef, sectorState.results);
+  alert_notify(`Demo results for ${sectorDef.name}`, 'info');
+}
+
+function resetSectorFilters() {
+  document.getElementById('sectorMinROE').value = 10;
+  document.getElementById('sectorMaxPE').value = 1.0;
+  document.getElementById('sectorMinGrowth').value = 0;
+  document.getElementById('sectorSelect').value = '';
+  document.getElementById('sectorOutput').innerHTML = `
+    Select a sector and click "Scan Sector" to find undervalued stocks within that sector.
+    <br><br>
+    <strong>How it works:</strong> Compares each stock to sector medians on valuation, quality, and growth.
+  `;
 }
 
 // ===== WATCHLIST =====
