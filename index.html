@@ -2521,33 +2521,77 @@ const CONSENSUS_DEMO_DATA = [
 ];
 
 function runConsensusAnalysis() {
-  consensusState.isAnalyzing = true;
-  const output = document.getElementById('consensusOutput');
+  // Check if a stock is selected in Analyzer
+  const analyzerInput = document.getElementById('analyzerInput').value.trim().toUpperCase();
   
-  output.innerHTML = `<div style="color:var(--accent)">
-    Running all 4 scanners and aggregating results...<br>
-    <div style="background:var(--card);border-radius:4px;height:8px;margin:12px 0;overflow:hidden">
-      <div id="consensusProgress" style="background:var(--accent);width:0%;height:100%;transition:width 0.3s"></div>
-    </div>
-    <span id="consensusStatus">Initializing...</span>
-  </div>`;
-  
-  // Simulate analysis
-  let progress = 0;
-  const interval = setInterval(() => {
-    progress += Math.random() * 20;
-    if (progress >= 100) {
-      progress = 100;
-      clearInterval(interval);
-      
-      consensusState.results = CONSENSUS_DEMO_DATA;
-      displayConsensusResults();
-      consensusState.isAnalyzing = false;
-    }
+  if (analyzerInput && analyzerInput.length > 0) {
+    // If stock selected, analyze just that stock with all 4 scanners
+    const output = document.getElementById('consensusOutput');
+    output.innerHTML = `<div style="color:var(--accent)">
+      Running all 4 scanners on <strong>${analyzerInput}</strong>...<br>
+      <div style="background:var(--card);border-radius:4px;height:8px;margin:12px 0;overflow:hidden">
+        <div id="consensusProgress" style="background:var(--accent);width:0%;height:100%;transition:width 0.3s"></div>
+      </div>
+      <span id="consensusStatus">Initializing...</span>
+    </div>`;
     
-    document.getElementById('consensusProgress').style.width = Math.min(progress, 100) + '%';
-    document.getElementById('consensusStatus').textContent = Math.round(Math.min(progress, 100)) + '% complete...';
-  }, 300);
+    // Simulate analysis
+    let progress = 0;
+    const interval = setInterval(() => {
+      progress += Math.random() * 20;
+      if (progress >= 100) {
+        progress = 100;
+        clearInterval(interval);
+        
+        // Find specific stock in demo data
+        const stockData = CONSENSUS_DEMO_DATA.find(d => d.ticker === analyzerInput);
+        if (stockData) {
+          consensusState.results = [stockData];
+        } else {
+          // Create mock data for unknown stock
+          consensusState.results = [{
+            ticker: analyzerInput,
+            consensus: 2,
+            scanners: ['Analyzer selected'],
+            reason: 'Stock selected for multi-scanner analysis'
+          }];
+        }
+        displayConsensusResults();
+      }
+      
+      document.getElementById('consensusProgress').style.width = Math.min(progress, 100) + '%';
+      document.getElementById('consensusStatus').textContent = Math.round(Math.min(progress, 100)) + '% complete...';
+    }, 300);
+  } else {
+    // If no stock selected, show full results
+    consensusState.isAnalyzing = true;
+    const output = document.getElementById('consensusOutput');
+    
+    output.innerHTML = `<div style="color:var(--accent)">
+      Running all 4 scanners and aggregating results...<br>
+      <div style="background:var(--card);border-radius:4px;height:8px;margin:12px 0;overflow:hidden">
+        <div id="consensusProgress" style="background:var(--accent);width:0%;height:100%;transition:width 0.3s"></div>
+      </div>
+      <span id="consensusStatus">Initializing...</span>
+    </div>`;
+    
+    // Simulate analysis
+    let progress = 0;
+    const interval = setInterval(() => {
+      progress += Math.random() * 20;
+      if (progress >= 100) {
+        progress = 100;
+        clearInterval(interval);
+        
+        consensusState.results = CONSENSUS_DEMO_DATA;
+        displayConsensusResults();
+        consensusState.isAnalyzing = false;
+      }
+      
+      document.getElementById('consensusProgress').style.width = Math.min(progress, 100) + '%';
+      document.getElementById('consensusStatus').textContent = Math.round(Math.min(progress, 100)) + '% complete...';
+    }, 300);
+  }
 }
 
 function displayConsensusResults() {
@@ -2763,7 +2807,7 @@ function renderWatchlist() {
     
     if (analyzeBtn) {
       analyzeBtn.addEventListener('click', () => {
-        document.getElementById('analyzerTicker').value = ticker;
+        document.getElementById('analyzerInput').value = ticker;
         analyzeStock();
         switchTab('analyzer');
       });
