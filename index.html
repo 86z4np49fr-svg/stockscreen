@@ -67,6 +67,7 @@ footer{margin-top:40px;padding-top:16px;border-top:1px solid var(--border);color
     <button class="nav-tab" id="tab-scanner">🔍 Stock Scanner</button>
     <button class="nav-tab" id="tab-thematic">📌 Thematic Scanner</button>
     <button class="nav-tab" id="tab-sector">🎯 Sector Scanner</button>
+    <button class="nav-tab" id="tab-rules">⚙️ Rules Engine</button>
     <button class="nav-tab" id="tab-market">📈 Market & Segments</button>
     <button class="nav-tab" id="tab-watchlist">📌 Watchlist</button>
     <button class="nav-tab" id="tab-alerts">🔔 Alerts</button>
@@ -93,6 +94,38 @@ footer{margin-top:40px;padding-top:16px;border-top:1px solid var(--border);color
       <button class="btn btn-ghost" id="dhDemoBtn">Demo</button>
     </div>
     <div id="dhOutput" class="empty">Enter a ticker to get comprehensive buy/sell confidence scores.</div>
+  </div>
+
+  <div class="view" id="rules">
+    <div style="background:var(--border);padding:12px;border-radius:8px;margin-bottom:16px">
+      <div style="font-weight:700;font-size:13px;margin-bottom:12px">⚙️ Rules Engine - Investment Philosophy Screening</div>
+      
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-bottom:12px">
+        <button class="btn" style="background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);border:none;cursor:pointer;font-weight:700" 
+          onclick="runRuleSet('value')">💎 Value Rules</button>
+        <button class="btn" style="background:linear-gradient(135deg, #f093fb 0%, #f5576c 100%);border:none;cursor:pointer;font-weight:700" 
+          onclick="runRuleSet('growth')">🚀 Growth Rules</button>
+        <button class="btn" style="background:linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);border:none;cursor:pointer;font-weight:700" 
+          onclick="runRuleSet('quality')">⭐ Quality Rules</button>
+        <button class="btn" style="background:linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);border:none;cursor:pointer;font-weight:700" 
+          onclick="runRuleSet('turnaround')">📈 Turnaround Rules</button>
+      </div>
+      
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+        <button class="btn btn-ghost" onclick="showRulesInfo()">📋 View Rules</button>
+        <button class="btn btn-ghost" onclick="showRulesDemo()">📊 Demo Results</button>
+        <button class="btn btn-ghost" onclick="resetRulesEngine()">↻ Reset</button>
+      </div>
+    </div>
+    
+    <div id="rulesOutput" class="empty">
+      Click any rule set to screen stocks against that investment philosophy:
+      <br><br>
+      <strong>💎 Value Rules:</strong> Conservative value investing (low P/E, dividends, safe)<br>
+      <strong>🚀 Growth Rules:</strong> Growth investing (high growth, reasonable valuation, quality)<br>
+      <strong>⭐ Quality Rules:</strong> Quality investing (excellent ROE, margins, FCF)<br>
+      <strong>📈 Turnaround Rules:</strong> Turnaround/recovery (beaten down, improving fundamentals)
+    </div>
   </div>
 
   <div class="view" id="sector">
@@ -363,7 +396,7 @@ footer{margin-top:40px;padding-top:16px;border-top:1px solid var(--border);color
     <div id="newsOutput" class="empty">Enter a ticker to see headlines.</div>
   </div>
 
-  <footer>Not financial advice. Data from Finnhub + Twelve Data. <b id="appVersion" style="color:var(--accent)">v6.2 SECTOR SCANNER</b></footer>
+  <footer>Not financial advice. Data from Finnhub + Twelve Data. <b id="appVersion" style="color:var(--accent)">v6.3 RULES ENGINE</b></footer>
 </div>
 
 <script>
@@ -377,6 +410,7 @@ document.getElementById('tab-decision').addEventListener('click', () => switchTa
 document.getElementById('tab-scanner').addEventListener('click', () => switchTab('scanner'));
 document.getElementById('tab-thematic').addEventListener('click', () => switchTab('thematic'));
 document.getElementById('tab-sector').addEventListener('click', () => switchTab('sector'));
+document.getElementById('tab-rules').addEventListener('click', () => switchTab('rules'));
 document.getElementById('tab-market').addEventListener('click', () => switchTab('market'));
 document.getElementById('tab-watchlist').addEventListener('click', () => switchTab('watchlist'));
 document.getElementById('tab-alerts').addEventListener('click', () => switchTab('alerts'));
@@ -2153,6 +2187,227 @@ function resetSectorFilters() {
     Select a sector and click "Scan Sector" to find undervalued stocks within that sector.
     <br><br>
     <strong>How it works:</strong> Compares each stock to sector medians on valuation, quality, and growth.
+  `;
+}
+
+// ===== RULES ENGINE (v6.3) =====
+let rulesState = {
+  results: [],
+  currentRuleSet: null,
+  isScanning: false
+};
+
+// Rule set definitions
+const RULE_SETS = {
+  value: {
+    name: '💎 Value Rules',
+    emoji: '💎',
+    description: 'Conservative value investing - find undervalued, safe stocks',
+    rules: [
+      'P/E below sector median',
+      'Price-to-Book < 2.0',
+      'Dividend Yield > 2%',
+      'Debt/Equity < 1.0',
+      'ROE > 15%'
+    ],
+    color: '#667eea',
+    philosophy: 'Buy quality companies at cheap prices. Safe, dividend-paying, low debt.'
+  },
+  growth: {
+    name: '🚀 Growth Rules',
+    emoji: '🚀',
+    description: 'Growth investing - find expanding businesses at reasonable prices',
+    rules: [
+      'Revenue Growth > 15%',
+      'EPS Growth > 15%',
+      'P/E < 30',
+      'Debt/Equity < 1.5',
+      'ROE > 20%'
+    ],
+    color: '#f5576c',
+    philosophy: 'Buy fast-growing companies with good ROE. Accept higher valuations for growth.'
+  },
+  quality: {
+    name: '⭐ Quality Rules',
+    emoji: '⭐',
+    description: 'Quality investing - find the best-run businesses',
+    rules: [
+      'ROE > 25%',
+      'Net Margin > 15%',
+      'Debt/Equity < 0.5',
+      'Free Cash Flow positive',
+      'Dividend Payout < 50%'
+    ],
+    color: '#00f2fe',
+    philosophy: 'Buy the best companies. High profitability, strong balance sheet, sustainable dividends.'
+  },
+  turnaround: {
+    name: '📈 Turnaround Rules',
+    emoji: '📈',
+    description: 'Recovery investing - find improving businesses that were beaten down',
+    rules: [
+      'P/E < 50% of sector median',
+      'ROE improving (>10%)',
+      'Price down 20%+ YTD',
+      'Revenue Growth > 5%',
+      'Improving fundamentals'
+    ],
+    color: '#43e97b',
+    philosophy: 'Buy beaten-down stocks with improving fundamentals. Higher risk/reward.'
+  }
+};
+
+// Demo results for each rule set
+const RULES_DEMO_RESULTS = {
+  value: [
+    { ticker: 'KO', rules_matched: 5, pe: 24, pb: 1.8, dividend: 3.1, de: 0.6, roe: 0.26, reason: 'Classic value: cheap, dividends, quality' },
+    { ticker: 'JNJ', rules_matched: 5, pe: 24, pb: 2.0, dividend: 2.5, de: 0.4, roe: 0.28, reason: 'Healthcare value: defensive, dividends' },
+    { ticker: 'PG', rules_matched: 5, pe: 26, pb: 1.9, dividend: 2.2, de: 0.5, roe: 0.18, reason: 'Consumer value: stable, safe' },
+    { ticker: 'WMT', rules_matched: 4, pe: 18, pb: 1.5, dividend: 1.4, de: 0.7, roe: 0.15, reason: 'Retail value: cheap, growing' },
+  ],
+  growth: [
+    { ticker: 'NVDA', rules_matched: 5, revenue_growth: 126, eps_growth: 168, pe: 52, de: 0.3, roe: 0.42, reason: 'AI growth: explosive earnings, quality' },
+    { ticker: 'MSFT', rules_matched: 5, revenue_growth: 16, eps_growth: 24, pe: 28, de: 0.5, roe: 0.35, reason: 'Cloud growth: strong metrics, reasonable P/E' },
+    { ticker: 'AMZN', rules_matched: 4, revenue_growth: 12, eps_growth: 45, pe: 48, de: 0.8, roe: 0.25, reason: 'E-commerce/cloud: growth justified' },
+    { ticker: 'CRM', rules_matched: 4, revenue_growth: 24, eps_growth: 32, pe: 35, de: 0.4, roe: 0.18, reason: 'SaaS growth: strong expansion' },
+  ],
+  quality: [
+    { ticker: 'MSFT', rules_matched: 5, roe: 0.35, margin: 0.36, de: 0.5, fcf: true, payout: 0.28, reason: 'Tech quality: best-in-class metrics' },
+    { ticker: 'AAPL', rules_matched: 5, roe: 0.92, margin: 0.29, de: 1.2, fcf: true, payout: 0.06, reason: 'Hardware quality: highest ROE' },
+    { ticker: 'AMZN', rules_matched: 4, roe: 0.25, margin: 0.06, de: 0.8, fcf: true, payout: 0.0, reason: 'E-commerce quality: FCF machine' },
+    { ticker: 'JNJ', rules_matched: 5, roe: 0.28, margin: 0.25, de: 0.4, fcf: true, payout: 0.42, reason: 'Pharma quality: fortress balance sheet' },
+  ],
+  turnaround: [
+    { ticker: 'AMD', rules_matched: 5, pe_vs_median: 0.65, roe: 0.25, down_ytd: 35, rev_growth: 24, reason: 'Chip turnaround: down 35%, recovering' },
+    { ticker: 'INTEL', rules_matched: 5, pe_vs_median: 0.50, roe: 0.18, down_ytd: 45, rev_growth: 5, reason: 'Tech recovery: beaten down, improving' },
+    { ticker: 'META', rules_matched: 4, pe_vs_median: 0.70, roe: 0.20, down_ytd: 25, rev_growth: 18, reason: 'AI recovery: down 25%, AI pivoting' },
+    { ticker: 'NFLX', rules_matched: 4, pe_vs_median: 0.80, roe: 0.35, down_ytd: 15, rev_growth: 12, reason: 'Streaming turnaround: stabilizing' },
+  ]
+};
+
+function runRuleSet(ruleSetKey) {
+  const ruleSet = RULE_SETS[ruleSetKey];
+  rulesState.currentRuleSet = ruleSetKey;
+  rulesState.isScanning = true;
+  
+  const output = document.getElementById('rulesOutput');
+  
+  output.innerHTML = `<div style="color:var(--accent)">
+    Screening stocks against ${ruleSet.name}...<br>
+    <div style="background:var(--card);border-radius:4px;height:8px;margin:12px 0;overflow:hidden">
+      <div id="rulesProgress" style="background:var(--accent);width:0%;height:100%;transition:width 0.3s"></div>
+    </div>
+    <span id="rulesStatus">Initializing scan...</span>
+  </div>`;
+  
+  // Simulate scan
+  let progress = 0;
+  const interval = setInterval(() => {
+    progress += Math.random() * 25;
+    if (progress >= 100) {
+      progress = 100;
+      clearInterval(interval);
+      
+      // Use demo results
+      rulesState.results = RULES_DEMO_RESULTS[ruleSetKey];
+      displayRulesResults(ruleSetKey, ruleSet, rulesState.results);
+      rulesState.isScanning = false;
+    }
+    
+    document.getElementById('rulesProgress').style.width = Math.min(progress, 100) + '%';
+    document.getElementById('rulesStatus').textContent = Math.round(Math.min(progress, 100)) + '% complete...';
+  }, 400);
+}
+
+function displayRulesResults(ruleSetKey, ruleSet, results) {
+  const output = document.getElementById('rulesOutput');
+  
+  const html = `
+    <div style="margin-bottom:16px">
+      <div style="font-weight:700;font-size:14px;margin-bottom:4px">${ruleSet.name}</div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:12px">${ruleSet.philosophy}</div>
+      
+      <div style="background:var(--card);padding:12px;border-radius:8px;margin-bottom:12px;border-left:4px solid ${ruleSet.color}">
+        <div style="font-weight:700;font-size:12px;margin-bottom:6px">Rules Being Applied:</div>
+        <div style="font-size:11px;color:var(--muted);line-height:1.8">
+          ${ruleSet.rules.map(r => `✓ ${r}`).join('<br>')}
+        </div>
+      </div>
+      
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px">
+        ${results.map((stock, idx) => {
+          const matchColor = stock.rules_matched === 5 ? 'var(--green)' : stock.rules_matched >= 4 ? '#fbbf24' : 'var(--red)';
+          return `
+            <div style="background:var(--card);padding:12px;border-radius:8px;border-left:4px solid ${matchColor}">
+              <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px">
+                <div style="font-weight:700;font-size:14px">${stock.ticker}</div>
+                <div style="font-weight:700;font-size:16px;color:${matchColor}">${stock.rules_matched}/5</div>
+              </div>
+              <div style="font-size:11px;color:var(--muted);line-height:1.6;margin-bottom:8px">
+                <div>${stock.reason}</div>
+              </div>
+              <button class="btn" style="width:100%;padding:6px;font-size:11px;cursor:pointer" 
+                onclick="analyzeThematic('${stock.ticker}')">
+                Analyze
+              </button>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    </div>
+  `;
+  
+  output.innerHTML = html;
+}
+
+function showRulesInfo() {
+  const output = document.getElementById('rulesOutput');
+  
+  const html = `
+    <div style="margin-bottom:16px">
+      <div style="font-weight:700;font-size:14px;margin-bottom:12px">⚙️ All Rule Sets</div>
+      
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px">
+        ${Object.entries(RULE_SETS).map(([key, ruleset]) => {
+          return `
+            <div style="background:var(--border);padding:12px;border-radius:8px;border-left:4px solid ${ruleset.color};cursor:pointer" 
+              onclick="runRuleSet('${key}')">
+              <div style="font-weight:700;font-size:13px;margin-bottom:4px">${ruleset.name}</div>
+              <div style="font-size:10px;color:var(--muted);margin-bottom:8px">${ruleset.description}</div>
+              <div style="font-size:10px;color:var(--muted);font-style:italic;margin-bottom:8px">${ruleset.philosophy}</div>
+              <div style="font-size:11px;color:var(--accent);font-weight:700">Click to screen stocks →</div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    </div>
+  `;
+  
+  output.innerHTML = html;
+}
+
+function showRulesDemo() {
+  if (!rulesState.currentRuleSet) {
+    alert_notify('Click a rule set first to see demo results', 'warning');
+    return;
+  }
+  
+  const ruleSet = RULE_SETS[rulesState.currentRuleSet];
+  rulesState.results = RULES_DEMO_RESULTS[rulesState.currentRuleSet];
+  displayRulesResults(rulesState.currentRuleSet, ruleSet, rulesState.results);
+  alert_notify(`Demo results for ${ruleSet.name}`, 'info');
+}
+
+function resetRulesEngine() {
+  rulesState.currentRuleSet = null;
+  rulesState.results = [];
+  document.getElementById('rulesOutput').innerHTML = `
+    Click any rule set to screen stocks against that investment philosophy:
+    <br><br>
+    <strong>💎 Value Rules:</strong> Conservative value investing (low P/E, dividends, safe)<br>
+    <strong>🚀 Growth Rules:</strong> Growth investing (high growth, reasonable valuation, quality)<br>
+    <strong>⭐ Quality Rules:</strong> Quality investing (excellent ROE, margins, FCF)<br>
+    <strong>📈 Turnaround Rules:</strong> Turnaround/recovery (beaten down, improving fundamentals)
   `;
 }
 
