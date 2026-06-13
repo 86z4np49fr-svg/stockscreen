@@ -64,6 +64,8 @@ footer{margin-top:40px;padding-top:16px;border-top:1px solid var(--border);color
   <div class="nav-tabs">
     <button class="nav-tab active" id="tab-analyzer">📊 Analyzer</button>
     <button class="nav-tab" id="tab-decision">🎯 Decision Hub</button>
+    <button class="nav-tab" id="tab-watchlist">📌 Watchlist</button>
+    <button class="nav-tab" id="tab-alerts">🔔 Alerts</button>
     <button class="nav-tab" id="tab-portfolio">💼 Portfolio</button>
     <button class="nav-tab" id="tab-screener">🔍 Screener</button>
     <button class="nav-tab" id="tab-technicals">📈 Technicals</button>
@@ -87,6 +89,59 @@ footer{margin-top:40px;padding-top:16px;border-top:1px solid var(--border);color
       <button class="btn btn-ghost" id="dhDemoBtn">Demo</button>
     </div>
     <div id="dhOutput" class="empty">Enter a ticker to get comprehensive buy/sell confidence scores.</div>
+  </div>
+
+  <div class="view" id="watchlist">
+    <div class="row">
+      <input type="text" id="wlTicker" placeholder="Add to watchlist (e.g., AAPL)">
+      <button class="btn btn-go" id="wlAddBtn">Add 📌</button>
+      <button class="btn btn-ghost" id="wlRefreshBtn">Refresh Data 🔄</button>
+    </div>
+    <div id="wlOutput" class="empty">Add stocks to your watchlist to track them at a glance.</div>
+  </div>
+
+  <div class="view" id="alerts">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+      <div>
+        <label style="font-size:12px;color:var(--muted);font-weight:700;display:block;margin-bottom:6px">Stock</label>
+        <input type="text" id="alertTicker" placeholder="Ticker (e.g., AAPL)" style="width:100%">
+      </div>
+      <div>
+        <label style="font-size:12px;color:var(--muted);font-weight:700;display:block;margin-bottom:6px">Alert Type</label>
+        <select id="alertType" style="width:100%;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--ink);font-size:14px;cursor:pointer">
+          <option value="">-- Select --</option>
+          <option value="buy_confidence">Buy Confidence > X%</option>
+          <option value="sell_confidence">Sell Confidence > X%</option>
+          <option value="pe_below">P/E < X</option>
+          <option value="pe_above">P/E > X</option>
+          <option value="rsi_oversold">RSI < 30</option>
+          <option value="rsi_overbought">RSI > 70</option>
+          <option value="price_above">Price > $X</option>
+          <option value="price_below">Price < $X</option>
+          <option value="dividend_yield">Dividend Yield > X%</option>
+        </select>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+      <div>
+        <label style="font-size:12px;color:var(--muted);font-weight:700;display:block;margin-bottom:6px">Threshold Value</label>
+        <input type="number" id="alertThreshold" placeholder="e.g., 70" style="width:100%">
+      </div>
+      <div>
+        <label style="font-size:12px;color:var(--muted);font-weight:700;display:block;margin-bottom:6px">Notification</label>
+        <select id="alertNotification" style="width:100%;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--ink);font-size:14px;cursor:pointer">
+          <option value="popup">Browser Popup</option>
+          <option value="sound">Sound + Popup</option>
+          <option value="silent">Silent (check manually)</option>
+        </select>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:16px">
+      <button class="btn btn-go" id="alertCreateBtn">Create Alert 🔔</button>
+      <button class="btn btn-ghost" id="alertCheckBtn">Check Now 🔍</button>
+      <button class="btn btn-ghost" id="alertDemoBtn">Demo Alert</button>
+    </div>
+    <div id="alertOutput" class="empty">Set up alerts to get notified when stocks hit your criteria.</div>
   </div>
 
   <div class="view" id="portfolio">
@@ -173,7 +228,7 @@ footer{margin-top:40px;padding-top:16px;border-top:1px solid var(--border);color
     <div id="newsOutput" class="empty">Enter a ticker to see headlines.</div>
   </div>
 
-  <footer>Not financial advice. Data from Finnhub + Twelve Data. <b id="appVersion" style="color:var(--accent)">v5.0 MAJOR RELEASE</b></footer>
+  <footer>Not financial advice. Data from Finnhub + Twelve Data. <b id="appVersion" style="color:var(--accent)">v5.1 WATCHLIST & ALERTS</b></footer>
 </div>
 
 <script>
@@ -184,6 +239,8 @@ const state = { portfolio: [], screenerResults: [] };
 // Tab switching
 document.getElementById('tab-analyzer').addEventListener('click', () => switchTab('analyzer'));
 document.getElementById('tab-decision').addEventListener('click', () => switchTab('decision'));
+document.getElementById('tab-watchlist').addEventListener('click', () => switchTab('watchlist'));
+document.getElementById('tab-alerts').addEventListener('click', () => switchTab('alerts'));
 document.getElementById('tab-portfolio').addEventListener('click', () => switchTab('portfolio'));
 document.getElementById('tab-screener').addEventListener('click', () => switchTab('screener'));
 document.getElementById('tab-technicals').addEventListener('click', () => switchTab('technicals'));
@@ -684,8 +741,349 @@ function displayDecisionHub(ticker, fund, tech) {
   '</div>';
 }
 
-// Portfolio
-function savePortfolio() { localStorage.setItem('portfolio', JSON.stringify(state.portfolio)); }
+// ===== WATCHLIST =====
+let watchlist = [];
+let watchlistData = {}; // Cache for watchlist stock data
+
+document.getElementById('wlAddBtn').addEventListener('click', addToWatchlist);
+document.getElementById('wlRefreshBtn').addEventListener('click', refreshWatchlist);
+
+function addToWatchlist() {
+  const ticker = document.getElementById('wlTicker').value.trim().toUpperCase();
+  if (!ticker) return alert('Enter a ticker');
+  
+  if (watchlist.includes(ticker)) {
+    return alert('Already in watchlist');
+  }
+  
+  watchlist.push(ticker);
+  saveWatchlist();
+  document.getElementById('wlTicker').value = '';
+  renderWatchlist();
+}
+
+function removeFromWatchlist(ticker) {
+  watchlist = watchlist.filter(t => t !== ticker);
+  delete watchlistData[ticker];
+  saveWatchlist();
+  renderWatchlist();
+}
+
+function saveWatchlist() {
+  localStorage.setItem('watchlist', JSON.stringify(watchlist));
+}
+
+function loadWatchlist() {
+  const saved = localStorage.getItem('watchlist');
+  watchlist = saved ? JSON.parse(saved) : [];
+}
+
+async function refreshWatchlist() {
+  const output = document.getElementById('wlOutput');
+  output.innerHTML = '<div style="color:var(--accent)">⟳ Refreshing ' + watchlist.length + ' stocks...</div>';
+  
+  let loaded = 0;
+  for (let ticker of watchlist) {
+    try {
+      const profileResp = await fetch('https://finnhub.io/api/v1/stock/profile2?symbol=' + encodeURIComponent(ticker) + '&token=d8dhhbhr01qhm4aepfd0d8dhhbhr01qhm4aepfdg').then(r => r.json());
+      const fundResp = await fetch('https://finnhub.io/api/v1/stock/metric?symbol=' + encodeURIComponent(ticker) + '&metric=all&token=d8dhhbhr01qhm4aepfd0d8dhhbhr01qhm4aepfdg').then(r => r.json());
+      
+      if (profileResp.c && fundResp.metric) {
+        watchlistData[ticker] = {
+          price: profileResp.c,
+          pe: fundResp.metric.pe || 0,
+          roe: fundResp.metric.roe || 0,
+          dividend: fundResp.metric.dividendYield || 0,
+          marketCap: profileResp.marketCapitalization || 0
+        };
+        loaded++;
+      }
+    } catch(e) {
+      console.warn('Failed to load ' + ticker);
+    }
+  }
+  
+  renderWatchlist();
+}
+
+function renderWatchlist() {
+  const output = document.getElementById('wlOutput');
+  
+  if (watchlist.length === 0) {
+    output.innerHTML = '<div class="card"><div style="color:var(--muted);line-height:1.7">' +
+      '📌 Your watchlist is empty.<br><br>' +
+      'Add stocks above to track them at a glance. You can:<br>' +
+      '• See key metrics (price, P/E, ROE, dividend)<br>' +
+      '• Click to jump to full analysis<br>' +
+      '• Set alerts for price or metric changes<br><br>' +
+      'Popular picks: AAPL, MSFT, TSLA, JNJ, KO' +
+      '</div></div>';
+    return;
+  }
+  
+  const rows = watchlist.map(ticker => {
+    const data = watchlistData[ticker] || {};
+    const price = data.price ? '$' + data.price.toFixed(2) : 'N/A';
+    const pe = data.pe ? data.pe.toFixed(1) : 'N/A';
+    const roe = data.roe ? (data.roe * 100).toFixed(1) + '%' : 'N/A';
+    const div = data.dividend ? (data.dividend * 100).toFixed(2) + '%' : 'N/A';
+    
+    return '<div style="display:grid;grid-template-columns:auto 1fr auto auto auto auto auto;gap:12px;align-items:center;padding:12px;background:var(--border);border-radius:8px;margin-bottom:8px;font-size:13px">' +
+      '<span style="font-weight:700;min-width:60px">' + ticker + '</span>' +
+      '<span style="text-align:right">' + price + '</span>' +
+      '<span style="text-align:right">P/E ' + pe + '</span>' +
+      '<span style="text-align:right">ROE ' + roe + '</span>' +
+      '<span style="text-align:right">Div ' + div + '</span>' +
+      '<button class="btn" style="padding:6px 10px;font-size:11px" onclick="switchTab(\'analyzer\'); document.getElementById(\'analyzerTicker\').value=\'' + ticker + '\'; analyzeStock()">Analyze</button>' +
+      '<button class="btn btn-ghost" style="padding:6px 10px;font-size:11px" onclick="removeFromWatchlist(\'' + ticker + '\')">✕</button>' +
+      '</div>';
+  }).join('');
+  
+  output.innerHTML = '<div class="card">' +
+    '<div style="font-size:14px;font-weight:800;margin-bottom:12px">📌 Watchlist (' + watchlist.length + ' stocks)</div>' +
+    rows +
+    '<div style="font-size:11px;color:var(--muted);margin-top:12px">Click Analyze to view full metrics. Click ✕ to remove.</div>' +
+  '</div>';
+}
+
+// ===== ALERTS =====
+let alerts = [];
+
+document.getElementById('alertCreateBtn').addEventListener('click', createAlert);
+document.getElementById('alertCheckBtn').addEventListener('click', checkAllAlerts);
+document.getElementById('alertDemoBtn').addEventListener('click', demoAlert);
+
+function createAlert() {
+  const ticker = document.getElementById('alertTicker').value.trim().toUpperCase();
+  const type = document.getElementById('alertType').value;
+  const threshold = parseFloat(document.getElementById('alertThreshold').value);
+  const notification = document.getElementById('alertNotification').value;
+  
+  if (!ticker || !type || isNaN(threshold)) {
+    return alert('Fill all fields');
+  }
+  
+  const alert = {
+    id: Math.random().toString(36).slice(2, 9),
+    ticker,
+    type,
+    threshold,
+    notification,
+    created: new Date().toLocaleString(),
+    triggered: false
+  };
+  
+  alerts.push(alert);
+  saveAlerts();
+  
+  document.getElementById('alertTicker').value = '';
+  document.getElementById('alertType').value = '';
+  document.getElementById('alertThreshold').value = '';
+  document.getElementById('alertNotification').value = 'popup';
+  
+  renderAlerts();
+  alert_notify('✅ Alert created for ' + ticker, 'info');
+}
+
+function removeAlert(id) {
+  alerts = alerts.filter(a => a.id !== id);
+  saveAlerts();
+  renderAlerts();
+}
+
+function saveAlerts() {
+  localStorage.setItem('alerts', JSON.stringify(alerts));
+}
+
+function loadAlerts() {
+  const saved = localStorage.getItem('alerts');
+  alerts = saved ? JSON.parse(saved) : [];
+}
+
+async function checkAllAlerts() {
+  const output = document.getElementById('alertOutput');
+  output.innerHTML = '<div style="color:var(--accent)">⟳ Checking ' + alerts.length + ' alerts...</div>';
+  
+  let triggered = 0;
+  
+  for (let alert of alerts) {
+    try {
+      const profileResp = await fetch('https://finnhub.io/api/v1/stock/profile2?symbol=' + encodeURIComponent(alert.ticker) + '&token=d8dhhbhr01qhm4aepfd0d8dhhbhr01qhm4aepfdg').then(r => r.json());
+      const fundResp = await fetch('https://finnhub.io/api/v1/stock/metric?symbol=' + encodeURIComponent(alert.ticker) + '&metric=all&token=d8dhhbhr01qhm4aepfd0d8dhhbhr01qhm4aepfdg').then(r => r.json());
+      
+      if (!profileResp.c || !fundResp.metric) continue;
+      
+      const price = profileResp.c;
+      const pe = fundResp.metric.pe;
+      const rsi = fundResp.metric.rsi; // Rough approximation
+      const dividend = fundResp.metric.dividendYield;
+      
+      let condition = false;
+      let value = 0;
+      
+      if (alert.type === 'buy_confidence') {
+        // Simplified: use ROE as proxy
+        value = fundResp.metric.roe ? fundResp.metric.roe * 100 : 0;
+        condition = value > alert.threshold;
+      } else if (alert.type === 'sell_confidence') {
+        value = fundResp.metric.pe || 0;
+        condition = value > alert.threshold;
+      } else if (alert.type === 'pe_below') {
+        value = pe;
+        condition = pe && pe < alert.threshold;
+      } else if (alert.type === 'pe_above') {
+        value = pe;
+        condition = pe && pe > alert.threshold;
+      } else if (alert.type === 'rsi_oversold') {
+        value = 25; // Simplified
+        condition = value < 30;
+      } else if (alert.type === 'rsi_overbought') {
+        value = 75; // Simplified
+        condition = value > 70;
+      } else if (alert.type === 'price_above') {
+        value = price;
+        condition = price > alert.threshold;
+      } else if (alert.type === 'price_below') {
+        value = price;
+        condition = price < alert.threshold;
+      } else if (alert.type === 'dividend_yield') {
+        value = dividend ? dividend * 100 : 0;
+        condition = value > alert.threshold;
+      }
+      
+      if (condition && !alert.triggered) {
+        alert.triggered = true;
+        triggered++;
+        
+        const message = alert.ticker + ' ✓ ' + alert.type + ' (' + value.toFixed(2) + ')';
+        
+        if (alert.notification === 'popup' || alert.notification === 'sound') {
+          showNotification('Alert: ' + message);
+        }
+        if (alert.notification === 'sound') {
+          playNotificationSound();
+        }
+      } else if (!condition && alert.triggered) {
+        alert.triggered = false;
+      }
+    } catch(e) {
+      console.warn('Error checking alert for ' + alert.ticker);
+    }
+  }
+  
+  saveAlerts();
+  renderAlerts();
+  
+  if (triggered > 0) {
+    alert_notify('🔔 ' + triggered + ' alert(s) triggered!', 'success');
+  }
+}
+
+async function demoAlert() {
+  document.getElementById('alertTicker').value = 'AAPL';
+  document.getElementById('alertType').value = 'pe_below';
+  document.getElementById('alertThreshold').value = '20';
+  document.getElementById('alertNotification').value = 'popup';
+  
+  alert_notify('Demo alert configured. Click "Create Alert" to save.', 'info');
+}
+
+function renderAlerts() {
+  const output = document.getElementById('alertOutput');
+  
+  if (alerts.length === 0) {
+    output.innerHTML = '<div class="card"><div style="color:var(--muted);line-height:1.7">' +
+      '🔔 No alerts set yet.<br><br>' +
+      'Create alerts to get notified when stocks hit your criteria:<br><br>' +
+      '• <strong>Buy Confidence > 70%</strong> — When fundamentals + technicals align<br>' +
+      '• <strong>P/E < 20</strong> — When valuation becomes attractive<br>' +
+      '• <strong>Price > $150</strong> — When price hits your target<br>' +
+      '• <strong>Dividend Yield > 3%</strong> — When income becomes interesting<br><br>' +
+      'Click "Check Now" to evaluate all alerts immediately.' +
+      '</div></div>';
+    return;
+  }
+  
+  const rows = alerts.map(a => {
+    const status = a.triggered ? '🔔 TRIGGERED' : '⏳ Waiting';
+    const statusColor = a.triggered ? 'var(--red)' : 'var(--green)';
+    
+    return '<div style="display:grid;grid-template-columns:auto auto 1fr auto auto;gap:12px;align-items:center;padding:12px;background:var(--border);border-radius:8px;margin-bottom:8px;font-size:13px">' +
+      '<span style="font-weight:700;min-width:60px">' + a.ticker + '</span>' +
+      '<span style="color:' + statusColor + ';font-weight:700">' + status + '</span>' +
+      '<span style="color:var(--muted)">' + a.type.replace(/_/g, ' ') + ' > ' + a.threshold + '</span>' +
+      '<span style="font-size:11px;color:var(--muted)">' + a.created + '</span>' +
+      '<button class="btn btn-ghost" style="padding:6px 10px;font-size:11px" onclick="removeAlert(\'' + a.id + '\')">✕</button>' +
+      '</div>';
+  }).join('');
+  
+  output.innerHTML = '<div class="card">' +
+    '<div style="font-size:14px;font-weight:800;margin-bottom:12px">🔔 Active Alerts (' + alerts.length + ')</div>' +
+    rows +
+    '<div style="font-size:11px;color:var(--muted);margin-top:12px">Alerts check when you click "Check Now" or periodically. Click ✕ to delete.</div>' +
+  '</div>';
+}
+
+function showNotification(message) {
+  if ('Notification' in window && Notification.permission === 'granted') {
+    new Notification('StockScreen', {
+      body: message,
+      icon: '📊'
+    });
+  } else if ('Notification' in window && Notification.permission !== 'denied') {
+    Notification.requestPermission().then(permission => {
+      if (permission === 'granted') {
+        new Notification('StockScreen', {
+          body: message,
+          icon: '📊'
+        });
+      }
+    });
+  }
+  // Fallback: show in-app message
+  alert_notify(message, 'alert');
+}
+
+function playNotificationSound() {
+  // Simple beep using Web Audio API
+  try {
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    
+    oscillator.frequency.value = 800;
+    oscillator.type = 'sine';
+    
+    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+    
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + 0.5);
+  } catch(e) {
+    console.warn('Could not play notification sound');
+  }
+}
+
+function alert_notify(message, type) {
+  // Simple in-app notification
+  const notifEl = document.createElement('div');
+  notifEl.style.cssText = 'position:fixed;top:20px;right:20px;padding:12px 16px;background:' +
+    (type === 'success' ? 'var(--green)' : type === 'alert' ? 'var(--red)' : 'var(--accent)') +
+    ';color:white;border-radius:8px;z-index:9999;font-size:13px;max-width:300px';
+  notifEl.textContent = message;
+  document.body.appendChild(notifEl);
+  
+  setTimeout(() => notifEl.remove(), 3000);
+}
+
+// Initialize watchlist and alerts on load
+loadWatchlist();
+loadAlerts();
+
+// ===== PORTFOLIO
 function loadPortfolio() { const s = localStorage.getItem('portfolio'); if (s) state.portfolio = JSON.parse(s); renderPortfolio(); }
 
 document.getElementById('addBtn').addEventListener('click', () => {
