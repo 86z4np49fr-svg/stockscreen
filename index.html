@@ -63,6 +63,7 @@ footer{margin-top:40px;padding-top:16px;border-top:1px solid var(--border);color
 
   <div class="nav-tabs">
     <button class="nav-tab active" id="tab-analyzer">📊 Analyzer</button>
+    <button class="nav-tab" id="tab-decision">🎯 Decision Hub</button>
     <button class="nav-tab" id="tab-portfolio">💼 Portfolio</button>
     <button class="nav-tab" id="tab-screener">🔍 Screener</button>
     <button class="nav-tab" id="tab-technicals">📈 Technicals</button>
@@ -77,6 +78,15 @@ footer{margin-top:40px;padding-top:16px;border-top:1px solid var(--border);color
       <button class="btn btn-ghost" id="demoBtn">Demo</button>
     </div>
     <div id="analyzerOutput" class="empty">Type a ticker to analyze. Shows 24 indicators, RAG status, peer comparison.</div>
+  </div>
+
+  <div class="view" id="decision">
+    <div class="row">
+      <input type="text" id="dhTicker" placeholder="Ticker to analyze">
+      <button class="btn btn-go" id="dhRunBtn">Analyze 🎯</button>
+      <button class="btn btn-ghost" id="dhDemoBtn">Demo</button>
+    </div>
+    <div id="dhOutput" class="empty">Enter a ticker to get comprehensive buy/sell confidence scores.</div>
   </div>
 
   <div class="view" id="portfolio">
@@ -163,7 +173,7 @@ footer{margin-top:40px;padding-top:16px;border-top:1px solid var(--border);color
     <div id="newsOutput" class="empty">Enter a ticker to see headlines.</div>
   </div>
 
-  <footer>Not financial advice. Data from Finnhub + Twelve Data. <b id="appVersion" style="color:var(--accent)">v3.1</b></footer>
+  <footer>Not financial advice. Data from Finnhub + Twelve Data. <b id="appVersion" style="color:var(--accent)">v5.0 MAJOR RELEASE</b></footer>
 </div>
 
 <script>
@@ -173,6 +183,7 @@ const state = { portfolio: [], screenerResults: [] };
 
 // Tab switching
 document.getElementById('tab-analyzer').addEventListener('click', () => switchTab('analyzer'));
+document.getElementById('tab-decision').addEventListener('click', () => switchTab('decision'));
 document.getElementById('tab-portfolio').addEventListener('click', () => switchTab('portfolio'));
 document.getElementById('tab-screener').addEventListener('click', () => switchTab('screener'));
 document.getElementById('tab-technicals').addEventListener('click', () => switchTab('technicals'));
@@ -406,6 +417,271 @@ async function analyzeStock() {
   } catch(e) {
     output.innerHTML = '<div style="color:var(--red)">❌ Error: ' + e.message + '</div>';
   }
+}
+
+// ===== DECISION HUB =====
+let decisionData = { ticker: null, fundamentals: null, technicals: null };
+
+document.getElementById('dhRunBtn').addEventListener('click', runDecisionHub);
+document.getElementById('dhDemoBtn').addEventListener('click', () => {
+  document.getElementById('dhTicker').value = 'MSFT';
+  runDecisionHub();
+});
+
+async function runDecisionHub() {
+  const ticker = document.getElementById('dhTicker').value.trim().toUpperCase();
+  if (!ticker) return alert('Enter a ticker');
+  const output = document.getElementById('dhOutput');
+
+  output.innerHTML = '<div style="color:var(--accent)">⟳ Gathering fundamental and technical data...</div>';
+
+  try {
+    // Load fundamentals
+    const fundResp = await fetch('https://finnhub.io/api/v1/stock/metric?symbol=' + encodeURIComponent(ticker) + '&metric=all&token=d8dhhbhr01qhm4aepfd0d8dhhbhr01qhm4aepfdg').then(r => r.json());
+    const profileResp = await fetch('https://finnhub.io/api/v1/stock/profile2?symbol=' + encodeURIComponent(ticker) + '&token=d8dhhbhr01qhm4aepfd0d8dhhbhr01qhm4aepfdg').then(r => r.json());
+
+    if (!fundResp.metric || !profileResp.name) {
+      output.innerHTML = '<div class="card"><div style="color:var(--red);font-weight:700">❌ Could not load data for ' + ticker + '</div></div>';
+      return;
+    }
+
+    // Load technicals
+    const tdKey = getTdKey();
+    let technicals = null;
+    if (tdKey) {
+      try {
+        const url = 'https://api.twelvedata.com/time_series?symbol=' + encodeURIComponent(ticker) + '&interval=1day&outputsize=420&apikey=' + encodeURIComponent(tdKey);
+        const resp = await fetch(url).then(r => r.json());
+        if (resp.values && resp.values.length >= 50) {
+          const rows = resp.values.slice().reverse();
+          const ohlcv = rows.map(r => ({
+            open: parseFloat(r.open),
+            high: parseFloat(r.high),
+            low: parseFloat(r.low),
+            close: parseFloat(r.close),
+            volume: parseFloat(r.volume) || 0
+          }));
+          technicals = analyzeTechnicals(ohlcv);
+        }
+      } catch(e) {
+        // If tech data fails, continue with just fundamentals
+      }
+    }
+
+    const fundamentals = analyzeFundamentals(fundResp.metric, profileResp);
+    decisionData = { ticker, fundamentals, technicals };
+    displayDecisionHub(ticker, fundamentals, technicals);
+  } catch(e) {
+    output.innerHTML = '<div class="card"><div style="color:var(--red)">Error: ' + e.message + '</div></div>';
+  }
+}
+
+function analyzeFundamentals(metric, profile) {
+  const m = metric;
+  const getVal = keys => {
+    for (let k of keys) {
+      const matches = Object.keys(m).filter(mk => mk.toLowerCase().includes(k.toLowerCase()));
+      for (let mk of matches) if (m[mk] != null && m[mk] !== 0) return m[mk];
+    }
+    return null;
+  };
+
+  const roe = getVal(['roe']) || 0;
+  const pe = getVal(['pe']) || 0;
+  const pb = getVal(['pb']) || 0;
+  const de = (getVal(['totaldebt']) || 0) / (getVal(['totalequity']) || 1) || 0;
+  const currentRatio = getVal(['currentratio']) || 0;
+  const grossMargin = getVal(['grossmargin']) || 0;
+  const revenueGrowth = getVal(['revenue', 'growth']) || 0;
+  const evEbitda = getVal(['ev', 'ebitda']) || 999;
+
+  // Grade each dimension (1-5 scale, 5=best)
+  const scores = {
+    profitability: roe > 20 ? 5 : roe > 15 ? 4 : roe > 10 ? 3 : roe > 5 ? 2 : 1,
+    valuation: pe > 0 && pe < 15 ? 5 : pe < 20 ? 4 : pe < 30 ? 3 : pe < 50 ? 2 : 1,
+    quality: grossMargin > 50 ? 5 : grossMargin > 40 ? 4 : grossMargin > 20 ? 3 : grossMargin > 10 ? 2 : 1,
+    growth: revenueGrowth > 20 ? 5 : revenueGrowth > 15 ? 4 : revenueGrowth > 10 ? 3 : revenueGrowth > 5 ? 2 : 1,
+    solvency: de < 0.5 ? 5 : de < 1.0 ? 4 : de < 2.0 ? 3 : de < 3.0 ? 2 : 1
+  };
+
+  const avgScore = (Object.values(scores).reduce((a, b) => a + b, 0) / Object.keys(scores).length);
+
+  return {
+    scores,
+    avgScore,
+    metrics: { roe, pe, pb, de, currentRatio, grossMargin, revenueGrowth, evEbitda }
+  };
+}
+
+function analyzeTechnicals(ohlcv) {
+  const closes = ohlcv.map(b => b.close);
+  const sma50 = calcSMA(closes, 50);
+  const sma200 = calcSMA(closes, 200);
+  const rsi = calcRSI(closes, 14);
+  const { macdLine, signal } = calcMACD(closes);
+  const boll = calcBollinger(closes, 20, 2);
+
+  const last = arr => { for (let i = arr.length - 1; i >= 0; i--) if (arr[i] != null) return arr[i]; return null; };
+  const price = closes[closes.length - 1];
+  const rsiVal = last(rsi);
+  const macdVal = last(macdLine);
+  const sigVal = last(signal);
+  const s50 = last(sma50), s200 = last(sma200);
+  const bUp = last(boll.upper), bLow = last(boll.lower);
+
+  // Score trend (1-5)
+  let trendScore = 3;
+  if (s50 && s200) {
+    if (price > s50 && s50 > s200) trendScore = 5;
+    else if (price > s50 && s50 <= s200) trendScore = 4;
+    else if (price < s50 && s50 <= s200) trendScore = 2;
+    else trendScore = 1;
+  }
+
+  // Score momentum (RSI, 1-5)
+  let momentumScore = 3;
+  if (rsiVal < 30) momentumScore = 5;
+  else if (rsiVal < 40) momentumScore = 4;
+  else if (rsiVal < 60) momentumScore = 3;
+  else if (rsiVal < 70) momentumScore = 2;
+  else momentumScore = 1;
+
+  // Score confirmation (MACD, 1-5)
+  let confirmScore = 3;
+  if (macdVal != null && sigVal != null) {
+    if (macdVal > sigVal && macdVal > 0) confirmScore = 5;
+    else if (macdVal > sigVal) confirmScore = 4;
+    else if (macdVal > sigVal * 0.95) confirmScore = 3;
+    else if (macdVal < sigVal) confirmScore = 2;
+    else confirmScore = 1;
+  }
+
+  // Score volatility position (Bollinger, 1-5)
+  let volScore = 3;
+  if (bUp && bLow) {
+    const range = bUp - bLow;
+    const pos = (price - bLow) / range;
+    if (pos > 0.8) volScore = 1; // extended high
+    else if (pos > 0.65) volScore = 2;
+    else if (pos > 0.35) volScore = 3;
+    else if (pos > 0.2) volScore = 4;
+    else volScore = 5; // extended low
+  }
+
+  return {
+    trendScore,
+    momentumScore,
+    confirmScore,
+    volScore,
+    avgScore: (trendScore + momentumScore + confirmScore + volScore) / 4,
+    values: { price, rsiVal, macdVal, sigVal, s50, s200, bUp, bLow }
+  };
+}
+
+function displayDecisionHub(ticker, fund, tech) {
+  const output = document.getElementById('dhOutput');
+
+  // Calculate confidence scores
+  const buyConfidence = tech ? 
+    Math.round((fund.avgScore * 0.4 + tech.avgScore * 0.5 + (tech.trendScore > 3 ? 20 : -20)) * 2) :
+    Math.round(fund.avgScore * 80);
+
+  const sellConfidence = tech ?
+    Math.round(((5 - tech.trendScore) / 5 * 100) * 0.5 + ((5 - fund.avgScore) / 5 * 100) * 0.5) :
+    Math.round(((5 - fund.avgScore) / 5 * 100));
+
+  const buyColor = buyConfidence >= 70 ? '#10b981' : buyConfidence >= 50 ? '#f59e0b' : '#ef4444';
+  const sellColor = sellConfidence >= 70 ? '#ef4444' : sellConfidence >= 50 ? '#f59e0b' : '#10b981';
+
+  // Overall signal
+  const netSignal = buyConfidence - sellConfidence;
+  let signalText, signalColor;
+  if (netSignal > 30) { signalText = '🚀 STRONG BUY'; signalColor = '#10b981'; }
+  else if (netSignal > 10) { signalText = '📈 BUY'; signalColor = '#34d399'; }
+  else if (netSignal > -10) { signalText = '⏸️ HOLD'; signalColor = '#f59e0b'; }
+  else if (netSignal > -30) { signalText = '📉 SELL'; signalColor = '#f87171'; }
+  else { signalText = '🔴 STRONG SELL'; signalColor = '#ef4444'; }
+
+  // Supporting indicators for BUY
+  const buySignals = [];
+  if (fund.scores.profitability >= 4) buySignals.push('✓ Strong profitability (ROE > 15%)');
+  if (fund.scores.valuation >= 4) buySignals.push('✓ Attractive valuation (P/E < 20)');
+  if (fund.scores.growth >= 4) buySignals.push('✓ Strong growth (Revenue > 15%)');
+  if (fund.scores.solvency >= 4) buySignals.push('✓ Low debt (D/E < 1.0)');
+  if (tech && tech.trendScore >= 4) buySignals.push('✓ Uptrend (price > SMA50 > SMA200)');
+  if (tech && tech.momentumScore >= 4) buySignals.push('✓ Oversold (RSI < 40)');
+  if (tech && tech.confirmScore >= 4) buySignals.push('✓ MACD bullish crossover');
+
+  // Opposing indicators for BUY
+  const buyWarnings = [];
+  if (fund.scores.profitability <= 2) buyWarnings.push('✗ Weak profitability (ROE < 10%)');
+  if (fund.scores.valuation <= 2) buyWarnings.push('✗ Expensive (P/E > 30)');
+  if (fund.scores.solvency <= 2) buyWarnings.push('✗ High debt (D/E > 3.0)');
+  if (tech && tech.trendScore <= 2) buyWarnings.push('✗ Downtrend (price < SMA50 < SMA200)');
+  if (tech && tech.momentumScore <= 2) buyWarnings.push('✗ Overbought (RSI > 70)');
+
+  // Supporting indicators for SELL
+  const sellSignals = [];
+  if (fund.scores.valuation <= 2) sellSignals.push('✓ Overvalued (P/E > 30)');
+  if (fund.scores.growth <= 2) sellSignals.push('✓ Slowing growth (Revenue < 5%)');
+  if (fund.scores.profitability <= 2) sellSignals.push('✓ Profitability declining');
+  if (tech && tech.trendScore <= 2) sellSignals.push('✓ Downtrend confirmed');
+  if (tech && tech.momentumScore <= 2) sellSignals.push('✓ Overbought (RSI > 70)');
+  if (tech && tech.confirmScore <= 2) sellSignals.push('✓ MACD bearish crossover');
+
+  const confidenceHTML = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">' +
+    '<div class="card" style="border-left:4px solid ' + buyColor + '">' +
+      '<div style="font-size:12px;color:var(--muted);font-weight:700;margin-bottom:8px">BUY CONFIDENCE</div>' +
+      '<div style="font-size:40px;font-weight:900;color:' + buyColor + ';margin-bottom:12px">' + buyConfidence + '%</div>' +
+      '<div style="width:100%;height:8px;background:var(--border);border-radius:4px;margin-bottom:12px;overflow:hidden">' +
+        '<div style="width:' + buyConfidence + '%;height:100%;background:' + buyColor + ';border-radius:4px"></div>' +
+      '</div>' +
+      (buySignals.length > 0 ? '<div style="font-size:11px;color:var(--green);line-height:1.6">' + buySignals.join('<br>') + '</div>' : '') +
+      (buyWarnings.length > 0 ? '<div style="font-size:11px;color:var(--red);margin-top:8px;line-height:1.6">' + buyWarnings.join('<br>') + '</div>' : '') +
+    '</div>' +
+    '<div class="card" style="border-left:4px solid ' + sellColor + '">' +
+      '<div style="font-size:12px;color:var(--muted);font-weight:700;margin-bottom:8px">SELL CONFIDENCE</div>' +
+      '<div style="font-size:40px;font-weight:900;color:' + sellColor + ';margin-bottom:12px">' + sellConfidence + '%</div>' +
+      '<div style="width:100%;height:8px;background:var(--border);border-radius:4px;margin-bottom:12px;overflow:hidden">' +
+        '<div style="width:' + sellConfidence + '%;height:100%;background:' + sellColor + ';border-radius:4px"></div>' +
+      '</div>' +
+      (sellSignals.length > 0 ? '<div style="font-size:11px;color:var(--red);line-height:1.6">' + sellSignals.join('<br>') + '</div>' : '') +
+    '</div>' +
+  '</div>';
+
+  const fundMetrics = '<div class="stat-grid" style="grid-template-columns:repeat(auto-fit,minmax(140px,1fr));margin-bottom:16px">' +
+    '<div class="stat-box"><div class="stat-label">Profitability</div><div style="font-size:24px;font-weight:800;color:' + (fund.scores.profitability >= 4 ? 'var(--green)' : 'var(--red)') + '">★ ' + fund.scores.profitability + '/5</div></div>' +
+    '<div class="stat-box"><div class="stat-label">Valuation</div><div style="font-size:24px;font-weight:800;color:' + (fund.scores.valuation >= 4 ? 'var(--green)' : 'var(--red)') + '">★ ' + fund.scores.valuation + '/5</div></div>' +
+    '<div class="stat-box"><div class="stat-label">Quality</div><div style="font-size:24px;font-weight:800;color:' + (fund.scores.quality >= 4 ? 'var(--green)' : 'var(--red)') + '">★ ' + fund.scores.quality + '/5</div></div>' +
+    '<div class="stat-box"><div class="stat-label">Growth</div><div style="font-size:24px;font-weight:800;color:' + (fund.scores.growth >= 4 ? 'var(--green)' : 'var(--red)') + '">★ ' + fund.scores.growth + '/5</div></div>' +
+    '<div class="stat-box"><div class="stat-label">Solvency</div><div style="font-size:24px;font-weight:800;color:' + (fund.scores.solvency >= 4 ? 'var(--green)' : 'var(--red)') + '">★ ' + fund.scores.solvency + '/5</div></div>' +
+  '</div>';
+
+  const techMetrics = tech ? '<div class="stat-grid" style="grid-template-columns:repeat(auto-fit,minmax(140px,1fr));margin-bottom:16px">' +
+    '<div class="stat-box"><div class="stat-label">Trend</div><div style="font-size:24px;font-weight:800;color:' + (tech.trendScore >= 4 ? 'var(--green)' : 'var(--red)') + '">★ ' + tech.trendScore + '/5</div></div>' +
+    '<div class="stat-box"><div class="stat-label">Momentum (RSI)</div><div style="font-size:24px;font-weight:800;color:' + (tech.momentumScore >= 4 ? 'var(--green)' : tech.momentumScore <= 2 ? 'var(--red)' : '#fbbf24') + '">★ ' + tech.momentumScore + '/5</div></div>' +
+    '<div class="stat-box"><div class="stat-label">Confirmation (MACD)</div><div style="font-size:24px;font-weight:800;color:' + (tech.confirmScore >= 4 ? 'var(--green)' : 'var(--red)') + '">★ ' + tech.confirmScore + '/5</div></div>' +
+    '<div class="stat-box"><div class="stat-label">Volatility</div><div style="font-size:24px;font-weight:800;color:' + (tech.volScore >= 4 ? '#fbbf24' : 'var(--green)') + '">★ ' + tech.volScore + '/5</div></div>' +
+    '<div class="stat-box"><div class="stat-label">Price</div><div style="font-size:18px;font-weight:800">$' + tech.values.price.toFixed(2) + '</div></div>' +
+  '</div>' : '';
+
+  output.innerHTML = '<div class="card">' +
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:12px">' +
+      '<div><div style="font-size:20px;font-weight:900">' + ticker + '</div></div>' +
+      '<div style="text-align:right"><div style="font-size:28px;font-weight:900;color:' + signalColor + ';margin-bottom:4px">' + signalText + '</div><div style="font-size:12px;color:var(--muted)">Net Signal: ' + (netSignal > 0 ? '+' : '') + netSignal.toFixed(0) + '</div></div>' +
+    '</div>' +
+    '<hr style="border:none;border-top:1px solid var(--border);margin:16px 0">' +
+    '<div style="font-size:13px;font-weight:800;margin-bottom:12px">📊 CONFIDENCE SCORES</div>' +
+    confidenceHTML +
+    '<div style="font-size:13px;font-weight:800;margin-bottom:12px">💎 FUNDAMENTAL HEALTH</div>' +
+    fundMetrics +
+    (tech ? '<div><div style="font-size:13px;font-weight:800;margin-bottom:12px">📈 TECHNICAL SETUP</div>' + techMetrics + '</div>' : '') +
+    '<hr style="border:none;border-top:1px solid var(--border);margin:16px 0">' +
+    '<div style="font-size:11px;color:var(--muted);line-height:1.7">' +
+      '<strong>⚠️ Disclaimer:</strong> This analysis synthesizes fundamentals and technicals for educational purposes. Not financial advice. ' +
+      'Always conduct your own research. Use 🎯 Decision Hub alongside Analyzer, Technicals, and Backtester tabs for comprehensive due diligence.' +
+    '</div>' +
+  '</div>';
 }
 
 // Portfolio
