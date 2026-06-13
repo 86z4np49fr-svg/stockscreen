@@ -2722,18 +2722,48 @@ async function loadWatchlistData(ticker) {
     const profileResp = await fetch('https://finnhub.io/api/v1/stock/profile2?symbol=' + encodeURIComponent(ticker) + '&token=d8dhhbhr01qhm4aepfd0d8dhhbhr01qhm4aepfdg').then(r => r.json());
     const fundResp = await fetch('https://finnhub.io/api/v1/stock/metric?symbol=' + encodeURIComponent(ticker) + '&metric=all&token=d8dhhbhr01qhm4aepfd0d8dhhbhr01qhm4aepfdg').then(r => r.json());
     
-    if (profileResp.c && fundResp.metric) {
+    // Log for debugging
+    console.log('Watchlist data for ' + ticker + ':', {profile: profileResp, fund: fundResp});
+    
+    if (profileResp && profileResp.c !== undefined && fundResp && fundResp.metric) {
+      // Extract values from metric data
+      const pe = fundResp.metric.peBasic || fundResp.metric.pe || null;
+      const roe = fundResp.metric.roe || null;
+      const dividend = fundResp.metric.dividendYieldIndicator || fundResp.metric.dividendYield || null;
+      
       watchlistData[ticker] = {
-        price: profileResp.c,
-        pe: fundResp.metric.pe || 0,
-        roe: fundResp.metric.roe || 0,
-        dividend: fundResp.metric.dividendYield || 0,
-        marketCap: profileResp.marketCapitalization || 0
+        price: profileResp.c || 0,
+        pe: pe,
+        roe: roe,
+        dividend: dividend,
+        marketCap: profileResp.marketCapitalization || 0,
+        updated: new Date().toLocaleString()
       };
+      
+      console.log('Stored watchlist data:', watchlistData[ticker]);
       return true;
+    } else {
+      console.warn('Missing data for ' + ticker, {hasProfile: !!profileResp.c, hasMetric: !!fundResp.metric});
+      // Store placeholder with loading indicator
+      watchlistData[ticker] = {
+        price: 0,
+        pe: null,
+        roe: null,
+        dividend: null,
+        marketCap: 0,
+        error: 'Data not available'
+      };
     }
   } catch(e) {
-    console.warn('Failed to load ' + ticker);
+    console.warn('Failed to load ' + ticker + ':', e.message);
+    watchlistData[ticker] = {
+      price: 0,
+      pe: null,
+      roe: null,
+      dividend: null,
+      marketCap: 0,
+      error: 'Fetch error'
+    };
   }
   return false;
 }
@@ -2749,16 +2779,38 @@ function loadWatchlist() {
 
 async function refreshWatchlist() {
   const output = document.getElementById('wlOutput');
-  output.innerHTML = '<div style="color:var(--accent)">⟳ Refreshing ' + watchlist.length + ' stocks...</div>';
+  
+  if (watchlist.length === 0) {
+    alert_notify('⟳ Watchlist is empty', 'info');
+    return;
+  }
+  
+  output.innerHTML = '<div style="color:var(--accent);padding:20px;text-align:center">' +
+    '<div style="font-size:16px;margin-bottom:8px">⟳ Refreshing ' + watchlist.length + ' stocks...</div>' +
+    '<div style="font-size:12px;color:var(--muted)">Please wait while data is being loaded...</div>' +
+  '</div>';
   
   let loaded = 0;
+  let failed = 0;
+  
   for (let ticker of watchlist) {
-    const success = await loadWatchlistData(ticker);
-    if (success) loaded++;
+    try {
+      const success = await loadWatchlistData(ticker);
+      if (success) {
+        loaded++;
+      } else {
+        failed++;
+      }
+    } catch(e) {
+      console.warn('Error loading ' + ticker, e);
+      failed++;
+    }
   }
   
   renderWatchlist();
-  alert_notify('✅ Refreshed ' + loaded + '/' + watchlist.length + ' stocks', 'success');
+  
+  const message = '✅ Refreshed: ' + loaded + ' loaded, ' + failed + ' unavailable';
+  alert_notify(message, loaded > 0 ? 'success' : 'warning');
 }
 
 function renderWatchlist() {
@@ -2778,10 +2830,41 @@ function renderWatchlist() {
   
   const rows = watchlist.map(ticker => {
     const data = watchlistData[ticker] || {};
-    const price = data.price ? '$' + data.price.toFixed(2) : '⟳ Loading...';
-    const pe = data.pe ? data.pe.toFixed(1) : '--';
-    const roe = data.roe ? (data.roe * 100).toFixed(1) + '%' : '--';
-    const div = data.dividend ? (data.dividend * 100).toFixed(2) + '%' : '--';
+    
+    // Format price
+    const price = data.price && data.price > 0 ? '$' + data.price.toFixed(2) : '⟳ Loading...';
+    
+    // Format P/E - show value if exists and > 0, otherwise show loading or N/A
+    let pe = '--';
+    if (data.pe !== null && data.pe !== undefined && data.pe > 0) {
+      pe = data.pe.toFixed(1);
+    } else if (data.error) {
+      pe = 'N/A';
+    } else if (!data.price || data.price === 0) {
+      pe = '⟳';
+    }
+    
+    // Format ROE - handle both decimal (0.25) and percentage (25) formats
+    let roe = '--';
+    if (data.roe !== null && data.roe !== undefined) {
+      const roeVal = data.roe > 1 ? data.roe : data.roe * 100; // Convert if decimal
+      if (roeVal > 0) roe = roeVal.toFixed(1) + '%';
+    } else if (data.error) {
+      roe = 'N/A';
+    } else if (!data.price || data.price === 0) {
+      roe = '⟳';
+    }
+    
+    // Format Dividend - handle both decimal (0.02) and percentage (2) formats
+    let div = '--';
+    if (data.dividend !== null && data.dividend !== undefined) {
+      const divVal = data.dividend > 1 ? data.dividend : data.dividend * 100; // Convert if decimal
+      if (divVal > 0) div = divVal.toFixed(2) + '%';
+    } else if (data.error) {
+      div = 'N/A';
+    } else if (!data.price || data.price === 0) {
+      div = '⟳';
+    }
     
     return '<div style="display:grid;grid-template-columns:auto 1fr auto auto auto auto auto;gap:12px;align-items:center;padding:12px;background:var(--border);border-radius:8px;margin-bottom:8px;font-size:13px">' +
       '<span style="font-weight:700;min-width:60px">' + ticker + '</span>' +
@@ -2797,7 +2880,7 @@ function renderWatchlist() {
   output.innerHTML = '<div class="card">' +
     '<div style="font-size:14px;font-weight:800;margin-bottom:12px">📌 Watchlist (' + watchlist.length + ' stocks)</div>' +
     rows +
-    '<div style="font-size:11px;color:var(--muted);margin-top:12px">Click Analyze to view full metrics. Click ✕ to remove.</div>' +
+    '<div style="font-size:11px;color:var(--muted);margin-top:12px">⟳ = Loading | N/A = Data unavailable | Click Analyze to view full metrics. Click ✕ to remove.</div>' +
   '</div>';
   
   // Wire up button listeners after rendering
