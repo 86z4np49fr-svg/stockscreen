@@ -66,6 +66,7 @@ footer{margin-top:40px;padding-top:16px;border-top:1px solid var(--border);color
     <button class="nav-tab" id="tab-portfolio">💼 Portfolio</button>
     <button class="nav-tab" id="tab-screener">🔍 Screener</button>
     <button class="nav-tab" id="tab-technicals">📈 Technicals</button>
+    <button class="nav-tab" id="tab-backtester">🧪 Backtester</button>
     <button class="nav-tab" id="tab-news">📰 News</button>
   </div>
 
@@ -131,6 +132,29 @@ footer{margin-top:40px;padding-top:16px;border-top:1px solid var(--border);color
     <div id="techOutput" class="empty">Enter a ticker to see candlestick chart with volume, RSI, MACD, moving averages, and Bollinger Bands.</div>
   </div>
 
+  <div class="view" id="backtester">
+    <div class="row">
+      <input type="text" id="btTicker" placeholder="Ticker to backtest">
+      <select id="btBuyRule" style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--ink);font-size:14px;cursor:pointer">
+        <option value="">-- Buy Rule --</option>
+        <option value="rsi_oversold">RSI < 30 (oversold)</option>
+        <option value="sma50_cross">Price crosses above SMA50</option>
+        <option value="macd_cross">MACD crosses above signal</option>
+      </select>
+      <select id="btSellRule" style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--ink);font-size:14px;cursor:pointer">
+        <option value="">-- Sell Rule --</option>
+        <option value="rsi_overbought">RSI > 70 (overbought)</option>
+        <option value="sma50_below">Price falls below SMA50</option>
+        <option value="macd_cross">MACD crosses below signal</option>
+        <option value="stop_loss">Stop loss at 5%</option>
+        <option value="take_profit">Take profit at 10%</option>
+      </select>
+      <button class="btn btn-go" id="btRunBtn">Backtest ▶️</button>
+      <button class="btn btn-ghost" id="btDemoBtn">Demo</button>
+    </div>
+    <div id="btOutput" class="empty">Select a ticker and buy/sell rules, then click Backtest to see results.</div>
+  </div>
+
   <div class="view" id="news">
     <div class="row">
       <input type="text" id="newsInput" placeholder="Ticker for news" style="max-width:200px">
@@ -152,6 +176,7 @@ document.getElementById('tab-analyzer').addEventListener('click', () => switchTa
 document.getElementById('tab-portfolio').addEventListener('click', () => switchTab('portfolio'));
 document.getElementById('tab-screener').addEventListener('click', () => switchTab('screener'));
 document.getElementById('tab-technicals').addEventListener('click', () => switchTab('technicals'));
+document.getElementById('tab-backtester').addEventListener('click', () => switchTab('backtester'));
 document.getElementById('tab-news').addEventListener('click', () => switchTab('news'));
 
 function switchTab(name) {
@@ -833,6 +858,307 @@ function drawCandlestickChart(bars, sma50, sma200, ema20) {
   ctx.fillStyle = '#8b97a8';
   ctx.font = '9px system-ui';
   ctx.fillText('Volume', 6, chartH + 12);
+}
+
+// ===== BACKTESTER =====
+let backTestData = { ohlcv: null, ticker: null };
+
+document.getElementById('btRunBtn').addEventListener('click', runBacktest);
+document.getElementById('btDemoBtn').addEventListener('click', () => {
+  document.getElementById('btTicker').value = 'AAPL';
+  document.getElementById('btBuyRule').value = 'rsi_oversold';
+  document.getElementById('btSellRule').value = 'rsi_overbought';
+  runBacktest();
+});
+
+async function runBacktest() {
+  const ticker = document.getElementById('btTicker').value.trim().toUpperCase();
+  const buyRule = document.getElementById('btBuyRule').value;
+  const sellRule = document.getElementById('btSellRule').value;
+  const output = document.getElementById('btOutput');
+
+  if (!ticker || !buyRule || !sellRule) {
+    return alert('Select a ticker and buy/sell rules');
+  }
+
+  output.innerHTML = '<div style="color:var(--accent)">⟳ Loading data and running backtest...</div>';
+
+  try {
+    let ohlcv = backTestData.ohlcv;
+    if (!ohlcv || backTestData.ticker !== ticker) {
+      const tdKey = getTdKey();
+      if (!tdKey) {
+        output.innerHTML = '<div class="card"><div style="color:var(--red)">Please save your Twelve Data key in the Technicals tab first.</div></div>';
+        return;
+      }
+
+      const url = 'https://api.twelvedata.com/time_series?symbol=' + encodeURIComponent(ticker) + '&interval=1day&outputsize=420&apikey=' + encodeURIComponent(tdKey);
+      const resp = await fetch(url).then(r => r.json());
+
+      if (resp.status === 'error' || !resp.values || resp.values.length < 50) {
+        output.innerHTML = '<div class="card"><div style="color:var(--red);font-weight:700">❌ Could not load data for ' + ticker + '</div></div>';
+        return;
+      }
+
+      const rows = resp.values.slice().reverse();
+      ohlcv = rows.map(r => ({
+        date: r.datetime,
+        open: parseFloat(r.open),
+        high: parseFloat(r.high),
+        low: parseFloat(r.low),
+        close: parseFloat(r.close),
+        volume: parseFloat(r.volume) || 0
+      }));
+
+      backTestData.ohlcv = ohlcv;
+      backTestData.ticker = ticker;
+    }
+
+    const result = backtestStrategy(ohlcv, buyRule, sellRule);
+    displayBacktestResults(result, ticker, buyRule, sellRule);
+  } catch(e) {
+    output.innerHTML = '<div class="card"><div style="color:var(--red)">Error: ' + e.message + '</div></div>';
+  }
+}
+
+function backtestStrategy(ohlcv, buyRuleId, sellRuleId) {
+  const closes = ohlcv.map(b => b.close);
+  const sma50 = calcSMA(closes, 50);
+  const rsi = calcRSI(closes, 14);
+  const { macdLine, signal } = calcMACD(closes);
+
+  const trades = [];
+  let inPosition = false;
+  let entryPrice = 0;
+  let entryIdx = 0;
+  let entryDate = '';
+
+  for (let i = 50; i < ohlcv.length; i++) {
+    const bar = ohlcv[i];
+    const closePrice = bar.close;
+    const rsiVal = rsi[i];
+    const sma50Val = sma50[i];
+    const macdVal = macdLine[i];
+    const signalVal = signal[i];
+
+    // Sell signal
+    if (inPosition) {
+      let shouldSell = false;
+
+      if (sellRuleId === 'rsi_overbought') {
+        shouldSell = rsiVal > 70;
+      } else if (sellRuleId === 'sma50_below') {
+        shouldSell = closePrice < sma50Val;
+      } else if (sellRuleId === 'macd_cross') {
+        if (macdVal != null && signalVal != null && macdLine[i-1] != null && signal[i-1] != null) {
+          shouldSell = macdLine[i-1] > signal[i-1] && macdVal <= signalVal;
+        }
+      } else if (sellRuleId === 'stop_loss') {
+        shouldSell = closePrice <= entryPrice * 0.95;
+      } else if (sellRuleId === 'take_profit') {
+        shouldSell = closePrice >= entryPrice * 1.10;
+      }
+
+      if (shouldSell) {
+        const pnl = closePrice - entryPrice;
+        const pnlPct = (pnl / entryPrice) * 100;
+        trades.push({
+          entryDate,
+          entryIdx,
+          entryPrice,
+          exitDate: bar.date,
+          exitIdx: i,
+          exitPrice: closePrice,
+          pnl,
+          pnlPct
+        });
+        inPosition = false;
+      }
+    }
+
+    // Buy signal
+    if (!inPosition) {
+      let shouldBuy = false;
+
+      if (buyRuleId === 'rsi_oversold') {
+        shouldBuy = rsiVal < 30;
+      } else if (buyRuleId === 'sma50_cross') {
+        if (sma50Val && i > 0 && sma50[i-1]) {
+          shouldBuy = sma50[i-1] <= closePrice && sma50Val > closes[i-1];
+        }
+      } else if (buyRuleId === 'macd_cross') {
+        if (macdVal != null && signalVal != null && macdLine[i-1] != null && signal[i-1] != null) {
+          shouldBuy = macdLine[i-1] <= signal[i-1] && macdVal > signalVal;
+        }
+      }
+
+      if (shouldBuy) {
+        inPosition = true;
+        entryPrice = closePrice;
+        entryIdx = i;
+        entryDate = bar.date;
+      }
+    }
+  }
+
+  // Close final position
+  if (inPosition) {
+    const lastBar = ohlcv[ohlcv.length - 1];
+    const pnl = lastBar.close - entryPrice;
+    const pnlPct = (pnl / entryPrice) * 100;
+    trades.push({
+      entryDate,
+      entryIdx,
+      entryPrice,
+      exitDate: lastBar.date,
+      exitIdx: ohlcv.length - 1,
+      exitPrice: lastBar.close,
+      pnl,
+      pnlPct,
+      open: true
+    });
+  }
+
+  // Calculate metrics
+  const wins = trades.filter(t => t.pnl > 0);
+  const losses = trades.filter(t => t.pnl < 0);
+  const totalReturn = trades.reduce((sum, t) => sum + t.pnlPct, 0);
+  const avgWin = wins.length ? wins.reduce((sum, t) => sum + t.pnlPct, 0) / wins.length : 0;
+  const avgLoss = losses.length ? losses.reduce((sum, t) => sum + t.pnlPct, 0) / losses.length : 0;
+  const profitFactor = losses.length === 0 ? (wins.length > 0 ? Infinity : 0) : Math.abs(
+    (wins.reduce((sum, t) => sum + t.pnl, 0)) / (losses.reduce((sum, t) => sum + t.pnl, 0))
+  );
+
+  // Max drawdown (peak-to-trough)
+  let maxDrawdown = 0;
+  let peakEquity = 1;
+  let equity = 1;
+  for (let t of trades) {
+    equity += (t.pnlPct / 100);
+    if (equity > peakEquity) peakEquity = equity;
+    const dd = (peakEquity - equity) / peakEquity;
+    if (dd > maxDrawdown) maxDrawdown = dd;
+  }
+
+  // Sharpe ratio (simplified: return / volatility)
+  const returns = trades.map(t => t.pnlPct);
+  const avgReturn = returns.length > 0 ? returns.reduce((a, b) => a + b, 0) / returns.length : 0;
+  const variance = returns.length > 1 ? returns.reduce((sum, r) => sum + Math.pow(r - avgReturn, 2), 0) / (returns.length - 1) : 0;
+  const stdDev = Math.sqrt(variance);
+  const sharpe = stdDev > 0 ? avgReturn / stdDev : 0;
+
+  return {
+    trades,
+    stats: {
+      numTrades: trades.length,
+      wins: wins.length,
+      losses: losses.length,
+      winRate: trades.length > 0 ? (wins.length / trades.length) * 100 : 0,
+      totalReturn,
+      avgWin,
+      avgLoss,
+      profitFactor,
+      maxDrawdown: maxDrawdown * 100,
+      sharpe
+    }
+  };
+}
+
+function displayBacktestResults(result, ticker, buyRuleId, sellRuleId) {
+  const output = document.getElementById('btOutput');
+  const stats = result.stats;
+  const trades = result.trades;
+
+  const buyRuleName = {
+    'rsi_oversold': 'RSI < 30',
+    'sma50_cross': 'Price ↑ SMA50',
+    'macd_cross': 'MACD ↑ Signal'
+  }[buyRuleId];
+
+  const sellRuleName = {
+    'rsi_overbought': 'RSI > 70',
+    'sma50_below': 'Price ↓ SMA50',
+    'macd_cross': 'MACD ↓ Signal',
+    'stop_loss': 'Stop Loss 5%',
+    'take_profit': 'Take Profit 10%'
+  }[sellRuleId];
+
+  const tradeRows = trades.map((t, i) => {
+    const color = t.pnl > 0 ? 'var(--green)' : t.pnl < 0 ? 'var(--red)' : '#999';
+    return '<tr style="border-bottom:1px solid var(--border);font-size:12px">' +
+      '<td style="padding:8px;text-align:left">' + (i + 1) + '</td>' +
+      '<td style="padding:8px">' + t.entryDate + '</td>' +
+      '<td style="padding:8px;text-align:right">$' + t.entryPrice.toFixed(2) + '</td>' +
+      '<td style="padding:8px">' + t.exitDate + '</td>' +
+      '<td style="padding:8px;text-align:right">$' + t.exitPrice.toFixed(2) + '</td>' +
+      '<td style="padding:8px;text-align:right;color:' + color + ';font-weight:700">$' + t.pnl.toFixed(2) + ' (' + t.pnlPct.toFixed(2) + '%)</td>' +
+      '<td style="padding:8px">' + (t.open ? '🟡 Open' : '✓') + '</td>' +
+      '</tr>';
+  }).join('');
+
+  const metricsColor = stats.totalReturn > 0 ? 'var(--green)' : 'var(--red)';
+
+  output.innerHTML = '<div class="card">' +
+    '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:16px;flex-wrap:wrap;gap:8px">' +
+      '<div>' +
+        '<div style="font-size:18px;font-weight:800">' + ticker + ' Backtest Results</div>' +
+        '<div style="font-size:12px;color:var(--muted);margin-top:4px">Buy: ' + buyRuleName + ' | Sell: ' + sellRuleName + '</div>' +
+      '</div>' +
+      '<div style="font-size:28px;font-weight:900;color:' + metricsColor + '">' + stats.totalReturn.toFixed(2) + '%</div>' +
+    '</div>' +
+
+    '<div class="stat-grid" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr));margin-bottom:20px">' +
+      '<div class="stat-box">' +
+        '<div class="stat-label">Trades</div>' +
+        '<div style="font-size:20px;font-weight:800">' + stats.numTrades + '</div>' +
+      '</div>' +
+      '<div class="stat-box">' +
+        '<div class="stat-label">Win Rate</div>' +
+        '<div style="font-size:20px;font-weight:800;color:' + (stats.winRate >= 50 ? 'var(--green)' : 'var(--red)') + '">' + stats.winRate.toFixed(1) + '%</div>' +
+        '<div style="font-size:11px;color:var(--muted);margin-top:4px">' + stats.wins + 'W / ' + stats.losses + 'L</div>' +
+      '</div>' +
+      '<div class="stat-box">' +
+        '<div class="stat-label">Avg Win / Loss</div>' +
+        '<div style="font-size:14px;font-weight:800;color:var(--green)">' + stats.avgWin.toFixed(2) + '%</div>' +
+        '<div style="font-size:12px;color:var(--red)">' + stats.avgLoss.toFixed(2) + '%</div>' +
+      '</div>' +
+      '<div class="stat-box">' +
+        '<div class="stat-label">Profit Factor</div>' +
+        '<div style="font-size:20px;font-weight:800;color:' + (stats.profitFactor > 1.5 ? 'var(--green)' : 'var(--red)') + '">' + (stats.profitFactor === Infinity ? '∞' : stats.profitFactor.toFixed(2)) + '</div>' +
+        '<div style="font-size:11px;color:var(--muted);margin-top:4px">Wins/Losses ratio</div>' +
+      '</div>' +
+      '<div class="stat-box">' +
+        '<div class="stat-label">Max Drawdown</div>' +
+        '<div style="font-size:20px;font-weight:800;color:var(--red)">' + stats.maxDrawdown.toFixed(1) + '%</div>' +
+      '</div>' +
+      '<div class="stat-box">' +
+        '<div class="stat-label">Sharpe Ratio</div>' +
+        '<div style="font-size:20px;font-weight:800;color:' + (stats.sharpe > 0.5 ? 'var(--green)' : '#fbbf24') + '">' + stats.sharpe.toFixed(2) + '</div>' +
+        '<div style="font-size:11px;color:var(--muted);margin-top:4px">Return/Volatility</div>' +
+      '</div>' +
+    '</div>' +
+
+    '<div style="font-size:13px;font-weight:800;margin-bottom:12px">📋 Trade List</div>' +
+    '<div style="overflow-x:auto">' +
+      '<table style="width:100%;border-collapse:collapse;font-size:12px">' +
+        '<tr style="background:var(--border);font-weight:700;text-align:left">' +
+          '<th style="padding:8px">№</th>' +
+          '<th style="padding:8px">Entry Date</th>' +
+          '<th style="padding:8px;text-align:right">Entry</th>' +
+          '<th style="padding:8px">Exit Date</th>' +
+          '<th style="padding:8px;text-align:right">Exit</th>' +
+          '<th style="padding:8px;text-align:right">P&L</th>' +
+          '<th style="padding:8px">Status</th>' +
+        '</tr>' +
+        tradeRows +
+      '</table>' +
+    '</div>' +
+
+    '<div style="font-size:11px;color:var(--muted);margin-top:16px;line-height:1.6">' +
+      '<strong>⚠️ Disclaimer:</strong> This backtest is for educational purposes only. Past performance does not guarantee future results. ' +
+      'Backtests ignore slippage, commissions, and market gaps — real results will differ. Use fundamental analysis from the Analyzer tab alongside technical signals.' +
+    '</div>' +
+  '</div>';
 }
 
 // News
