@@ -741,21 +741,37 @@ function drawTechChart(closes, sma50, sma200, ema20) {
 }
 
 // News
+function headlineSentiment(text) {
+  const t = (text || '').toLowerCase();
+  const bull = ['surge', 'soar', 'jump', 'rally', 'beat', 'beats', 'record', 'upgrade', 'upgraded', 'growth', 'profit', 'gains', 'rises', 'strong', 'bullish', 'outperform', 'buy rating', 'all-time high', 'tops estimates'];
+  const bear = ['fall', 'falls', 'drop', 'drops', 'plunge', 'sink', 'miss', 'misses', 'downgrade', 'downgraded', 'loss', 'losses', 'lawsuit', 'probe', 'investigation', 'recall', 'layoff', 'layoffs', 'cuts', 'weak', 'bearish', 'sell rating', 'warns', 'warning'];
+  let score = 0;
+  bull.forEach(w => { if (t.includes(w)) score++; });
+  bear.forEach(w => { if (t.includes(w)) score--; });
+  return score > 0 ? 'bullish' : score < 0 ? 'bearish' : 'neutral';
+}
+
 document.getElementById('newsBtn').addEventListener('click', async () => {
   const ticker = document.getElementById('newsInput').value.trim().toUpperCase();
   if (!ticker) return alert('Enter ticker');
   
+  document.getElementById('newsOutput').innerHTML = '<div style="color:var(--accent)">⟳ Loading news for ' + ticker + '...</div>';
+  
   try {
-    const news = await fetch('https://finnhub.io/api/v1/news?symbol=' + ticker + '&token=' + API_KEY).then(r => r.json());
-    if (!Array.isArray(news)) {
-      document.getElementById('newsOutput').innerHTML = '<div style="color:var(--red)">No news found</div>';
+    const toDate = new Date().toISOString().split('T')[0];
+    const fromDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    const url = 'https://finnhub.io/api/v1/company-news?symbol=' + ticker + '&from=' + fromDate + '&to=' + toDate + '&token=' + API_KEY;
+    const news = await fetch(url).then(r => r.json());
+    
+    if (!Array.isArray(news) || news.length === 0) {
+      document.getElementById('newsOutput').innerHTML = '<div class="empty">No recent news found for ' + ticker + ' (last 30 days). Note: Finnhub free tier covers company news for North American tickers.</div>';
       return;
     }
     const html = news.slice(0, 15).map(n => {
-      const sent = Math.random() > 0.5 ? 'bullish' : Math.random() > 0.5 ? 'neutral' : 'bearish';
-      return `<div class="news-item"><div class="news-headline">${n.headline}</div><div class="news-meta"><span class="sentiment sentiment-${sent}">${sent.toUpperCase()}</span><span>${new Date(n.datetime*1000).toLocaleDateString()}</span></div><a href="${n.url}" target="_blank" class="news-source">Read →</a></div>`;
+      const sent = headlineSentiment(n.headline + ' ' + (n.summary || ''));
+      return `<div class="news-item"><div class="news-headline">${n.headline}</div><div class="news-meta"><span class="sentiment sentiment-${sent}">${sent.toUpperCase()}</span><span>${new Date(n.datetime*1000).toLocaleDateString()}</span><span style="margin-left:8px">${n.source || ''}</span></div><a href="${n.url}" target="_blank" class="news-source">Read →</a></div>`;
     }).join('');
-    document.getElementById('newsOutput').innerHTML = html;
+    document.getElementById('newsOutput').innerHTML = '<div style="font-size:11px;color:var(--muted);margin-bottom:10px">Showing ' + Math.min(15, news.length) + ' headlines for ' + ticker + ' (last 30 days). Sentiment is a simple keyword heuristic — not financial advice.</div>' + html;
   } catch(e) {
     document.getElementById('newsOutput').innerHTML = '<div style="color:var(--red)">Error: ' + e.message + '</div>';
   }
