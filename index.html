@@ -120,10 +120,15 @@ footer{margin-top:40px;padding-top:16px;border-top:1px solid var(--border);color
     </div>
     <div class="row">
       <input type="text" id="techInput" placeholder="Ticker for technical analysis">
+      <select id="timeframeSelect" style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--ink);font-size:14px;cursor:pointer">
+        <option value="daily">Daily</option>
+        <option value="weekly">Weekly</option>
+        <option value="monthly">Monthly</option>
+      </select>
       <button class="btn btn-go" id="techBtn">Analyze 📈</button>
       <button class="btn btn-ghost" id="techDemoBtn">Demo</button>
     </div>
-    <div id="techOutput" class="empty">Enter a ticker to see RSI, MACD, moving averages, Bollinger Bands, and price chart.</div>
+    <div id="techOutput" class="empty">Enter a ticker to see candlestick chart with volume, RSI, MACD, moving averages, and Bollinger Bands.</div>
   </div>
 
   <div class="view" id="news">
@@ -485,10 +490,18 @@ function renderScreener() {
 }
 
 // ===== TECHNICALS =====
+let techData = { ohlcv: null, ticker: null };
+
 document.getElementById('techBtn').addEventListener('click', loadTechnicals);
 document.getElementById('techDemoBtn').addEventListener('click', () => {
   document.getElementById('techInput').value = 'AAPL';
   loadTechnicals();
+});
+
+document.getElementById('timeframeSelect').addEventListener('change', () => {
+  if (techData.ohlcv && techData.ticker) {
+    renderTechs(techData.ohlcv, techData.ticker);
+  }
 });
 
 // --- Indicator math (computed from daily closes) ---
@@ -607,93 +620,136 @@ async function loadTechnicals() {
       return;
     }
 
-    // Twelve Data returns newest-first; reverse to oldest-first
     const rows = resp.values.slice().reverse();
-    const closes = rows.map(r => parseFloat(r.close));
-    const volumes = rows.map(r => parseFloat(r.volume) || 0);
-    const price = closes[closes.length - 1];
+    const ohlcv = rows.map(r => ({
+      time: new Date(r.datetime).getTime() / 1000,
+      open: parseFloat(r.open),
+      high: parseFloat(r.high),
+      low: parseFloat(r.low),
+      close: parseFloat(r.close),
+      volume: parseFloat(r.volume) || 0
+    }));
 
-    const sma50 = calcSMA(closes, 50);
-    const sma200 = calcSMA(closes, 200);
-    const ema20 = calcEMA(closes, 20);
-    const rsi = calcRSI(closes, 14);
-    const { macdLine, signal } = calcMACD(closes);
-    const boll = calcBollinger(closes, 20, 2);
-
-    const last = arr => { for (let i = arr.length - 1; i >= 0; i--) { if (arr[i] != null) return arr[i]; } return null; };
-    const s50 = last(sma50), s200 = last(sma200), e20 = last(ema20);
-    const rsiNow = last(rsi);
-    const macdNow = last(macdLine), sigNow = last(signal);
-    const bUp = last(boll.upper), bLow = last(boll.lower), bMid = last(boll.mid);
-
-    // 52-week range
-    const yearCloses = closes.slice(-252);
-    const hi52 = Math.max(...yearCloses), lo52 = Math.min(...yearCloses);
-    const rangePos = ((price - lo52) / (hi52 - lo52)) * 100;
-
-    // Signals
-    const signals = [];
-    let trendState, trendColor;
-    if (s50 && s200 && price > s50 && s50 > s200) { trendState = 'Strong Uptrend'; trendColor = 'var(--green)'; }
-    else if (s50 && s200 && price < s50 && s50 < s200) { trendState = 'Downtrend'; trendColor = 'var(--red)'; }
-    else { trendState = 'Mixed / Sideways'; trendColor = '#fbbf24'; }
-    signals.push({ name: 'Trend (vs SMA50/200)', value: trendState, color: trendColor, detail: 'Price $' + price.toFixed(2) + ' | SMA50 ' + (s50 ? '$' + s50.toFixed(2) : '—') + ' | SMA200 ' + (s200 ? '$' + s200.toFixed(2) : '—') });
-
-    // Golden / death cross in last 30 sessions
-    if (s50 && s200) {
-      let cross = null;
-      for (let i = Math.max(1, closes.length - 30); i < closes.length; i++) {
-        if (sma50[i] != null && sma200[i] != null && sma50[i-1] != null && sma200[i-1] != null) {
-          if (sma50[i-1] <= sma200[i-1] && sma50[i] > sma200[i]) cross = 'golden';
-          if (sma50[i-1] >= sma200[i-1] && sma50[i] < sma200[i]) cross = 'death';
-        }
-      }
-      if (cross === 'golden') signals.push({ name: 'Crossover Alert', value: '✨ Golden Cross (last 30 days)', color: 'var(--green)', detail: 'SMA50 crossed above SMA200 — classic bullish signal' });
-      if (cross === 'death') signals.push({ name: 'Crossover Alert', value: '💀 Death Cross (last 30 days)', color: 'var(--red)', detail: 'SMA50 crossed below SMA200 — classic bearish signal' });
-    }
-
-    const rsiState = rsiNow > 70 ? ['Overbought', 'var(--red)', 'Price may be stretched — pullback risk'] : rsiNow < 30 ? ['Oversold', '#fbbf24', 'Heavily sold — watch for reversal'] : ['Neutral', 'var(--green)', 'No extreme momentum reading'];
-    signals.push({ name: 'RSI (14)', value: rsiNow.toFixed(1) + ' — ' + rsiState[0], color: rsiState[1], detail: rsiState[2] });
-
-    const macdBull = macdNow != null && sigNow != null && macdNow > sigNow;
-    signals.push({ name: 'MACD (12,26,9)', value: macdBull ? 'Bullish (above signal)' : 'Bearish (below signal)', color: macdBull ? 'var(--green)' : 'var(--red)', detail: 'MACD ' + (macdNow != null ? macdNow.toFixed(2) : '—') + ' vs Signal ' + (sigNow != null ? sigNow.toFixed(2) : '—') });
-
-    let bollState, bollColor;
-    if (bUp && price > bUp) { bollState = 'Above upper band — stretched'; bollColor = 'var(--red)'; }
-    else if (bLow && price < bLow) { bollState = 'Below lower band — washed out'; bollColor = '#fbbf24'; }
-    else { bollState = 'Inside bands — normal range'; bollColor = 'var(--green)'; }
-    signals.push({ name: 'Bollinger Bands (20,2)', value: bollState, color: bollColor, detail: 'Upper $' + (bUp ? bUp.toFixed(2) : '—') + ' | Mid $' + (bMid ? bMid.toFixed(2) : '—') + ' | Lower $' + (bLow ? bLow.toFixed(2) : '—') });
-
-    signals.push({ name: '52-Week Range', value: rangePos.toFixed(0) + '% of range', color: rangePos > 80 ? 'var(--green)' : rangePos < 20 ? 'var(--red)' : '#fbbf24', detail: 'Low $' + lo52.toFixed(2) + ' → High $' + hi52.toFixed(2) });
-
-    if (volumes.length > 20) {
-      const recentVol = volumes.slice(-5).reduce((a,b) => a+b, 0) / 5;
-      const avgVol = volumes.slice(-60).reduce((a,b) => a+b, 0) / Math.min(60, volumes.length);
-      const volRatio = recentVol / avgVol;
-      signals.push({ name: 'Volume (5d vs 60d avg)', value: volRatio > 1.5 ? 'Heavy volume (' + volRatio.toFixed(1) + 'x)' : volRatio < 0.6 ? 'Light volume (' + volRatio.toFixed(1) + 'x)' : 'Normal (' + volRatio.toFixed(1) + 'x)', color: volRatio > 1.5 ? '#fbbf24' : 'var(--green)', detail: 'Elevated volume confirms moves; light volume = low conviction' });
-    }
-
-    const sigCards = signals.map(s => '<div class="stat-box" style="border-left:3px solid ' + s.color + '"><div class="stat-label">' + s.name + '</div><div style="font-size:14px;font-weight:800;margin-top:4px;color:' + s.color + '">' + s.value + '</div><div style="font-size:11px;color:var(--muted);margin-top:6px;line-height:1.5">' + s.detail + '</div></div>').join('');
-
-    output.innerHTML = '<div class="card">' +
-      '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px;flex-wrap:wrap;gap:8px">' +
-        '<div style="font-size:18px;font-weight:800">' + ticker + ' — $' + price.toFixed(2) + '</div>' +
-        '<div style="font-size:11px;color:var(--muted)">Daily closes, ~' + closes.length + ' sessions</div>' +
-      '</div>' +
-      '<canvas id="techChart" style="width:100%;height:300px;background:var(--card);border-radius:10px;border:1px solid var(--border)"></canvas>' +
-      '<div style="font-size:11px;color:var(--muted);margin:8px 0 16px">— Price &nbsp; <span style="color:#fbbf24">— SMA50</span> &nbsp; <span style="color:#60a5fa">— SMA200</span> &nbsp; <span style="color:#a78bfa">— EMA20</span></div>' +
-      '<div style="font-size:13px;font-weight:800;margin-bottom:12px">📡 Technical Signals</div>' +
-      '<div class="stat-grid" style="grid-template-columns:repeat(auto-fit,minmax(240px,1fr))">' + sigCards + '</div>' +
-      '<div style="font-size:11px;color:var(--muted);margin-top:14px;line-height:1.6">⚠️ Technical signals describe recent price behavior — they are not predictions. Use alongside the fundamental analysis in the Analyzer tab.</div>' +
-    '</div>';
-
-    drawTechChart(closes, sma50, sma200, ema20);
+    techData.ohlcv = ohlcv;
+    techData.ticker = ticker;
+    renderTechs(ohlcv, ticker);
   } catch(e) {
     output.innerHTML = '<div style="color:var(--red)">❌ Error: ' + e.message + '</div>';
   }
 }
 
-function drawTechChart(closes, sma50, sma200, ema20) {
+function resampleOHLCV(data, interval) {
+  if (interval === 'daily') return data;
+  const resampled = [];
+  let bucket = null;
+  
+  data.forEach(bar => {
+    const d = new Date(bar.time * 1000);
+    let key;
+    if (interval === 'weekly') {
+      const weekStart = new Date(d);
+      weekStart.setDate(d.getDate() - d.getDay());
+      key = weekStart.toISOString().split('T')[0];
+    } else if (interval === 'monthly') {
+      key = d.toISOString().slice(0, 7);
+    }
+    
+    if (!bucket || bucket.key !== key) {
+      bucket = { key, open: bar.open, high: bar.high, low: bar.low, close: bar.close, volume: bar.volume, time: bar.time };
+      resampled.push(bucket);
+    } else {
+      bucket.high = Math.max(bucket.high, bar.high);
+      bucket.low = Math.min(bucket.low, bar.low);
+      bucket.close = bar.close;
+      bucket.volume += bar.volume;
+    }
+  });
+  
+  return resampled;
+}
+
+function renderTechs(ohlcv, ticker) {
+  const output = document.getElementById('techOutput');
+  const timeframe = document.getElementById('timeframeSelect').value || 'daily';
+  const data = resampleOHLCV(ohlcv, timeframe);
+  
+  const closes = data.map(b => b.close);
+  const volumes = data.map(b => b.volume);
+  const price = closes[closes.length - 1];
+
+  const sma50 = calcSMA(closes, Math.min(50, Math.floor(closes.length / 2)));
+  const sma200 = calcSMA(closes, Math.min(200, Math.floor(closes.length / 2)));
+  const ema20 = calcEMA(closes, Math.min(20, Math.floor(closes.length / 2)));
+  const rsi = calcRSI(closes, 14);
+  const { macdLine, signal } = calcMACD(closes);
+  const boll = calcBollinger(closes, 20, 2);
+
+  const last = arr => { for (let i = arr.length - 1; i >= 0; i--) { if (arr[i] != null) return arr[i]; } return null; };
+  const s50 = last(sma50), s200 = last(sma200), e20 = last(ema20);
+  const rsiNow = last(rsi);
+  const macdNow = last(macdLine), sigNow = last(signal);
+  const bUp = last(boll.upper), bLow = last(boll.lower), bMid = last(boll.mid);
+
+  const yearCloses = closes.slice(-252);
+  const hi52 = Math.max(...yearCloses), lo52 = Math.min(...yearCloses);
+  const rangePos = ((price - lo52) / (hi52 - lo52)) * 100;
+
+  const signals = [];
+  let trendState, trendColor;
+  if (s50 && s200 && price > s50 && s50 > s200) { trendState = 'Strong Uptrend'; trendColor = 'var(--green)'; }
+  else if (s50 && s200 && price < s50 && s50 < s200) { trendState = 'Downtrend'; trendColor = 'var(--red)'; }
+  else { trendState = 'Mixed / Sideways'; trendColor = '#fbbf24'; }
+  signals.push({ name: 'Trend (vs SMA50/200)', value: trendState, color: trendColor, detail: 'Price $' + price.toFixed(2) + ' | SMA50 ' + (s50 ? '$' + s50.toFixed(2) : '—') + ' | SMA200 ' + (s200 ? '$' + s200.toFixed(2) : '—') });
+
+  if (s50 && s200) {
+    let cross = null;
+    for (let i = Math.max(1, closes.length - 30); i < closes.length; i++) {
+      if (sma50[i] != null && sma200[i] != null && sma50[i-1] != null && sma200[i-1] != null) {
+        if (sma50[i-1] <= sma200[i-1] && sma50[i] > sma200[i]) cross = 'golden';
+        if (sma50[i-1] >= sma200[i-1] && sma50[i] < sma200[i]) cross = 'death';
+      }
+    }
+    if (cross === 'golden') signals.push({ name: 'Crossover Alert', value: '✨ Golden Cross', color: 'var(--green)', detail: 'SMA50 crossed above SMA200' });
+    if (cross === 'death') signals.push({ name: 'Crossover Alert', value: '💀 Death Cross', color: 'var(--red)', detail: 'SMA50 crossed below SMA200' });
+  }
+
+  const rsiState = rsiNow > 70 ? ['Overbought', 'var(--red)', 'May pullback'] : rsiNow < 30 ? ['Oversold', '#fbbf24', 'May bounce'] : ['Neutral', 'var(--green)', 'No extreme'];
+  signals.push({ name: 'RSI (14)', value: rsiNow.toFixed(1) + ' — ' + rsiState[0], color: rsiState[1], detail: rsiState[2] });
+
+  const macdBull = macdNow != null && sigNow != null && macdNow > sigNow;
+  signals.push({ name: 'MACD (12,26,9)', value: macdBull ? 'Bullish' : 'Bearish', color: macdBull ? 'var(--green)' : 'var(--red)', detail: 'MACD ' + (macdNow != null ? macdNow.toFixed(2) : '—') });
+
+  let bollState, bollColor;
+  if (bUp && price > bUp) { bollState = 'Above upper'; bollColor = 'var(--red)'; }
+  else if (bLow && price < bLow) { bollState = 'Below lower'; bollColor = '#fbbf24'; }
+  else { bollState = 'Inside bands'; bollColor = 'var(--green)'; }
+  signals.push({ name: 'Bollinger Bands (20,2)', value: bollState, color: bollColor, detail: '$' + (bUp ? bUp.toFixed(2) : '—') });
+
+  signals.push({ name: '52-Week Range', value: rangePos.toFixed(0) + '%', color: rangePos > 80 ? 'var(--green)' : rangePos < 20 ? 'var(--red)' : '#fbbf24', detail: '$' + lo52.toFixed(2) + ' → $' + hi52.toFixed(2) });
+
+  if (volumes.length > 20) {
+    const recentVol = volumes.slice(-5).reduce((a,b) => a+b, 0) / 5;
+    const avgVol = volumes.slice(-60).reduce((a,b) => a+b, 0) / Math.min(60, volumes.length);
+    const volRatio = recentVol / avgVol;
+    signals.push({ name: 'Volume', value: volRatio > 1.5 ? 'Heavy (' + volRatio.toFixed(1) + 'x)' : volRatio < 0.6 ? 'Light (' + volRatio.toFixed(1) + 'x)' : 'Normal', color: volRatio > 1.5 ? '#fbbf24' : 'var(--green)', detail: '5d vs 60d avg' });
+  }
+
+  const sigCards = signals.map(s => '<div class="stat-box" style="border-left:3px solid ' + s.color + '"><div class="stat-label">' + s.name + '</div><div style="font-size:14px;font-weight:800;margin-top:4px;color:' + s.color + '">' + s.value + '</div><div style="font-size:11px;color:var(--muted);margin-top:6px">' + s.detail + '</div></div>').join('');
+
+  output.innerHTML = '<div class="card">' +
+    '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px;flex-wrap:wrap;gap:8px">' +
+      '<div><div style="font-size:18px;font-weight:800">' + ticker + ' — $' + price.toFixed(2) + '</div><div style="font-size:11px;color:var(--muted)">' + (timeframe.charAt(0).toUpperCase() + timeframe.slice(1)) + ' | ' + data.length + ' candles</div></div>' +
+    '</div>' +
+    '<canvas id="techChart" style="width:100%;height:350px;background:var(--card);border-radius:10px;border:1px solid var(--border);margin-bottom:12px"></canvas>' +
+    '<div style="font-size:13px;font-weight:800;margin-bottom:12px">📡 Technical Signals</div>' +
+    '<div class="stat-grid" style="grid-template-columns:repeat(auto-fit,minmax(240px,1fr))">' + sigCards + '</div>' +
+    '<div style="font-size:11px;color:var(--muted);margin-top:14px">Technical signals describe price behavior — not predictions. Use alongside fundamentals in the Analyzer tab.</div>' +
+  '</div>';
+
+  drawCandlestickChart(data, sma50, sma200, ema20);
+}
+
+function drawCandlestickChart(bars, sma50, sma200, ema20) {
   const canvas = document.getElementById('techChart');
   if (!canvas) return;
   const dpr = window.devicePixelRatio || 1;
@@ -703,14 +759,19 @@ function drawTechChart(closes, sma50, sma200, ema20) {
   const ctx = canvas.getContext('2d');
   ctx.scale(dpr, dpr);
 
-  const pad = { l: 48, r: 10, t: 10, b: 20 };
-  const all = closes.concat(sma50.filter(v => v != null), sma200.filter(v => v != null));
+  const pad = { l: 50, r: 10, t: 10, b: 50 };
+  const chartH = h - pad.t - (pad.b / 2);
+  const volH = pad.b / 2;
+  
+  const all = bars.map(b => [b.high, b.low]).flat().concat(sma50.filter(v => v != null), sma200.filter(v => v != null));
   const min = Math.min(...all) * 0.98;
   const max = Math.max(...all) * 1.02;
-  const x = i => pad.l + (i / (closes.length - 1)) * (w - pad.l - pad.r);
-  const y = v => pad.t + (1 - (v - min) / (max - min)) * (h - pad.t - pad.b);
+  const volMax = Math.max(...bars.map(b => b.volume));
+  
+  const x = i => pad.l + (i / (bars.length - 1)) * (w - pad.l - pad.r);
+  const y = v => pad.t + (1 - (v - min) / (max - min)) * (chartH - pad.t);
+  const volY = v => chartH + (v / volMax) * volH;
 
-  // gridlines + labels
   ctx.strokeStyle = 'rgba(255,255,255,0.06)';
   ctx.fillStyle = '#8b97a8';
   ctx.font = '10px system-ui';
@@ -721,6 +782,36 @@ function drawTechChart(closes, sma50, sma200, ema20) {
     ctx.fillText('$' + v.toFixed(0), 6, gy + 3);
   }
 
+  ctx.fillStyle = 'rgba(52,211,153,0.2)';
+  const barWidth = Math.max(2, (w - pad.l - pad.r) / bars.length * 0.8);
+  bars.forEach((bar, i) => {
+    const barX = x(i);
+    const barY = volY(bar.volume);
+    ctx.fillRect(barX - barWidth / 2, barY, barWidth, chartH + volH - barY);
+  });
+
+  bars.forEach((bar, i) => {
+    const barX = x(i);
+    const o = y(bar.open), h = y(bar.high), l = y(bar.low), c = y(bar.close);
+    const color = bar.close >= bar.open ? '#34d399' : '#f87171';
+    const wickW = Math.max(1, barWidth / 2);
+
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(barX, h);
+    ctx.lineTo(barX, l);
+    ctx.stroke();
+
+    const bodyTop = Math.min(o, c);
+    const bodyH = Math.abs(c - o) || 1;
+    ctx.fillStyle = color;
+    ctx.fillRect(barX - barWidth / 2, bodyTop, barWidth, bodyH);
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1;
+    ctx.strokeRect(barX - barWidth / 2, bodyTop, barWidth, bodyH);
+  });
+
   function drawLine(series, color, width) {
     ctx.strokeStyle = color;
     ctx.lineWidth = width;
@@ -728,8 +819,9 @@ function drawTechChart(closes, sma50, sma200, ema20) {
     let started = false;
     for (let i = 0; i < series.length; i++) {
       if (series[i] == null) continue;
-      if (!started) { ctx.moveTo(x(i), y(series[i])); started = true; }
-      else ctx.lineTo(x(i), y(series[i]));
+      const py = y(series[i]);
+      if (!started) { ctx.moveTo(x(i), py); started = true; }
+      else ctx.lineTo(x(i), py);
     }
     ctx.stroke();
   }
@@ -737,7 +829,10 @@ function drawTechChart(closes, sma50, sma200, ema20) {
   drawLine(sma200, '#60a5fa', 1.2);
   drawLine(sma50, '#fbbf24', 1.2);
   drawLine(ema20, '#a78bfa', 1);
-  drawLine(closes, '#34d399', 1.6);
+
+  ctx.fillStyle = '#8b97a8';
+  ctx.font = '9px system-ui';
+  ctx.fillText('Volume', 6, chartH + 12);
 }
 
 // News
