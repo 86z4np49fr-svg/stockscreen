@@ -134,7 +134,7 @@ footer{margin-top:40px;padding-top:16px;border-top:1px solid var(--border);color
     <div id="newsOutput" class="empty">Enter a ticker to see headlines.</div>
   </div>
 
-  <footer>Not financial advice. Data from Finnhub API.</footer>
+  <footer>Not financial advice. Data from Finnhub + Twelve Data. <b id="appVersion" style="color:var(--accent)">v3.1</b></footer>
 </div>
 
 <script>
@@ -783,7 +783,7 @@ const savedTdKey = localStorage.getItem('td_key');
 if (savedTdKey) document.getElementById('tdKeyInput').value = savedTdKey;
 // Hide key bar entirely if a key is embedded in the file
 if (TD_KEY && TD_KEY.indexOf('PASTE_YOUR') === -1) document.getElementById('tdKeyBar').style.display = 'none';
-console.log('✓ StockScreen Pro loaded successfully');
+console.log('✓ StockScreen Pro v3.1 loaded (news: company-news endpoint)');
 </script>
 </body>
 </html>
