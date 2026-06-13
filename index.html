@@ -119,18 +119,26 @@ footer{margin-top:40px;padding-top:16px;border-top:1px solid var(--border);color
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <button class="btn btn-go" onclick="runConsensusAnalysis()">🔗 Run All Scanners</button>
         <button class="btn btn-ghost" onclick="showConsensusDemo()">📊 Demo Results</button>
+        <button class="btn btn-ghost" onclick="showConsensusInfo()">ℹ️ Info & Guide</button>
         <button class="btn btn-ghost" onclick="resetConsensus()">↻ Reset</button>
       </div>
     </div>
     
     <div id="consensusOutput" class="empty">
-      Check which scanners to include, then click "Run All Scanners" to find stocks that pass multiple screening methods.
-      <br><br>
-      <strong>Consensus Levels:</strong><br>
-      4/4 = STRONG BUY (all scanners agree)<br>
-      3/4 = STRONG (most agree)<br>
-      2/4 = GOOD (some agree)<br>
-      1/4 = CHECK (single screen only)
+      <div style="line-height:1.8">
+        <strong style="font-size:14px">🔗 Strategy Consensus Validator</strong><br><br>
+        Run multiple independent stock screening methods and find stocks with consensus agreement.<br><br>
+        <strong>How it works:</strong><br>
+        ✓ Runs 4 different screening approaches simultaneously<br>
+        ✓ Counts how many methods found each stock<br>
+        ✓ Higher agreement = Higher confidence<br><br>
+        <strong>Consensus Confidence Levels:</strong><br>
+        🟢 <strong>4/4</strong> = STRONG BUY (all 4 scanners agree)<br>
+        🟡 <strong>3/4</strong> = STRONG (most scanners agree)<br>
+        🔵 <strong>2/4</strong> = GOOD (some scanners agree)<br>
+        🔴 <strong>1/4</strong> = CHECK (single scanner only)<br><br>
+        Click [ℹ️ Info & Guide] to learn about each scanner, or [📊 Demo Results] to see examples.
+      </div>
     </div>
   </div>
 
@@ -2670,6 +2678,133 @@ function showConsensusDemo() {
   consensusState.results = CONSENSUS_DEMO_DATA;
   displayConsensusResults();
   alert_notify('Demo: Multi-strategy consensus results', 'info');
+}
+
+function showConsensusInfo() {
+  const output = document.getElementById('consensusOutput');
+  
+  output.innerHTML = `
+    <div style="background:var(--card);padding:16px;border-radius:8px;border-left:4px solid var(--accent)">
+      <div style="font-weight:700;font-size:14px;margin-bottom:12px;color:var(--accent)">📊 Strategy Consensus - Decision Making Guide</div>
+      
+      <div style="font-size:12px;color:var(--muted);line-height:1.8">
+        <div style="margin-bottom:16px">
+          <strong style="color:var(--text);display:block;margin-bottom:6px">🎯 What is Strategy Consensus?</strong>
+          Instead of relying on one screening method, we run FOUR independent approaches on the same stock. If multiple methods find the same stock, confidence increases significantly.
+        </div>
+        
+        <div style="background:var(--border);padding:12px;border-radius:6px;margin-bottom:16px">
+          <strong style="color:var(--text);display:block;margin-bottom:8px">📈 The 4 Validation Methods:</strong>
+          
+          <div style="margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid var(--border)">
+            <div style="font-weight:700;color:#60a5fa">1️⃣ Hybrid Scanner (v6.0) - Balanced Scoring</div>
+            <div style="font-size:11px;margin-top:4px">
+              <strong>Method:</strong> Scores all stocks on 4 dimensions equally<br>
+              <strong>Dimensions:</strong> Valuation (25%) + Quality (25%) + Growth (25%) + Momentum (25%)<br>
+              <strong>Result:</strong> 0-100 overall score<br>
+              <strong>Best For:</strong> Finding overall best stocks<br>
+              <strong>Strength:</strong> Comprehensive, nothing missed<br>
+              <strong>Weakness:</strong> May miss sector-specific or themed plays
+            </div>
+          </div>
+          
+          <div style="margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid var(--border)">
+            <div style="font-weight:700;color:#34d399">2️⃣ Thematic Scanner (v6.1) - Catalyst Finder</div>
+            <div style="font-size:11px;margin-top:4px">
+              <strong>Method:</strong> Identifies stocks matching investment themes<br>
+              <strong>Themes:</strong> AI Winners | Dividend Growth | Oversold Recovery | Earnings Surprise | Sector Rotation<br>
+              <strong>Result:</strong> Stocks with specific catalyst<br>
+              <strong>Best For:</strong> Tactical positioning, specific theses<br>
+              <strong>Strength:</strong> Finds catalysts others miss<br>
+              <strong>Weakness:</strong> Limited to 5 themes only
+            </div>
+          </div>
+          
+          <div style="margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid var(--border)">
+            <div style="font-weight:700;color:#fbbf24">3️⃣ Sector Scanner (v6.2) - Peer Comparison</div>
+            <div style="font-size:11px;margin-top:4px">
+              <strong>Method:</strong> Compares stocks to sector medians<br>
+              <strong>Comparison:</strong> P/E vs median | ROE vs median | Growth vs median<br>
+              <strong>Result:</strong> Bargains within sector<br>
+              <strong>Best For:</strong> Finding undervalued peers<br>
+              <strong>Strength:</strong> Avoids sector-wide traps<br>
+              <strong>Weakness:</strong> Within-sector only, misses best overall
+            </div>
+          </div>
+          
+          <div style="margin-bottom:0">
+            <div style="font-weight:700;color:#f87171">4️⃣ Rules Engine (v6.3) - Philosophy Based</div>
+            <div style="font-size:11px;margin-top:4px">
+              <strong>Method:</strong> Applies explicit investment rules<br>
+              <strong>Rules:</strong> 4 philosophies × 5 rules each = 20 total rules<br>
+              <strong>Philosophies:</strong> Value | Growth | Quality | Turnaround<br>
+              <strong>Result:</strong> Stocks matching philosophy<br>
+              <strong>Best For:</strong> Rule-based, transparent investing<br>
+              <strong>Strength:</strong> Explicit, reproducible<br>
+              <strong>Weakness:</strong> Rigid rules may miss exceptions
+            </div>
+          </div>
+        </div>
+        
+        <div style="background:var(--border);padding:12px;border-radius:6px;margin-bottom:16px">
+          <strong style="color:var(--text);display:block;margin-bottom:8px">🎯 Decision Making Process:</strong>
+          
+          <div style="font-size:11px;margin-bottom:12px">
+            <div style="margin-bottom:8px">
+              <strong style="color:var(--green)">🟢 STOCK FOUND IN 4/4 SCANNERS → STRONG BUY</strong><br>
+              All 4 independent methods found it. Maximum confidence. All agree from different angles.
+            </div>
+            
+            <div style="margin-bottom:8px">
+              <strong style="color:#fbbf24">🟡 STOCK FOUND IN 3/4 SCANNERS → STRONG</strong><br>
+              Most methods found it. High confidence. One method has blind spot but 3 validate.
+            </div>
+            
+            <div style="margin-bottom:8px">
+              <strong style="color:#60a5fa">🔵 STOCK FOUND IN 2/4 SCANNERS → GOOD</strong><br>
+              Some methods found it. Moderate confidence. Good opportunity but less validated.
+            </div>
+            
+            <div style="margin-bottom:0">
+              <strong style="color:var(--muted)">🔴 STOCK FOUND IN 1/4 SCANNERS → CHECK</strong><br>
+              Only one method found it. Low confidence. Interesting but needs deeper investigation.
+            </div>
+          </div>
+        </div>
+        
+        <div style="background:var(--border);padding:12px;border-radius:6px;margin-bottom:16px">
+          <strong style="color:var(--text);display:block;margin-bottom:8px">📋 How to Use Results:</strong>
+          
+          <div style="font-size:11px;line-height:1.7">
+            <div style="margin-bottom:8px"><strong>Step 1: Look at 4/4 & 3/4 Results</strong><br>Focus here first. Multiple validation = high confidence.</div>
+            
+            <div style="margin-bottom:8px"><strong>Step 2: Understand Why Each Scanner Picked It</strong><br>Different methods = different insights. One saw value, one saw growth, one saw catalyst.</div>
+            
+            <div style="margin-bottom:8px"><strong>Step 3: Click [Analyze] to Deep Dive</strong><br>See all 24 indicators, peer comparison, analyst summary.</div>
+            
+            <div><strong>Step 4: Make Decision</strong><br>4/4 = Buy | 3/4 = Strong buy | 2/4 = Consider | 1/4 = Research more</div>
+          </div>
+        </div>
+        
+        <div style="background:var(--border);padding:12px;border-radius:6px">
+          <strong style="color:var(--text);display:block;margin-bottom:8px">✅ Example: MSFT Found in All 4 Scanners</strong>
+          
+          <div style="font-size:11px;line-height:1.6">
+            <div style="margin-bottom:6px"><strong>✓ Hybrid:</strong> Score 87 - Balanced strength across all dimensions</div>
+            <div style="margin-bottom:6px"><strong>✓ AI Theme:</strong> Score 88 - Copilot + Enterprise AI adoption</div>
+            <div style="margin-bottom:6px"><strong>✓ Tech Sector:</strong> Score 87 - Undervalued vs tech peers</div>
+            <div style="margin-bottom:6px"><strong>✓ Quality Rules:</strong> Score 90 - Perfect quality match (ROE 35%, Margin 36%)</div>
+            <div style="font-weight:700;color:var(--green)">→ ALL METHODS AGREE = 4/4 STRONG BUY</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:4px">Interpretation: Different validation angles all point to same stock. Different reasons same conclusion. Very high confidence.</div>
+          </div>
+        </div>
+      </div>
+      
+      <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border);text-align:center">
+        <button class="btn btn-go" style="font-size:12px" onclick="runConsensusAnalysis()">🔗 Run All Scanners</button>
+      </div>
+    </div>
+  `;
 }
 
 function resetConsensus() {
