@@ -652,6 +652,42 @@ async function analyzeStock() {
         </div>
         
         <div id="peerContainer">${peerHtml}</div>
+        
+        <!-- UNIFIED ANALYSIS SYNTHESIS -->
+        <div style="padding:14px;background:linear-gradient(135deg, rgba(96,165,250,.1) 0%, rgba(168,85,247,.1) 100%);border-radius:10px;margin-top:20px;margin-bottom:0;border:1px solid var(--border)">
+          <div style="font-size:13px;font-weight:800;margin-bottom:10px;color:var(--accent)">🔗 Unified Analysis Synthesis</div>
+          <div style="font-size:12px;color:var(--muted);line-height:1.8">
+            <div style="margin-bottom:10px">
+              <strong style="color:var(--text)">📊 Fundamental View (This Tab):</strong><br>
+              Based on 24 financial indicators, this stock shows <strong style="color:${verdict.color}">${verdict.title.toLowerCase()}</strong> fundamentals (Score: ${Math.round(score)}/100, Grade: <strong>${grade}</strong>).
+            </div>
+            
+            <div style="margin-bottom:10px;padding:10px;background:var(--card);border-radius:6px;border-left:3px solid var(--accent)">
+              <strong style="color:var(--text);display:block;margin-bottom:6px">⚠️ Important: Fundamentals vs Market Timing</strong>
+              This Analyzer shows what the <strong>company's financials</strong> say (long-term quality).<br>
+              But 🎯 Decision Hub shows <strong>market timing signals</strong> (short-term entry/exit).<br>
+              They measure DIFFERENT things - both are important!
+            </div>
+            
+            <div style="margin-bottom:10px">
+              <strong style="color:var(--text)">⚖️ If You See Conflicting Signals:</strong><br><br>
+              <strong style="color:var(--green)">✓ Analyzer: STRONG, Decision Hub: SELL</strong><br>
+              → Good company, bad timing. Wait for technicals to improve.<br><br>
+              
+              <strong style="color:var(--red)">✗ Analyzer: WEAK, Decision Hub: BUY</strong><br>
+              → Technical bounce, but fundamentals weak. Avoid for long-term.
+            </div>
+            
+            <div style="background:var(--card);padding:10px;border-radius:6px">
+              <strong style="color:var(--text);display:block;margin-bottom:6px">✅ Unified Decision Framework:</strong>
+              <div style="font-size:11px;line-height:1.7">
+                <strong style="color:var(--text)">BEST CASE:</strong> Fundamentals strong + Timing good + Technicals confirm<br>
+                <strong style="color:#fbbf24">OKAY:</strong> Fundamentals strong OR Timing good (wait for other to align)<br>
+                <strong style="color:var(--red)">AVOID:</strong> Fundamentals weak (even if timing good)
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     `;
     
