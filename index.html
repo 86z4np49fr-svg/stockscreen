@@ -485,6 +485,74 @@ async function analyzeStock() {
   const ticker = document.getElementById('analyzerInput').value.trim().toUpperCase();
   if (!ticker) return alert('Enter a ticker');
   
+  // MUTUAL FUND DETECTION
+  const mutualFundPatterns = [
+    /^[A-Z]{5}X$/, // FBCGX pattern
+    /^VTSAX|VFIAX|VFFVX|VTSIX|VFIIX|VFISX/, // Vanguard
+    /^FSKAX|FSMAX|FBCGX|FDVV|FSTMX|FXAIX/, // Fidelity
+    /^SWPPX|SWDSX|SWTSX/, // Schwab
+  ];
+  
+  const isMutualFund = mutualFundPatterns.some(p => p.test(ticker));
+  
+  if (isMutualFund) {
+    document.getElementById('analyzerOutput').innerHTML = `
+      <div class="card" style="border-left:4px solid #f87171">
+        <div style="font-size:14px;font-weight:800;color:#f87171;margin-bottom:12px">
+          🚨 Mutual Fund/ETF Detected: ${ticker}
+        </div>
+        
+        <div style="font-size:13px;color:var(--muted);line-height:1.8;margin-bottom:16px">
+          <strong style="color:var(--text)">Why ${ticker} doesn't work:</strong><br>
+          StockScreen is optimized for <strong>individual stocks</strong>. Mutual funds and ETFs have different data structures that our analyzer doesn't support.
+        </div>
+        
+        <div style="background:var(--card);padding:12px;border-radius:8px;margin-bottom:16px;font-size:12px;color:var(--muted);line-height:1.7">
+          <strong style="color:var(--text);display:block;margin-bottom:8px">💡 Here's what to do instead:</strong>
+          
+          <div style="margin-bottom:10px;padding:10px;background:var(--border);border-radius:6px">
+            <strong style="color:var(--text);display:block;margin-bottom:4px">Option 1: Analyze Top Holdings ⭐ (BEST)</strong>
+            <ol style="margin:4px 0;padding-left:16px;font-size:11px">
+              <li>Go to fund provider website (Fidelity, Vanguard, etc.)</li>
+              <li>Find "${ticker}" holdings section</li>
+              <li>Copy top 10 stock tickers</li>
+              <li>Analyze each in StockScreen</li>
+              <li>If most are Grade A/B → Fund holds quality companies</li>
+            </ol>
+          </div>
+          
+          <div style="margin-bottom:10px;padding:10px;background:var(--border);border-radius:6px">
+            <strong style="color:var(--text);display:block;margin-bottom:4px">Option 2: Try Similar ETF (May work)</strong>
+            <div style="font-size:11px;">
+              Popular ETFs that StockScreen may support:<br>
+              • <strong style="color:#60a5fa;cursor:pointer;text-decoration:underline" onclick="document.getElementById('analyzerInput').value='QQQ';analyzeStock()">QQQ</strong> (Tech/Growth - Try analyzing)<br>
+              • <strong style="color:#60a5fa;cursor:pointer;text-decoration:underline" onclick="document.getElementById('analyzerInput').value='SPY';analyzeStock()">SPY</strong> (Broad market - Try analyzing)<br>
+              • <strong style="color:#60a5fa;cursor:pointer;text-decoration:underline" onclick="document.getElementById('analyzerInput').value='IVV';analyzeStock()">IVV</strong> (S&P 500 - Try analyzing)
+            </div>
+          </div>
+          
+          <div style="padding:10px;background:var(--border);border-radius:6px">
+            <strong style="color:var(--text);display:block;margin-bottom:4px">Option 3: Check Fund Metrics Directly</strong>
+            <div style="font-size:11px;">
+              For professional fund analysis, visit:<br>
+              • <strong style="color:#60a5fa">Morningstar.com</strong> - Fund ratings, holdings, performance<br>
+              • Fund provider website - Holdings, expense ratios<br>
+              • Yahoo Finance - Fund performance charts
+            </div>
+          </div>
+        </div>
+        
+        <div style="padding:12px;background:rgba(96,165,250,.1);border-radius:8px;font-size:11px;color:var(--muted);border-left:3px solid #60a5fa">
+          <strong style="color:var(--text)">📌 Why StockScreen Doesn't Support Mutual Funds:</strong><br>
+          Our analyzer uses Finnhub API (stock fundamentals: P/E, ROE, Growth rates).<br>
+          Mutual funds need different analysis (expense ratios, holdings allocation, fund performance benchmarking).<br>
+          These are completely different investment analysis frameworks.
+        </div>
+      </div>
+    `;
+    return;
+  }
+  
   const output = document.getElementById('analyzerOutput');
   output.innerHTML = '<div style="color:var(--accent)">⟳ Loading...</div>';
   
