@@ -1256,7 +1256,6 @@ async function analyzeStock() {
     
     const html = `
       <div class="card">
-        <!-- METHODOLOGY OVERVIEW -->
         <div style="padding:12px;background:linear-gradient(135deg, rgba(96,165,250,.1) 0%, rgba(168,85,247,.1) 100%);border-radius:8px;margin-bottom:20px;border:1px solid var(--border)">
           <div style="font-size:13px;font-weight:800;margin-bottom:8px;color:var(--accent)">🔬 Analysis Methodology & Transparency</div>
           <div style="font-size:11px;color:var(--muted);line-height:1.6">
@@ -1274,23 +1273,19 @@ async function analyzeStock() {
           </div>
         </div>
         
-        <!-- Header Row -->
         <div style="display:grid;grid-template-columns:1fr 2fr 1fr;gap:20px;margin-bottom:24px;align-items:start">
-          <!-- Grade & Company Info (Left) -->
           <div>
             <div style="font-size:56px;font-weight:800;color:${verdict.color};text-align:center;margin-bottom:8px">${grade}</div>
             <div style="font-size:14px;font-weight:700;text-align:center">${profile.name}</div>
             <div style="font-size:11px;color:var(--muted);text-align:center;margin-top:4px">${profile.finnhubIndustry || 'N/A'}</div>
           </div>
           
-          <!-- Verdict & Score (Center) -->
           <div style="padding:16px;background:var(--card);border-radius:10px;border-left:4px solid ${verdict.color}">
             <div style="font-size:18px;font-weight:800;color:${verdict.color};margin-bottom:8px">${verdict.icon} ${verdict.title}</div>
             <div style="font-size:24px;font-weight:800;color:var(--ink);margin-bottom:8px">${Math.round(score)}/100</div>
             <div style="font-size:12px;color:var(--muted);line-height:1.5">${score>=70?'Strong fundamentals with solid growth prospects':score>=50?'Mixed signals - some strengths offset by concerns':'Red flags present - requires careful review'}</div>
           </div>
           
-          <!-- Analyst Summary (Right) -->
           <div style="font-size:12px;color:var(--muted);line-height:1.7">
             <div style="margin-bottom:10px">
               <div style="font-size:10px;color:var(--accent);font-weight:700;text-transform:uppercase;margin-bottom:3px">Valuation</div>
@@ -1311,7 +1306,6 @@ async function analyzeStock() {
           </div>
         </div>
         
-        <!-- Strengths & Concerns Row -->
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px">
           <div style="padding:14px;background:var(--card);border-radius:10px;border-left:3px solid var(--green)">
             <div style="font-size:13px;font-weight:800;margin-bottom:10px;color:var(--green)">💪 What's Working</div>
@@ -1356,7 +1350,6 @@ async function analyzeStock() {
         
         <div id="peerContainer">${peerHtml}</div>
         
-        <!-- UNIFIED ANALYSIS SYNTHESIS (DYNAMIC) -->
         <div style="padding:14px;background:linear-gradient(135deg, rgba(96,165,250,.1) 0%, rgba(168,85,247,.1) 100%);border-radius:10px;margin-top:20px;margin-bottom:0;border:1px solid var(--border)">
           <div style="font-size:13px;font-weight:800;margin-bottom:10px;color:var(--accent)">🔗 Unified Analysis Synthesis - Cross-Tab Comparison</div>
           <div style="font-size:12px;color:var(--muted);line-height:1.8">
@@ -3499,43 +3492,79 @@ function displayConsensusResults() {
 function consensusCard(stock, color) {
   // Calculate which scanner is most positive
   const scores = [
-    { name: 'Hybrid', score: stock.hybrid, icon: '📊' },
-    { name: 'Thematic', score: stock.thematic, icon: '🎯' },
-    { name: 'Sector', score: stock.sector, icon: '📈' },
-    { name: 'Rules', score: stock.rules, icon: '⚙️' }
+    { name: 'Hybrid', score: stock.hybrid, icon: '📊', desc: 'Overall quality' },
+    { name: 'Thematic', score: stock.thematic, icon: '🎯', desc: 'Trend match' },
+    { name: 'Sector', score: stock.sector, icon: '📈', desc: 'vs Peers' },
+    { name: 'Rules', score: stock.rules, icon: '⚙️', desc: 'Your style' }
   ];
   
   const activeScores = scores.filter(s => s.score > 0);
   const mostPositive = activeScores.length > 0 ? activeScores.reduce((a, b) => a.score > b.score ? a : b) : null;
   const avgScore = activeScores.length > 0 ? Math.round(activeScores.reduce((sum, s) => sum + s.score, 0) / activeScores.length) : 0;
   
-  // Determine sentiment
+  // Determine sentiment with plain language
   let sentiment = '';
   let sentimentColor = '';
+  let plainEnglish = '';
+  
   if (stock.consensus === 4) {
     sentiment = '🟢 UNANIMOUS BULLISH';
     sentimentColor = 'var(--green)';
+    plainEnglish = 'All 4 experts agree this is good';
   } else if (stock.consensus === 3) {
     sentiment = '🟡 STRONG BULLISH';
     sentimentColor = '#fbbf24';
+    plainEnglish = '3 out of 4 experts agree this is good';
   } else if (stock.consensus === 2) {
     sentiment = '🔵 MODERATELY BULLISH';
     sentimentColor = '#60a5fa';
+    plainEnglish = '2 out of 4 experts think it\'s good';
   } else {
     sentiment = '🔴 MIXED SIGNALS';
     sentimentColor = 'var(--muted)';
+    plainEnglish = 'Only 1 expert thinks it\'s good';
   }
   
-  // Create scanner comparison bars
+  // Determine confidence level in plain English
+  let confidenceLevel = '';
+  if (stock.consensus === 4) {
+    confidenceLevel = '⭐⭐⭐⭐⭐ VERY SAFE (Maximum confidence)';
+  } else if (stock.consensus === 3) {
+    confidenceLevel = '⭐⭐⭐⭐ SAFE (High confidence)';
+  } else if (stock.consensus === 2) {
+    confidenceLevel = '⭐⭐⭐ MODERATE (Mixed signals - need more research)';
+  } else {
+    confidenceLevel = '⭐⭐ RISKY (Do serious research first)';
+  }
+  
+  // Score interpretation in plain English
+  let scoreInterpretation = '';
+  if (avgScore >= 90) scoreInterpretation = 'Excellent - Strong signals';
+  else if (avgScore >= 80) scoreInterpretation = 'Good - Solid signals';
+  else if (avgScore >= 70) scoreInterpretation = 'Fair - Moderate signals';
+  else scoreInterpretation = 'Weak - Be careful';
+  
+  // Create scanner comparison bars with tooltips
   const scannerBars = scores.map(s => {
     if (s.score === 0) return '';
     const barWidth = (s.score / 100) * 100;
     const isHighest = mostPositive && s.name === mostPositive.name;
+    
+    // Score interpretation
+    let scoreDesc = '';
+    if (s.score >= 90) scoreDesc = '(Excellent)';
+    else if (s.score >= 80) scoreDesc = '(Good)';
+    else if (s.score >= 70) scoreDesc = '(Fair)';
+    else scoreDesc = '(Weak)';
+    
     return `
-      <div style="margin-bottom:6px;font-size:10px">
-        <div style="display:flex;justify-content:space-between;margin-bottom:2px">
-          <span>${s.icon} ${s.name}</span>
-          <strong style="color:${isHighest ? color : 'var(--muted)'}">${s.score}${isHighest ? ' ⭐' : ''}</strong>
+      <div style="margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:2px;font-size:11px">
+          <div>
+            <span style="cursor:help;border-bottom:1px dotted rgba(255,255,255,0.3)" title="${s.name}: measures ${s.desc}">${s.icon} ${s.name}</span>
+            <span style="color:var(--muted);font-size:10px"> (${s.desc})</span>
+          </div>
+          <strong style="color:${isHighest ? color : 'var(--muted)'}">${s.score} ${scoreDesc}${isHighest ? ' ⭐' : ''}</strong>
         </div>
         <div style="background:var(--border);height:6px;border-radius:3px;overflow:hidden">
           <div style="background:${isHighest ? color : '#666'};height:100%;width:${barWidth}%;transition:width 0.3s"></div>
@@ -3549,35 +3578,38 @@ function consensusCard(stock, color) {
       <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px">
         <div>
           <div style="font-weight:700;font-size:14px">${stock.ticker}</div>
-          <div style="font-size:10px;color:var(--muted)">Consensus: ${stock.consensus}/4</div>
+          <div style="font-size:10px;color:var(--muted)">${stock.consensus}/4 experts agree</div>
         </div>
         <div style="text-align:right">
-          <div style="font-weight:700;font-size:13px;color:${sentimentColor}">${sentiment}</div>
-          <div style="font-size:10px;color:var(--muted)">Avg Score: ${avgScore}</div>
+          <div style="font-weight:700;font-size:12px;color:${sentimentColor}">${sentiment}</div>
+          <div style="font-size:9px;color:var(--muted)">${scoreInterpretation}</div>
+        </div>
+      </div>
+      
+      <div style="background:var(--border);padding:8px;border-radius:6px;margin-bottom:8px;font-size:10px">
+        <div style="font-weight:700;color:var(--text);margin-bottom:6px">📖 What This Means:</div>
+        <div style="color:var(--muted);line-height:1.6;margin-bottom:6px">
+          ${plainEnglish}<br>
+          <strong style="color:var(--text)">Confidence Level:</strong> ${confidenceLevel}
         </div>
       </div>
       
       <div style="background:var(--border);padding:8px;border-radius:6px;margin-bottom:8px">
-        <div style="font-size:10px;font-weight:700;color:var(--text);margin-bottom:6px">📊 Scanner Comparison:</div>
+        <div style="font-size:10px;font-weight:700;color:var(--text);margin-bottom:6px">📊 4 Expert Opinions:</div>
         ${scannerBars}
         ${mostPositive ? `<div style="margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,0.1);font-size:10px;color:${color}">✅ Most Positive: ${mostPositive.icon} ${mostPositive.name} (${mostPositive.score})</div>` : ''}
       </div>
       
-      <div style="font-size:10px;color:var(--muted);line-height:1.6;margin-bottom:8px">
-        <strong>Active Scanners:</strong><br>
-        ${stock.scanners.map(s => `✓ ${s}`).join('<br>')}
-      </div>
-      
       <div style="background:rgba(96,165,250,0.1);padding:8px;border-left:3px solid #60a5fa;border-radius:4px;margin-bottom:8px;font-size:10px">
-        <strong style="color:var(--text)">📋 Outcome Summary:</strong><br>
-        <div style="margin-top:4px;color:var(--muted)">
+        <strong style="color:var(--text)">💡 Plain English Summary:</strong><br>
+        <div style="margin-top:4px;color:var(--muted);line-height:1.6">
           ${stock.consensus === 4 ? 
-            `All 4 scanners unanimous. Maximum confidence. Different validation angles confirm same stock.` :
+            `This stock looks good from ALL angles. Like asking 4 financial experts, and all 4 said "YES, buy it!" You can be very confident.` :
           stock.consensus === 3 ?
-            `3 of 4 scanners agree. High confidence. One method has blind spot but majority validates.` :
+            `This stock looks good from 3 angles. 1 expert has a different opinion (maybe it doesn't fit their style). Still very safe overall.` :
           stock.consensus === 2 ?
-            `2 of 4 scanners agree. Moderate confidence. Specialist play or mixed signals - research deeper.` :
-            `Single scanner. Low confidence. Interesting but needs validation. Investigate thoroughly.`
+            `This stock has mixed opinions. Some experts like it, some don't. It might be good for certain investors but not others. Do more research.` :
+            `Only 1 expert likes this stock. Other 3 passed. This could be a hidden gem OR it could have problems. Very risky - investigate thoroughly.`
           }
         </div>
       </div>
@@ -3589,7 +3621,7 @@ function consensusCard(stock, color) {
         </button>
         <button class="btn btn-ghost" style="flex:1;padding:6px;font-size:11px;cursor:pointer" 
           onclick="showScannerDetails('${stock.ticker}')">
-          ℹ️ Details
+          ℹ️ Why?
         </button>
       </div>
     </div>
@@ -3656,12 +3688,12 @@ function showScannerDetails(ticker) {
         <div style="font-weight:700;font-size:12px;margin-bottom:8px;color:var(--text)">✅ What This Means:</div>
         <div style="font-size:11px;color:var(--muted);line-height:1.7">
           ${stock.consensus === 4 ? 
-            `<strong style="color:var(--green)">UNANIMOUS AGREEMENT (4/4)</strong><br>All scanners agree this is a strong candidate. Different analytical approaches validate the same stock. Maximum confidence for investment decision.` :
+            '<strong style="color:var(--green)">UNANIMOUS AGREEMENT (4/4)</strong><br>All scanners agree this is a strong candidate. Different analytical approaches validate the same stock. Maximum confidence for investment decision.' :
           stock.consensus === 3 ?
-            `<strong style="color:#fbbf24">STRONG AGREEMENT (3/4)</strong><br>Most scanners agree with high confidence. One scanner has a blind spot but doesn't invalidate the conclusion. Safe to proceed with further analysis.` :
+            '<strong style="color:#fbbf24">STRONG AGREEMENT (3/4)</strong><br>Most scanners agree with high confidence. One scanner has a blind spot but cannot invalidate the conclusion. Safe to proceed with further analysis.' :
           stock.consensus === 2 ?
-            `<strong style="color:#60a5fa">MODERATE AGREEMENT (2/4)</strong><br>Mixed signals from different approaches. Could be a specialist play or have specific weaknesses. Requires deeper research before decision.` :
-            `<strong style="color:var(--muted)">LIMITED AGREEMENT (1/4)</strong><br>Only one scanner found it. Could be a hidden gem or have blind spots others caught. Significant research required.`
+            '<strong style="color:#60a5fa">MODERATE AGREEMENT (2/4)</strong><br>Mixed signals from different approaches. Could be a specialist play or have specific weaknesses. Requires deeper research before decision.' :
+            '<strong style="color:var(--muted)">LIMITED AGREEMENT (1/4)</strong><br>Only one scanner found it. Could be a hidden gem or have blind spots others caught. Significant research required.'
           }
         </div>
       </div>
@@ -3681,7 +3713,306 @@ function showConsensusInfo() {
   
   output.innerHTML = `
     <div style="background:var(--card);padding:16px;border-radius:8px;border-left:4px solid var(--accent);max-height:90vh;overflow-y:auto">
-      <div style="font-weight:700;font-size:14px;margin-bottom:12px;color:var(--accent)">📊 Strategy Consensus - Complete Decision Making Guide</div>
+      <div style="font-weight:700;font-size:14px;margin-bottom:12px;color:var(--accent)">📚 Strategy Consensus - Beginner's Guide</div>
+      
+      <div style="font-size:12px;color:var(--muted);line-height:1.8">
+        
+        <div style="margin-bottom:16px;padding:12px;background:rgba(96,165,250,0.1);border-left:3px solid #60a5fa;border-radius:6px">
+          <strong style="color:var(--text);display:block;margin-bottom:8px">🎯 For Beginners: What Does This Do?</strong>
+          <div style="font-size:11px;line-height:1.8">
+            <div style="margin-bottom:8px">
+              <strong>Simple Explanation:</strong><br>
+              Imagine you're thinking about buying a stock (like Apple or Microsoft). Before you buy, you want to make sure it's a good choice. So you ask 4 different financial experts for advice.
+            </div>
+            
+            <div style="margin-bottom:8px">
+              <strong>What Happens:</strong><br>
+              ✓ Expert 1 (Hybrid) looks at: "Is it cheap? Is it profitable? Is it growing?"<br>
+              ✓ Expert 2 (Thematic) looks at: "Is it in a hot trend? (like AI)"<br>
+              ✓ Expert 3 (Sector) looks at: "Is it better than competitors in same industry?"<br>
+              ✓ Expert 4 (Rules) looks at: "Does it fit my investment style?"
+            </div>
+            
+            <div style="margin-bottom:8px">
+              <strong>The Key Insight:</strong><br>
+              If ALL 4 experts say "YES, buy it!" → You can be very confident<br>
+              If only 1 expert says "YES, buy it!" → You need to be careful
+            </div>
+            
+            <div style="margin-bottom:0">
+              <strong>That's It!</strong> It's like asking multiple people before making a big decision.
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-bottom:16px;padding:12px;background:var(--border);border-radius:6px">
+          <strong style="color:var(--text);display:block;margin-bottom:8px">🌍 Real-World Analogy</strong>
+          <div style="font-size:11px;line-height:1.7">
+            <div style="margin-bottom:8px;padding:8px;background:rgba(52,211,153,0.1);border-left:3px solid #34d399">
+              <strong style="color:var(--text)">Buying a House (Not Stocks):</strong><br>
+              Before buying a house, you might ask:<br>
+              ✓ Real Estate Agent: "Is the price fair compared to area?"<br>
+              ✓ Inspector: "Is the house in good condition?"<br>
+              ✓ Neighbor: "Is this neighborhood growing or declining?"<br>
+              ✓ Accountant: "Can I actually afford this long-term?"<br><br>
+              If all 4 say YES → Buy with confidence<br>
+              If only 1 says YES → Be very careful
+            </div>
+            
+            <div style="padding:8px;background:rgba(251,191,36,0.1);border-left:3px solid #fbbf24">
+              <strong style="color:var(--text)">Stock Buying (Same Idea):</strong><br>
+              Before buying a stock, we ask 4 "experts":<br>
+              ✓ Hybrid Scanner: "Is it a good overall investment?"<br>
+              ✓ Thematic Scanner: "Is it in a growing trend?"<br>
+              ✓ Sector Scanner: "Is it better than similar companies?"<br>
+              ✓ Rules Scanner: "Does it match my investing style?"<br><br>
+              If all 4 say YES → Buy with confidence<br>
+              If only 1 says YES → Be very careful
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-bottom:16px;padding:12px;background:var(--border);border-radius:6px">
+          <strong style="color:var(--text);display:block;margin-bottom:8px">📖 Key Terms (In Plain English)</strong>
+          <div style="font-size:11px;line-height:1.8">
+            <div style="margin-bottom:8px">
+              <strong style="color:var(--accent)">Stock:</strong> A small piece of ownership in a company. Like if Apple was a pizza, a stock is one slice.
+            </div>
+            <div style="margin-bottom:8px">
+              <strong style="color:var(--accent)">Valuation:</strong> How expensive is the stock? Like asking "Is this pizza slice worth \\$5 or \\$10?"
+            </div>
+            <div style="margin-bottom:8px">
+              <strong style="color:var(--accent)">Profit Margin:</strong> How much money the company keeps after expenses. Like: You sell lemonade for \\$1. Costs 20¢ to make. Margin = 80¢.
+            </div>
+            <div style="margin-bottom:8px">
+              <strong style="color:var(--accent)">P/E Ratio:</strong> Price vs Earnings. Is the stock expensive compared to how much money the company makes?
+            </div>
+            <div style="margin-bottom:8px">
+              <strong style="color:var(--accent)">ROE (Return on Equity):</strong> How efficient is the company at making money? Higher = Better.
+            </div>
+            <div style="margin-bottom:8px">
+              <strong style="color:var(--accent)">Consensus:</strong> When multiple people agree on something. 4/4 = Everyone agrees.
+            </div>
+            <div style="margin-bottom:0">
+              <strong style="color:var(--accent)">Sector:</strong> An industry group. Like: Healthcare sector, Tech sector, Finance sector.
+            </div>
+          </div>
+        </div>
+
+        <div style="background:var(--border);padding:12px;border-radius:6px;margin-bottom:16px">
+          <strong style="color:var(--text);display:block;margin-bottom:12px">🎯 The 4 "Experts" Explained Simply</strong>
+          
+          <div style="margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid rgba(255,255,255,0.1)">
+            <div style="font-weight:700;color:#60a5fa;font-size:12px;margin-bottom:6px">1️⃣ HYBRID SCANNER - "The Balanced Advisor"</div>
+            <div style="font-size:11px;margin-bottom:6px">
+              <strong>What They Ask:</strong><br>
+              ✓ "Is it cheap or expensive?" (Price check)<br>
+              ✓ "Does the company make good profits?" (Quality check)<br>
+              ✓ "Is the company growing?" (Growth check)<br>
+              ✓ "Is it trending up or down?" (Momentum check)
+            </div>
+            <div style="font-size:11px;background:rgba(96,165,250,0.1);padding:6px;border-radius:4px">
+              <strong>Real Example:</strong> Apple score 87<br>
+              Meaning: Apple is good on ALL counts (price, quality, growth, momentum)
+            </div>
+          </div>
+          
+          <div style="margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid rgba(255,255,255,0.1)">
+            <div style="font-weight:700;color:#34d399;font-size:12px;margin-bottom:6px">2️⃣ THEMATIC SCANNER - "The Trend Spotter"</div>
+            <div style="font-size:11px;margin-bottom:6px">
+              <strong>What They Ask:</strong><br>
+              ✓ "Is this company in a hot trend?" (Like AI, Electric Cars, Green Energy)<br>
+              ✓ "Does this company lead in that trend?"<br>
+              ✓ "Will this trend continue?"
+            </div>
+            <div style="font-size:11px;background:rgba(52,211,153,0.1);padding:6px;border-radius:4px">
+              <strong>Real Example:</strong> Nvidia score 92 in "AI Winners"<br>
+              Meaning: Nvidia is THE leader in AI chips. Perfect AI play.
+            </div>
+          </div>
+          
+          <div style="margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid rgba(255,255,255,0.1)">
+            <div style="font-weight:700;color:#fbbf24;font-size:12px;margin-bottom:6px">3️⃣ SECTOR SCANNER - "The Relative Value Expert"</div>
+            <div style="font-size:11px;margin-bottom:6px">
+              <strong>What They Ask:</strong><br>
+              ✓ "Compare this company to its competitors"<br>
+              ✓ "Is it cheaper than similar companies?"<br>
+              ✓ "Does it make more profit than similar companies?"
+            </div>
+            <div style="font-size:11px;background:rgba(251,191,36,0.1);padding:6px;border-radius:4px">
+              <strong>Real Example:</strong> JPMorgan score 84 vs banking peers<br>
+              Meaning: JPM is cheaper AND more profitable than other banks
+            </div>
+          </div>
+          
+          <div style="margin-bottom:0">
+            <div style="font-weight:700;color:#f87171;font-size:12px;margin-bottom:6px">4️⃣ RULES ENGINE - "The Philosophy Matcher"</div>
+            <div style="font-size:11px;margin-bottom:6px">
+              <strong>What They Ask:</strong><br>
+              ✓ "Does this match YOUR investing style?"<br>
+              ✓ "If you like VALUE stocks, does it qualify?"<br>
+              ✓ "If you like GROWTH stocks, does it qualify?"
+            </div>
+            <div style="font-size:11px;background:rgba(248,113,113,0.1);padding:6px;border-radius:4px">
+              <strong>Real Example:</strong> Apple score 90 in "Quality" style<br>
+              Meaning: Apple is perfect for people who like high-quality, profitable companies
+            </div>
+          </div>
+        </div>
+
+        <div style="background:var(--border);padding:12px;border-radius:6px;margin-bottom:16px">
+          <strong style="color:var(--text);display:block;margin-bottom:12px">🎯 Understanding the Results</strong>
+          
+          <div style="margin-bottom:10px;padding:10px;background:rgba(34,197,94,0.1);border-left:3px solid var(--green)">
+            <strong style="color:var(--green)">🟢 4/4 CONSENSUS = "YES, ALL EXPERTS AGREE!"</strong><br>
+            <div style="font-size:10px;margin-top:6px;color:var(--muted)">
+              <strong>What It Means:</strong> All 4 experts examined the stock from different angles and ALL said it's good.<br><br>
+              <strong>In House Terms:</strong> You asked 4 people (realtor, inspector, neighbor, accountant) about a house, and ALL 4 said it's a great buy.<br><br>
+              <strong>Your Action:</strong> This is safe to buy. Maximum confidence.
+            </div>
+          </div>
+          
+          <div style="margin-bottom:10px;padding:10px;background:rgba(251,191,36,0.1);border-left:3px solid #fbbf24">
+            <strong style="color:#fbbf24">🟡 3/4 CONSENSUS = "MOSTLY YES, ONE MAYBE"</strong><br>
+            <div style="font-size:10px;margin-top:6px;color:var(--muted)">
+              <strong>What It Means:</strong> 3 experts say yes, 1 expert says "it's okay but not my style"<br><br>
+              <strong>In House Terms:</strong> Realtor, Inspector, Accountant all say YES. Neighbor says "it's in a quiet area, not for everyone"<br><br>
+              <strong>Your Action:</strong> This is still very safe. The one expert probably just has a different preference. Go ahead.
+            </div>
+          </div>
+          
+          <div style="margin-bottom:10px;padding:10px;background:rgba(96,165,250,0.1);border-left:3px solid #60a5fa">
+            <strong style="color:#60a5fa">🔵 2/4 CONSENSUS = "MIXED OPINIONS"</strong><br>
+            <div style="font-size:10px;margin-top:6px;color:var(--muted)">
+              <strong>What It Means:</strong> 2 experts like it, 2 experts don't (or like it less)<br><br>
+              <strong>In House Terms:</strong> Realtor & Inspector say YES. Accountant says "expensive" and Neighbor says "noisy street"<br><br>
+              <strong>Your Action:</strong> Think more carefully. It has pros and cons. Maybe it's right for you, maybe not. Do more research.
+            </div>
+          </div>
+          
+          <div style="margin-bottom:0;padding:10px;background:rgba(107,114,128,0.1);border-left:3px solid #6b7280">
+            <strong style="color:var(--muted)">🔴 1/4 CONSENSUS = "ONE EXPERT ONLY"</strong><br>
+            <div style="font-size:10px;margin-top:6px;color:var(--muted)">
+              <strong>What It Means:</strong> Only 1 expert likes it, other 3 are silent or don't like it<br><br>
+              <strong>In House Terms:</strong> Only the realtor (who wants a commission) says YES. Everyone else is quiet.<br><br>
+              <strong>Your Action:</strong> Be careful! This could be a hidden gem OR a trap. Ask more questions. Do serious research before buying.
+            </div>
+          </div>
+        </div>
+
+        <div style="background:var(--border);padding:12px;border-radius:6px;margin-bottom:16px">
+          <strong style="color:var(--text);display:block;margin-bottom:10px">📊 Reading the Comparison Bars (What the Numbers Mean)</strong>
+          
+          <div style="font-size:11px;margin-bottom:10px;padding:8px;background:rgba(0,0,0,0.2);border-radius:4px">
+            <div style="margin-bottom:8px">
+              <strong>Example: MSFT Scores</strong><br>
+              🎯 Thematic: 88 ← What does 88 mean?
+            </div>
+            
+            <div style="margin-bottom:8px;padding:8px;background:var(--card);border-radius:4px">
+              <strong style="color:var(--accent)">Score Scale (0-100):</strong><br>
+              90-100 = Excellent, very bullish (Strong buy signal)<br>
+              80-89 = Good, bullish (Good candidate)<br>
+              70-79 = Fair, okay (Maybe consider)<br>
+              60-69 = Weak, not ideal (Be cautious)<br>
+              Below 60 = Poor, avoid (Skip this one)
+            </div>
+            
+            <div style="margin-bottom:8px;padding:8px;background:var(--card);border-radius:4px">
+              <strong style="color:var(--accent)">So MSFT score 88 means:</strong><br>
+              • 88 out of 100<br>
+              • In the "Good" range<br>
+              • Thematic scanner is bullish about it<br>
+              • Confidence level: High
+            </div>
+            
+            <div style="padding:8px;background:var(--card);border-radius:4px">
+              <strong style="color:var(--accent)">Visual Bar:</strong><br>
+              🎯 Thematic: █████████ 88<br>
+              (Bar fills up 88% = 88 out of 100)
+            </div>
+          </div>
+        </div>
+
+        <div style="background:var(--border);padding:12px;border-radius:6px;margin-bottom:16px">
+          <strong style="color:var(--text);display:block;margin-bottom:8px">⭐ What Does the Star Mean?</strong>
+          <div style="font-size:11px;line-height:1.7">
+            <div style="margin-bottom:10px;padding:8px;background:rgba(251,191,36,0.1);border-left:3px solid #fbbf24">
+              <strong style="color:#fbbf24">⭐ HIGHEST SCORE</strong><br>
+              The star shows which expert was MOST bullish about this stock.
+            </div>
+            
+            <div style="margin-bottom:10px;padding:8px;background:var(--card);border-radius:4px">
+              <strong>Example:</strong><br>
+              🎯 Thematic: 88 ⭐<br>
+              ⚙️ Rules: 90<br>
+              📈 Sector: 87<br>
+              📊 Hybrid: 87
+            </div>
+            
+            <div style="padding:8px;background:var(--card);border-radius:4px">
+              <strong style="color:var(--text)">Wait! Rules scored 90 (highest), but Thematic has the star?</strong><br>
+              The star shows: Thematic is the most confident about THIS SPECIFIC REASON.<br>
+              But Rules scored slightly higher overall.
+            </div>
+          </div>
+        </div>
+
+        <div style="background:var(--border);padding:12px;border-radius:6px;margin-bottom:16px">
+          <strong style="color:var(--text);display:block;margin-bottom:8px">✅ Beginner Action Plan</strong>
+          <div style="font-size:11px;line-height:1.8">
+            <div style="margin-bottom:8px;padding:8px;background:rgba(34,197,94,0.1);border-radius:4px">
+              <strong style="color:var(--green)">Step 1: Look for 4/4 Stocks</strong><br>
+              These have maximum confidence. All 4 experts agree. Safest choices.
+            </div>
+            
+            <div style="margin-bottom:8px;padding:8px;background:rgba(251,191,36,0.1);border-radius:4px">
+              <strong style="color:#fbbf24">Step 2: Check Individual Scores</strong><br>
+              All scores above 80? Very good.<br>
+              Scores mixed (70, 85, 92)? Mixed signals.
+            </div>
+            
+            <div style="margin-bottom:8px;padding:8px;background:rgba(96,165,250,0.1);border-radius:4px">
+              <strong style="color:#60a5fa">Step 3: Click "ℹ️ Details" for Explanation</strong><br>
+              Understand which expert likes it most and why.
+            </div>
+            
+            <div style="padding:8px;background:rgba(52,211,153,0.1);border-radius:4px">
+              <strong style="color:var(--green)">Step 4: Click "📊 Analyze" for Deep Research</strong><br>
+              See detailed financial metrics to understand the stock better.
+            </div>
+          </div>
+        </div>
+
+        <div style="background:var(--border);padding:12px;border-radius:6px">
+          <strong style="color:var(--text);display:block;margin-bottom:8px">❓ Still Confused? Remember This</strong>
+          <div style="font-size:11px;line-height:1.8;color:var(--muted)">
+            <div style="margin-bottom:8px">
+              You don't need to understand all the financial details!<br>
+              Just remember:
+            </div>
+            <div style="padding:8px;background:var(--card);border-radius:4px;margin-bottom:8px">
+              <strong style="color:var(--accent)">4/4 = All experts agree = Safe to buy</strong><br>
+              <strong style="color:var(--accent)">3/4 = Most agree = Probably safe</strong><br>
+              <strong style="color:var(--accent)">2/4 = Mixed = Be careful</strong><br>
+              <strong style="color:var(--accent)">1/4 = One expert only = Very risky</strong>
+            </div>
+            
+            <div>
+              That's the main takeaway!<br>
+              The detailed explanations are there when you need them.<br>
+              Start simple, learn more as you go.
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border);text-align:center">
+        <button class="btn btn-go" style="font-size:12px" onclick="runConsensusAnalysis()">🔗 Run All Scanners</button>
+      </div>
+    </div>
+  `;
+}
       
       <div style="font-size:12px;color:var(--muted);line-height:1.8">
         <div style="margin-bottom:16px;padding:12px;background:var(--border);border-radius:6px">
