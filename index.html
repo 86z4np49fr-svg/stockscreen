@@ -3614,6 +3614,16 @@ function consensusCard(stock, color) {
         </div>
       </div>
       
+      ${stock.reason ? `
+        <div style="background:rgba(34,197,94,0.1);padding:8px;border-left:3px solid var(--green);border-radius:4px;margin-bottom:8px;font-size:10px">
+          <strong style="color:var(--text)">✅ Why This Consensus:</strong><br>
+          <div style="margin-top:4px;color:var(--muted);line-height:1.6">
+            ${stock.reason}
+          </div>
+        </div>
+      ` : ''}
+      
+      
       <div style="display:flex;gap:6px">
         <button class="btn" style="flex:1;padding:6px;font-size:11px;cursor:pointer" 
           onclick="analyzeThematic('${stock.ticker}')">
@@ -3697,6 +3707,17 @@ function showScannerDetails(ticker) {
           }
         </div>
       </div>
+      
+      ${stock.reason ? `
+        <div style="background:rgba(96,165,250,0.1);border-left:3px solid #60a5fa;padding:12px;border-radius:6px;margin-bottom:16px">
+          <div style="font-weight:700;font-size:12px;margin-bottom:8px;color:var(--text)">💡 Expert Opinion & Rationale:</div>
+          <div style="font-size:11px;color:var(--muted);line-height:1.7">
+            <strong style="color:var(--text)">${stock.reason}</strong><br><br>
+            This consensus was reached based on multiple analytical approaches working together. Each scanner evaluated the stock from a different angle and came to similar conclusions.
+          </div>
+        </div>
+      ` : ''}
+      
       
       <div style="display:flex;gap:8px">
         <button class="btn" style="flex:1;padding:8px;font-size:11px" onclick="analyzeThematic('${ticker}')">📊 Analyze Stock</button>
