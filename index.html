@@ -3544,7 +3544,7 @@ function consensusCard(stock, color) {
   else if (avgScore >= 70) scoreInterpretation = 'Fair - Moderate signals';
   else scoreInterpretation = 'Weak - Be careful';
   
-  // Create scanner comparison bars with tooltips
+  // Create scanner comparison bars with tooltips and explanations
   const scannerBars = scores.map(s => {
     if (s.score === 0) return '';
     const barWidth = (s.score / 100) * 100;
@@ -3557,17 +3557,44 @@ function consensusCard(stock, color) {
     else if (s.score >= 70) scoreDesc = '(Fair)';
     else scoreDesc = '(Weak)';
     
+    // Expert-specific explanations based on score
+    let explanation = '';
+    if (s.name === 'Hybrid') {
+      if (s.score >= 90) explanation = 'Strong across price, profit, and growth metrics';
+      else if (s.score >= 80) explanation = 'Good balance of valuation and fundamentals';
+      else if (s.score >= 70) explanation = 'Acceptable fundamentals but some concerns';
+      else explanation = 'Weak fundamentals or poor valuation';
+    } else if (s.name === 'Thematic') {
+      if (s.score >= 90) explanation = 'Excellent positioning in hot trends (AI, green energy, etc)';
+      else if (s.score >= 80) explanation = 'Strong alignment with emerging market trends';
+      else if (s.score >= 70) explanation = 'Some exposure to trendy themes';
+      else explanation = 'Limited trend exposure';
+    } else if (s.name === 'Sector') {
+      if (s.score >= 90) explanation = 'Clear winner vs sector competitors on value and quality';
+      else if (s.score >= 80) explanation = 'Outperforms most peers in the same industry';
+      else if (s.score >= 70) explanation = 'Competitive with sector peers';
+      else explanation = 'Underperforming compared to peers';
+    } else if (s.name === 'Rules') {
+      if (s.score >= 90) explanation = 'Perfect fit for disciplined, rules-based investing style';
+      else if (s.score >= 80) explanation = 'Strong alignment with investment philosophy';
+      else if (s.score >= 70) explanation = 'Meets most investment criteria';
+      else explanation = 'Doesn\'t fit typical investment rules';
+    }
+    
     return `
-      <div style="margin-bottom:8px">
-        <div style="display:flex;justify-content:space-between;margin-bottom:2px;font-size:11px">
+      <div style="margin-bottom:10px;padding:8px;background:var(--card);border-radius:6px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px;font-size:11px">
           <div>
             <span style="cursor:help;border-bottom:1px dotted rgba(255,255,255,0.3)" title="${s.name}: measures ${s.desc}">${s.icon} ${s.name}</span>
-            <span style="color:var(--muted);font-size:10px"> (${s.desc})</span>
+            <span style="color:var(--muted);font-size:9px"> (${s.desc})</span>
           </div>
           <strong style="color:${isHighest ? color : 'var(--muted)'}">${s.score} ${scoreDesc}${isHighest ? ' ⭐' : ''}</strong>
         </div>
-        <div style="background:var(--border);height:6px;border-radius:3px;overflow:hidden">
+        <div style="background:var(--border);height:6px;border-radius:3px;overflow:hidden;margin-bottom:6px">
           <div style="background:${isHighest ? color : '#666'};height:100%;width:${barWidth}%;transition:width 0.3s"></div>
+        </div>
+        <div style="font-size:9px;color:var(--muted);line-height:1.4;font-style:italic">
+          💡 ${explanation}
         </div>
       </div>
     `;
@@ -3665,15 +3692,53 @@ function showScannerDetails(ticker) {
     if (s.score === 0) return;
     const barWidth = (s.score / 100) * 100;
     const isBest = s.score === maxScore;
+    
+    // Determine outcome message based on score
+    let outcome = '';
+    if (s.score >= 90) outcome = '✅ Strong positive signal';
+    else if (s.score >= 80) outcome = '✅ Good signal';
+    else if (s.score >= 70) outcome = '⚠️ Moderate signal';
+    else outcome = '⚠️ Weak signal';
+    
+    // Expert-specific explanations
+    let explanation = '';
+    if (s.name.includes('Hybrid')) {
+      if (s.score >= 90) explanation = 'Excellent valuation, profitability, and growth trajectory';
+      else if (s.score >= 80) explanation = 'Good fundamentals with balanced metrics';
+      else if (s.score >= 70) explanation = 'Fair metrics but some concerns exist';
+      else explanation = 'Weak fundamentals or poor value proposition';
+    } else if (s.name.includes('Thematic')) {
+      if (s.score >= 90) explanation = 'Prime candidate in hot trends (AI, green energy, etc)';
+      else if (s.score >= 80) explanation = 'Strong exposure to emerging market themes';
+      else if (s.score >= 70) explanation = 'Some alignment with current trends';
+      else explanation = 'Limited trend exposure or theme exposure';
+    } else if (s.name.includes('Sector')) {
+      if (s.score >= 90) explanation = 'Clear outperformer vs sector peers on all metrics';
+      else if (s.score >= 80) explanation = 'Better than most competitors in the sector';
+      else if (s.score >= 70) explanation = 'In line with sector performance';
+      else explanation = 'Underperforming relative to peers';
+    } else if (s.name.includes('Rules')) {
+      if (s.score >= 90) explanation = 'Exemplary fit for disciplined investing philosophy';
+      else if (s.score >= 80) explanation = 'Strong alignment with investment rules';
+      else if (s.score >= 70) explanation = 'Meets majority of investment criteria';
+      else explanation = 'Poor fit for typical investment rules';
+    }
+    
     html += `
-      <div style="margin-bottom:12px">
-        <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+      <div style="margin-bottom:14px;padding:10px;background:var(--card);border-radius:6px;border-left:3px solid ${isBest ? 'var(--accent)' : 'rgba(255,255,255,0.1)'}">
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px">
           <span style="font-weight:${isBest ? 700 : 400}">${s.name}</span>
           <strong style="color:${isBest ? 'var(--accent)' : 'var(--muted)'}">${s.score}${isBest ? ' ⭐ HIGHEST' : ''}</strong>
         </div>
-        <div style="font-size:10px;color:var(--muted);margin-bottom:4px">${s.desc}</div>
-        <div style="background:var(--border);height:8px;border-radius:4px;overflow:hidden">
+        <div style="font-size:10px;color:var(--muted);margin-bottom:6px">${s.desc}</div>
+        <div style="background:var(--border);height:8px;border-radius:4px;overflow:hidden;margin-bottom:6px">
           <div style="background:${isBest ? 'var(--accent)' : '#666'};height:100%;width:${barWidth}%;transition:width 0.3s"></div>
+        </div>
+        <div style="font-size:9px;color:var(--muted);line-height:1.5;margin-bottom:4px">
+          <strong>Rationale:</strong> ${explanation}
+        </div>
+        <div style="font-size:9px;color:var(--accent);font-weight:700">
+          ${outcome}
         </div>
       </div>
     `;
