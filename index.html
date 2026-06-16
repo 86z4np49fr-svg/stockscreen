@@ -3405,118 +3405,350 @@ function showConsensusInfo() {
   const output = document.getElementById('consensusOutput');
   
   output.innerHTML = `
-    <div style="background:var(--card);padding:16px;border-radius:8px;border-left:4px solid var(--accent)">
-      <div style="font-weight:700;font-size:14px;margin-bottom:12px;color:var(--accent)">📊 Strategy Consensus - Decision Making Guide</div>
+    <div style="background:var(--card);padding:16px;border-radius:8px;border-left:4px solid var(--accent);max-height:90vh;overflow-y:auto">
+      <div style="font-weight:700;font-size:14px;margin-bottom:12px;color:var(--accent)">📊 Strategy Consensus - Complete Decision Making Guide</div>
       
       <div style="font-size:12px;color:var(--muted);line-height:1.8">
-        <div style="margin-bottom:16px">
-          <strong style="color:var(--text);display:block;margin-bottom:6px">🎯 What is Strategy Consensus?</strong>
-          Instead of relying on one screening method, we run FOUR independent approaches on the same stock. If multiple methods find the same stock, confidence increases significantly.
+        <div style="margin-bottom:16px;padding:12px;background:var(--border);border-radius:6px">
+          <strong style="color:var(--text);display:block;margin-bottom:6px">🎯 Core Concept</strong>
+          Instead of relying on ONE screening method (which may have blind spots), we run FOUR completely independent approaches. If multiple approaches find the same stock from different angles, that's STRONG validation. It's like asking 4 different financial analysts and counting how many agree.
         </div>
         
         <div style="background:var(--border);padding:12px;border-radius:6px;margin-bottom:16px">
-          <strong style="color:var(--text);display:block;margin-bottom:8px">📈 The 4 Validation Methods:</strong>
+          <strong style="color:var(--text);display:block;margin-bottom:12px">📈 Deep Dive: The 4 Validation Methods</strong>
           
-          <div style="margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid var(--border)">
-            <div style="font-weight:700;color:#60a5fa">1️⃣ Hybrid Scanner (v6.0) - Balanced Scoring</div>
-            <div style="font-size:11px;margin-top:4px">
-              <strong>Method:</strong> Scores all stocks on 4 dimensions equally<br>
-              <strong>Dimensions:</strong> Valuation (25%) + Quality (25%) + Growth (25%) + Momentum (25%)<br>
-              <strong>Result:</strong> 0-100 overall score<br>
-              <strong>Best For:</strong> Finding overall best stocks<br>
-              <strong>Strength:</strong> Comprehensive, nothing missed<br>
-              <strong>Weakness:</strong> May miss sector-specific or themed plays
+          <div style="margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--border)">
+            <div style="font-weight:700;color:#60a5fa;font-size:13px;margin-bottom:8px">1️⃣ HYBRID SCANNER (v6.0) - Balanced Scoring</div>
+            <div style="font-size:11px">
+              <div style="margin-bottom:8px">
+                <strong>📌 Purpose:</strong> Creates a single comprehensive score by balancing ALL investment factors equally
+              </div>
+              
+              <div style="margin-bottom:8px;padding:8px;background:rgba(96,165,250,0.1);border-left:3px solid #60a5fa">
+                <strong>Decision Process:</strong><br>
+                Step 1: Scores stock on Valuation (How cheap? P/E, P/B ratios)<br>
+                Step 2: Scores stock on Quality (How good? ROE, Margins)<br>
+                Step 3: Scores stock on Growth (How fast? Revenue growth)<br>
+                Step 4: Scores stock on Momentum (How hot? Recent trends)<br>
+                Step 5: Combines all 4 equally (25% + 25% + 25% + 25%)<br>
+                Step 6: Final score 0-100
+              </div>
+              
+              <div style="margin-bottom:8px">
+                <strong>Scoring Logic:</strong><br>
+                • 80-100 = Excellent (buy)<br>
+                • 70-79 = Good (consider)<br>
+                • 60-69 = Moderate (monitor)<br>
+                • Below 60 = Weak (skip)
+              </div>
+              
+              <div style="margin-bottom:8px">
+                <strong>✅ Strengths:</strong> Comprehensive, balanced, catches all-around winners, nothing missed<br>
+                <strong>❌ Weaknesses:</strong> May miss pure-play themes, may dilute specialized strategies
+              </div>
+              
+              <div style="margin-bottom:0">
+                <strong>🎯 Best For:</strong> Finding the best overall stocks. If Hybrid picks it = broadly excellent stock<br>
+                <strong>Example:</strong> AAPL scores 88 (strong valuation + quality + growth)
+              </div>
             </div>
           </div>
           
-          <div style="margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid var(--border)">
-            <div style="font-weight:700;color:#34d399">2️⃣ Thematic Scanner (v6.1) - Catalyst Finder</div>
-            <div style="font-size:11px;margin-top:4px">
-              <strong>Method:</strong> Identifies stocks matching investment themes<br>
-              <strong>Themes:</strong> AI Winners | Dividend Growth | Oversold Recovery | Earnings Surprise | Sector Rotation<br>
-              <strong>Result:</strong> Stocks with specific catalyst<br>
-              <strong>Best For:</strong> Tactical positioning, specific theses<br>
-              <strong>Strength:</strong> Finds catalysts others miss<br>
-              <strong>Weakness:</strong> Limited to 5 themes only
+          <div style="margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--border)">
+            <div style="font-weight:700;color:#34d399;font-size:13px;margin-bottom:8px">2️⃣ THEMATIC SCANNER (v6.1) - Catalyst Finder</div>
+            <div style="font-size:11px">
+              <div style="margin-bottom:8px">
+                <strong>📌 Purpose:</strong> Finds stocks matching specific investment themes or catalysts
+              </div>
+              
+              <div style="margin-bottom:8px;padding:8px;background:rgba(52,211,153,0.1);border-left:3px solid #34d399">
+                <strong>Decision Process:</strong><br>
+                Step 1: Define theme (e.g., "AI Winners")<br>
+                Step 2: Set theme criteria (e.g., revenue growth >25% + AI exposure)<br>
+                Step 3: Scan for stocks matching theme<br>
+                Step 4: Score matched stocks on theme-specific factors<br>
+                Step 5: Rank by theme relevance
+              </div>
+              
+              <div style="margin-bottom:8px">
+                <strong>5 Available Themes:</strong><br>
+                🤖 AI Winners: High growth + AI/ML exposure<br>
+                💰 Dividend Growth: Dividend increases + safe payout ratio<br>
+                📈 Oversold Recovery: Down >30% but fundamentals intact<br>
+                🚀 Earnings Surprise: Beat estimates + guidance raised<br>
+                🔄 Sector Rotation: Leading sector + underperforming stock
+              </div>
+              
+              <div style="margin-bottom:8px">
+                <strong>Decision Logic for AI Theme (Example):</strong><br>
+                • Revenue growth >25%? ✓<br>
+                • R&D spending >15% of revenue? ✓<br>
+                • AI/ML mentioned in earnings? ✓<br>
+                → Score 85 = Strong AI play
+              </div>
+              
+              <div style="margin-bottom:8px">
+                <strong>✅ Strengths:</strong> Finds catalysts, tactical flexibility, current-focused, theme-specific<br>
+                <strong>❌ Weaknesses:</strong> Limited to 5 themes, catalysts may not materialize
+              </div>
+              
+              <div style="margin-bottom:0">
+                <strong>🎯 Best For:</strong> Tactical trades with specific catalysts. If Thematic picks it + theme you believe in = good trade setup<br>
+                <strong>Example:</strong> NVDA scores 92 in AI theme (dominant AI supplier)
+              </div>
             </div>
           </div>
           
-          <div style="margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid var(--border)">
-            <div style="font-weight:700;color:#fbbf24">3️⃣ Sector Scanner (v6.2) - Peer Comparison</div>
-            <div style="font-size:11px;margin-top:4px">
-              <strong>Method:</strong> Compares stocks to sector medians<br>
-              <strong>Comparison:</strong> P/E vs median | ROE vs median | Growth vs median<br>
-              <strong>Result:</strong> Bargains within sector<br>
-              <strong>Best For:</strong> Finding undervalued peers<br>
-              <strong>Strength:</strong> Avoids sector-wide traps<br>
-              <strong>Weakness:</strong> Within-sector only, misses best overall
+          <div style="margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--border)">
+            <div style="font-weight:700;color:#fbbf24;font-size:13px;margin-bottom:8px">3️⃣ SECTOR SCANNER (v6.2) - Peer Comparison</div>
+            <div style="font-size:11px">
+              <div style="margin-bottom:8px">
+                <strong>📌 Purpose:</strong> Finds stocks that are BARGAINS within their sector by comparing to peers
+              </div>
+              
+              <div style="margin-bottom:8px;padding:8px;background:rgba(251,191,36,0.1);border-left:3px solid #fbbf24">
+                <strong>Decision Process:</strong><br>
+                Step 1: Identify stock's sector (e.g., Healthcare)<br>
+                Step 2: Calculate sector median for key metrics<br>
+                Step 3: Compare stock to medians:<br>
+                  • P/E vs Sector P/E (cheaper?)<br>
+                  • ROE vs Sector ROE (better quality?)<br>
+                  • Growth vs Sector Growth (faster?)<br>
+                Step 4: Count how many metrics beat sector<br>
+                Step 5: Calculate "bargain score"
+              </div>
+              
+              <div style="margin-bottom:8px">
+                <strong>Bargain Scoring Logic:</strong><br>
+                • All 3 metrics beat sector? = Score 90 (excellent bargain)<br>
+                • 2 of 3 beat sector? = Score 70 (good bargain)<br>
+                • 1 of 3 beat sector? = Score 50 (marginal bargain)<br>
+                • 0 of 3 beat sector? = Score 30 (not a bargain)
+              </div>
+              
+              <div style="margin-bottom:8px">
+                <strong>Example: JPM vs Banking Sector</strong><br>
+                JPM P/E = 12 vs Sector median = 13.5 ✓ Cheaper<br>
+                JPM ROE = 15% vs Sector median = 12% ✓ Better quality<br>
+                JPM Growth = 8% vs Sector median = 6% ✓ Faster<br>
+                → 3/3 metrics win = Score 90 = Sector bargain!
+              </div>
+              
+              <div style="margin-bottom:8px">
+                <strong>✅ Strengths:</strong> Avoids sector-wide traps, finds relative value, peer-validated<br>
+                <strong>❌ Weaknesses:</strong> Works only within sector, misses cross-sector leaders
+              </div>
+              
+              <div style="margin-bottom:0">
+                <strong>🎯 Best For:</strong> Finding undervalued peers in sectors you like. If Sector Scanner picks it = cheapest relative to peers<br>
+                <strong>Example:</strong> XOM scores 78 (cheap vs energy peers despite oil price)
+              </div>
             </div>
           </div>
           
-          <div style="margin-bottom:0">
-            <div style="font-weight:700;color:#f87171">4️⃣ Rules Engine (v6.3) - Philosophy Based</div>
-            <div style="font-size:11px;margin-top:4px">
-              <strong>Method:</strong> Applies explicit investment rules<br>
-              <strong>Rules:</strong> 4 philosophies × 5 rules each = 20 total rules<br>
-              <strong>Philosophies:</strong> Value | Growth | Quality | Turnaround<br>
-              <strong>Result:</strong> Stocks matching philosophy<br>
-              <strong>Best For:</strong> Rule-based, transparent investing<br>
-              <strong>Strength:</strong> Explicit, reproducible<br>
-              <strong>Weakness:</strong> Rigid rules may miss exceptions
+          <div style="margin-bottom:16px">
+            <div style="font-weight:700;color:#f87171;font-size:13px;margin-bottom:8px">4️⃣ RULES ENGINE (v6.3) - Philosophy Based</div>
+            <div style="font-size:11px">
+              <div style="margin-bottom:8px">
+                <strong>📌 Purpose:</strong> Applies explicit investment philosophies as scoring rules - transparent & reproducible
+              </div>
+              
+              <div style="margin-bottom:8px;padding:8px;background:rgba(248,113,113,0.1);border-left:3px solid #f87171">
+                <strong>Decision Process:</strong><br>
+                Step 1: Choose philosophy (Value, Growth, Quality, Turnaround)<br>
+                Step 2: Apply 5 explicit rules for that philosophy<br>
+                Step 3: Count how many rules stock passes<br>
+                Step 4: Calculate philosophy score
+              </div>
+              
+              <div style="margin-bottom:8px">
+                <strong>4 Philosophies × 5 Rules = 20 Total Rules</strong><br>
+                <br>
+                <strong style="color:#f87171">VALUE PHILOSOPHY (5 Rules):</strong><br>
+                1. P/E < sector median ✓<br>
+                2. P/B < 1.5 ✓<br>
+                3. Dividend yield > 2% ✓<br>
+                4. Debt/Equity < 1.0 ✓<br>
+                5. Free cash flow positive ✓<br>
+                → Pass 5/5 = Value Score 100<br>
+                <br>
+                <strong style="color:#fbbf24">GROWTH PHILOSOPHY (5 Rules):</strong><br>
+                1. Revenue growth > 15% ✓<br>
+                2. Earnings growth > 20% ✓<br>
+                3. R&D > 10% of revenue ✓<br>
+                4. Market expansion story ✓<br>
+                5. Competitive moat ✓<br>
+                → Pass 5/5 = Growth Score 100<br>
+                <br>
+                <strong style="color:#34d399">QUALITY PHILOSOPHY (5 Rules):</strong><br>
+                1. ROE > 15% ✓<br>
+                2. Profit margin > 20% ✓<br>
+                3. Asset turnover efficient ✓<br>
+                4. Low debt ✓<br>
+                5. Consistent earnings ✓<br>
+                → Pass 5/5 = Quality Score 100<br>
+                <br>
+                <strong style="color:#60a5fa">TURNAROUND PHILOSOPHY (5 Rules):</strong><br>
+                1. Stock down >30% ✓<br>
+                2. Management change ✓<br>
+                3. New strategic focus ✓<br>
+                4. Cost restructuring ✓<br>
+                5. Early earnings recovery ✓<br>
+                → Pass 4/5 = Turnaround Score 80
+              </div>
+              
+              <div style="margin-bottom:8px">
+                <strong>Scoring Rule Count:</strong><br>
+                • Pass 5/5 rules = Score 100 (perfect fit)<br>
+                • Pass 4/5 rules = Score 80 (strong fit)<br>
+                • Pass 3/5 rules = Score 60 (moderate fit)<br>
+                • Pass 2/5 rules = Score 40 (weak fit)<br>
+                • Pass <2 rules = Score 0 (not a fit)
+              </div>
+              
+              <div style="margin-bottom:8px">
+                <strong>✅ Strengths:</strong> Transparent, reproducible, explicit, philosophy-driven, clear rationale<br>
+                <strong>❌ Weaknesses:</strong> Rigid rules miss nuance, exceptions ignored, may be dated
+              </div>
+              
+              <div style="margin-bottom:0">
+                <strong>🎯 Best For:</strong> Rule-based investors who want to know EXACTLY why a stock qualifies<br>
+                <strong>Example:</strong> BRK scores 100 on Quality rules (ROE 25%, Margins 15%, Debt low)
+              </div>
             </div>
           </div>
         </div>
         
         <div style="background:var(--border);padding:12px;border-radius:6px;margin-bottom:16px">
-          <strong style="color:var(--text);display:block;margin-bottom:8px">🎯 Decision Making Process:</strong>
+          <strong style="color:var(--text);display:block;margin-bottom:12px">🎯 The Consensus Voting System</strong>
           
           <div style="font-size:11px;margin-bottom:12px">
-            <div style="margin-bottom:8px">
-              <strong style="color:var(--green)">🟢 STOCK FOUND IN 4/4 SCANNERS → STRONG BUY</strong><br>
-              All 4 independent methods found it. Maximum confidence. All agree from different angles.
+            <div style="margin-bottom:10px;padding:10px;background:rgba(34,197,94,0.1);border-left:3px solid #22c55e">
+              <strong style="color:var(--green)">🟢 4/4 CONSENSUS = STRONG BUY</strong><br>
+              <strong>Meaning:</strong> All 4 methods found the stock from completely different angles<br>
+              <strong>Interpretation:</strong> Hybrid says it's balanced excellent. Thematic says it's a theme leader. Sector says it beats peers. Rules say it fits a philosophy perfectly.<br>
+              <strong>Confidence:</strong> ⭐⭐⭐⭐⭐ MAXIMUM (multiple independent validations)<br>
+              <strong>Action:</strong> This is your best opportunity. Different paths = same conclusion.
             </div>
             
-            <div style="margin-bottom:8px">
-              <strong style="color:#fbbf24">🟡 STOCK FOUND IN 3/4 SCANNERS → STRONG</strong><br>
-              Most methods found it. High confidence. One method has blind spot but 3 validate.
+            <div style="margin-bottom:10px;padding:10px;background:rgba(251,191,36,0.1);border-left:3px solid #fbbf24">
+              <strong style="color:#fbbf24">🟡 3/4 CONSENSUS = STRONG</strong><br>
+              <strong>Meaning:</strong> 3 methods found it, 1 method missed it (has a blind spot)<br>
+              <strong>Interpretation:</strong> Maybe it doesn't fit one philosophy, but 3 other angles validate it<br>
+              <strong>Confidence:</strong> ⭐⭐⭐⭐ VERY HIGH (multiple validation, one blind spot)<br>
+              <strong>Action:</strong> Excellent opportunity. Understand which method missed it and why.
             </div>
             
-            <div style="margin-bottom:8px">
-              <strong style="color:#60a5fa">🔵 STOCK FOUND IN 2/4 SCANNERS → GOOD</strong><br>
-              Some methods found it. Moderate confidence. Good opportunity but less validated.
+            <div style="margin-bottom:10px;padding:10px;background:rgba(96,165,250,0.1);border-left:3px solid #60a5fa">
+              <strong style="color:#60a5fa">🔵 2/4 CONSENSUS = GOOD</strong><br>
+              <strong>Meaning:</strong> 2 methods found it, 2 methods missed it<br>
+              <strong>Interpretation:</strong> Some angles like it, some don't. Maybe it's a specialist play (strong in one area)<br>
+              <strong>Confidence:</strong> ⭐⭐⭐ MODERATE (partial validation)<br>
+              <strong>Action:</strong> Good opportunity but less validated. Investigate why half the methods missed it.
+            </div>
+            
+            <div style="margin-bottom:0;padding:10px;background:rgba(107,114,128,0.1);border-left:3px solid #6b7280">
+              <strong style="color:var(--muted)">🔴 1/4 CONSENSUS = CHECK</strong><br>
+              <strong>Meaning:</strong> Only 1 method found it. Could be unique or could be wrong.<br>
+              <strong>Interpretation:</strong> Interesting but not validated. Is it a hidden gem or a trap?<br>
+              <strong>Confidence:</strong> ⭐⭐ LOW (single validation only)<br>
+              <strong>Action:</strong> Research deeper before committing. Don't skip it but be cautious.
+            </div>
+          </div>
+        </div>
+        
+        <div style="background:var(--border);padding:12px;border-radius:6px;margin-bottom:16px">
+          <strong style="color:var(--text);display:block;margin-bottom:12px">🧠 Decision Trees: How Each Scanner Decides</strong>
+          
+          <div style="font-size:10px;line-height:1.6;font-family:monospace;background:rgba(0,0,0,0.2);padding:10px;border-radius:4px">
+            <div style="margin-bottom:12px">
+              <strong>HYBRID Flow:</strong><br>
+              Valuation (25%)? → + Quality (25%)? → + Growth (25%)? → + Momentum (25%)? → = Score (0-100)<br>
+              All factors weighted equally. Best for "overall" plays.
+            </div>
+            
+            <div style="margin-bottom:12px">
+              <strong>THEMATIC Flow:</strong><br>
+              Matches theme? YES → Meets theme criteria? YES → Score on theme metrics → Final score<br>
+              Best for catalysts and tactical trades.
+            </div>
+            
+            <div style="margin-bottom:12px">
+              <strong>SECTOR Flow:</strong><br>
+              Get sector → Calculate medians → Compare P/E? Better? → Compare ROE? Better? → Compare Growth? Better? → Count wins (0-3) → Final score<br>
+              Best for finding bargains within sectors.
             </div>
             
             <div style="margin-bottom:0">
-              <strong style="color:var(--muted)">🔴 STOCK FOUND IN 1/4 SCANNERS → CHECK</strong><br>
-              Only one method found it. Low confidence. Interesting but needs deeper investigation.
+              <strong>RULES Flow:</strong><br>
+              Choose philosophy → Apply 5 rules → Count passes (0-5) → Score = (passes/5)*100<br>
+              Best for transparent, rule-based investing.
             </div>
           </div>
         </div>
         
         <div style="background:var(--border);padding:12px;border-radius:6px;margin-bottom:16px">
-          <strong style="color:var(--text);display:block;margin-bottom:8px">📋 How to Use Results:</strong>
+          <strong style="color:var(--text);display:block;margin-bottom:12px">📋 How to Interpret Results</strong>
           
-          <div style="font-size:11px;line-height:1.7">
-            <div style="margin-bottom:8px"><strong>Step 1: Look at 4/4 & 3/4 Results</strong><br>Focus here first. Multiple validation = high confidence.</div>
+          <div style="font-size:11px">
+            <div style="margin-bottom:12px">
+              <strong>Step 1: Check Consensus Level First</strong><br>
+              Focus on 4/4 and 3/4 results. These have multiple validation. Skip 1/4 for now (too risky).
+            </div>
             
-            <div style="margin-bottom:8px"><strong>Step 2: Understand Why Each Scanner Picked It</strong><br>Different methods = different insights. One saw value, one saw growth, one saw catalyst.</div>
+            <div style="margin-bottom:12px">
+              <strong>Step 2: Read Which Scanners Found Each Stock</strong><br>
+              If 3/4: Which scanner missed it? That's the weakness. Example:<br>
+              "Found by Hybrid, Thematic, Sector BUT missed by Rules"<br>
+              → Interpretation: Stock is good but doesn't fit strict philosophy
+            </div>
             
-            <div style="margin-bottom:8px"><strong>Step 3: Click [Analyze] to Deep Dive</strong><br>See all 24 indicators, peer comparison, analyst summary.</div>
+            <div style="margin-bottom:12px">
+              <strong>Step 3: Check Individual Scores</strong><br>
+              Look at scores from each method. Higher scores = more certain.<br>
+              Example: Hybrid 85, Thematic 92, Sector 78 = all confident (all >70)
+            </div>
             
-            <div><strong>Step 4: Make Decision</strong><br>4/4 = Buy | 3/4 = Strong buy | 2/4 = Consider | 1/4 = Research more</div>
+            <div style="margin-bottom:12px">
+              <strong>Step 4: Click [Analyze] for Deep Dive</strong><br>
+              See all 24 indicators to understand the stock better.
+            </div>
+            
+            <div style="margin-bottom:0">
+              <strong>Step 5: Make Decision</strong><br>
+              4/4 = Buy immediately | 3/4 = Strong buy | 2/4 = Research more | 1/4 = Investigate further
+            </div>
           </div>
         </div>
         
         <div style="background:var(--border);padding:12px;border-radius:6px">
-          <strong style="color:var(--text);display:block;margin-bottom:8px">✅ Example: MSFT Found in All 4 Scanners</strong>
+          <strong style="color:var(--text);display:block;margin-bottom:12px">✅ Real Example: MSFT Found in All 4 Scanners</strong>
           
-          <div style="font-size:11px;line-height:1.6">
-            <div style="margin-bottom:6px"><strong>✓ Hybrid:</strong> Score 87 - Balanced strength across all dimensions</div>
-            <div style="margin-bottom:6px"><strong>✓ AI Theme:</strong> Score 88 - Copilot + Enterprise AI adoption</div>
-            <div style="margin-bottom:6px"><strong>✓ Tech Sector:</strong> Score 87 - Undervalued vs tech peers</div>
-            <div style="margin-bottom:6px"><strong>✓ Quality Rules:</strong> Score 90 - Perfect quality match (ROE 35%, Margin 36%)</div>
-            <div style="font-weight:700;color:var(--green)">→ ALL METHODS AGREE = 4/4 STRONG BUY</div>
-            <div style="font-size:10px;color:var(--muted);margin-top:4px">Interpretation: Different validation angles all point to same stock. Different reasons same conclusion. Very high confidence.</div>
+          <div style="font-size:11px;line-height:1.7">
+            <div style="padding:8px;margin-bottom:8px;background:rgba(96,165,250,0.1);border-left:3px solid #60a5fa">
+              <strong>Hybrid Scanner:</strong> Score 87<br>
+              <span style="font-size:10px">Strong valuation (P/E 28 reasonable for growth) + Quality (27% ROE) + Growth (15% revenue growth) + Momentum (up 25% YTD) = Well-balanced excellent stock</span>
+            </div>
+            
+            <div style="padding:8px;margin-bottom:8px;background:rgba(52,211,153,0.1);border-left:3px solid #34d399">
+              <strong>Thematic Scanner:</strong> Score 88 (AI Winners)<br>
+              <span style="font-size:10px">Perfect AI play: Copilot in Office, Copilot Pro, Azure OpenAI partnership + 17% revenue growth + R&D 13% = Strong AI theme exposure</span>
+            </div>
+            
+            <div style="padding:8px;margin-bottom:8px;background:rgba(251,191,36,0.1);border-left:3px solid #fbbf24">
+              <strong>Sector Scanner:</strong> Score 85 (Tech Sector)<br>
+              <span style="font-size:10px">vs Tech median: P/E 28 vs 32 (cheaper) + ROE 27% vs 20% (better) + Growth 15% vs 12% (faster) = 3/3 beats peers</span>
+            </div>
+            
+            <div style="padding:8px;margin-bottom:8px;background:rgba(248,113,113,0.1);border-left:3px solid #f87171">
+              <strong>Rules Engine:</strong> Score 92 (Quality Philosophy)<br>
+              <span style="font-size:10px">Quality rules: ROE 27% > 15% ✓ + Margin 37% > 20% ✓ + Consistent ✓ + Low debt ✓ + Efficient ✓ = 5/5 perfect quality fit</span>
+            </div>
+            
+            <div style="margin-top:12px;padding:10px;background:var(--accent);border-radius:4px;text-align:center;font-weight:700">
+              🟢 ALL 4 SCANNERS AGREE = 4/4 STRONG BUY<br>
+              <span style="font-size:10px;font-weight:normal">Different reasons (AI + Balance + Value + Quality) but same conclusion: MSFT is excellent</span>
+            </div>
           </div>
         </div>
       </div>
