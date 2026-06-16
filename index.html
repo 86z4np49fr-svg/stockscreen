@@ -81,9 +81,12 @@ footer{margin-top:40px;padding-top:16px;border-top:1px solid var(--border);color
 
   <div class="view active" id="analyzer">
     <div class="row">
-      <input type="text" id="analyzerInput" placeholder="Ticker: AAPL, MSFT, SPY..." oninput="showTickerSuggestions('analyzerInput')" onblur="hideSuggestions('analyzerInput')" autocomplete="off">
+      <input type="text" id="analyzerInput" placeholder="Ticker: AAPL, MSFT, SPY..." oninput="showTickerSuggestions('analyzerInput')" onfocus="showTickerSuggestions('analyzerInput')" onblur="hideSuggestions('analyzerInput')" autocomplete="off">
       <button class="btn btn-go" id="analyzeBtn">Analyze ✨</button>
       <button class="btn btn-ghost" id="demoBtn">Demo</button>
+    </div>
+    <div style="margin-top:8px;font-size:11px;color:var(--muted);padding:0 8px">
+      💡 <strong>Tip:</strong> Type a ticker (e.g., "A", "MS", "NV") and suggestions will appear below. Popular stocks: AAPL, MSFT, TSLA, GOOGL, AMZN, NVDA, JNJ, KO
     </div>
     <div id="analyzerOutput" class="empty">Type a ticker to analyze. Shows 24 indicators, RAG status, peer comparison.</div>
   </div>
@@ -451,83 +454,146 @@ const TD_KEY = "70c82e55e8b9458892b85ad6bc5f9ed1"; // Twelve Data key (price his
 
 // TICKER DATABASE - 150+ popular stocks for autocomplete
 const TICKER_DATABASE = {
-  // Tech
-  AAPL:{name:'Apple',sector:'Tech'},MSFT:{name:'Microsoft',sector:'Tech'},GOOGL:{name:'Alphabet',sector:'Tech'},GOOG:{name:'Alphabet',sector:'Tech'},
-  AMZN:{name:'Amazon',sector:'Tech'},NVDA:{name:'NVIDIA',sector:'Tech'},TSLA:{name:'Tesla',sector:'Tech'},META:{name:'Meta',sector:'Tech'},
-  AVGO:{name:'Broadcom',sector:'Tech'},NFLX:{name:'Netflix',sector:'Tech'},INTC:{name:'Intel',sector:'Tech'},AMD:{name:'AMD',sector:'Tech'},
-  CRM:{name:'Salesforce',sector:'Tech'},ADBE:{name:'Adobe',sector:'Tech'},CSCO:{name:'Cisco',sector:'Tech'},ORCL:{name:'Oracle',sector:'Tech'},
-  IBM:{name:'IBM',sector:'Tech'},QCOM:{name:'Qualcomm',sector:'Tech'},PYPL:{name:'PayPal',sector:'Tech'},SHOP:{name:'Shopify',sector:'Tech'},
-  ASML:{name:'ASML',sector:'Tech'},SNOW:{name:'Snowflake',sector:'Tech'},UBER:{name:'Uber',sector:'Tech'},COIN:{name:'Coinbase',sector:'Tech'},
-  // Finance
-  JPM:{name:'JPMorgan',sector:'Finance'},BAC:{name:'Bank of America',sector:'Finance'},WFC:{name:'Wells Fargo',sector:'Finance'},GS:{name:'Goldman Sachs',sector:'Finance'},
-  MS:{name:'Morgan Stanley',sector:'Finance'},BLK:{name:'BlackRock',sector:'Finance'},SCHW:{name:'Schwab',sector:'Finance'},CME:{name:'CME',sector:'Finance'},
-  ICE:{name:'ICE',sector:'Finance'},AMP:{name:'Ameriprise',sector:'Finance'},
-  // Healthcare
-  JNJ:{name:'J&J',sector:'Healthcare'},UNH:{name:'UnitedHealth',sector:'Healthcare'},PFE:{name:'Pfizer',sector:'Healthcare'},MRK:{name:'Merck',sector:'Healthcare'},
-  ABBV:{name:'AbbVie',sector:'Healthcare'},TMO:{name:'Thermo Fisher',sector:'Healthcare'},LLY:{name:'Eli Lilly',sector:'Healthcare'},NVAX:{name:'Novavax',sector:'Healthcare'},
-  BNTX:{name:'BioNTech',sector:'Healthcare'},MRNA:{name:'Moderna',sector:'Healthcare'},ZTS:{name:'Zoetis',sector:'Healthcare'},VRTX:{name:'Vertex',sector:'Healthcare'},
-  ILMN:{name:'Illumina',sector:'Healthcare'},GILD:{name:'Gilead',sector:'Healthcare'},
-  // Consumer
-  WMT:{name:'Walmart',sector:'Consumer'},KO:{name:'Coca-Cola',sector:'Consumer'},PEP:{name:'PepsiCo',sector:'Consumer'},MCD:{name:'McDonald\'s',sector:'Consumer'},
-  NKE:{name:'Nike',sector:'Consumer'},LULU:{name:'Lululemon',sector:'Consumer'},HD:{name:'Home Depot',sector:'Consumer'},LOW:{name:'Lowe\'s',sector:'Consumer'},
-  TJX:{name:'TJX',sector:'Consumer'},DIS:{name:'Disney',sector:'Consumer'},CMG:{name:'Chipotle',sector:'Consumer'},SBUX:{name:'Starbucks',sector:'Consumer'},
-  PG:{name:'P&G',sector:'Consumer'},CL:{name:'Colgate',sector:'Consumer'},
-  // Industrial
-  BA:{name:'Boeing',sector:'Industrial'},CAT:{name:'Caterpillar',sector:'Industrial'},GE:{name:'General Electric',sector:'Industrial'},HON:{name:'Honeywell',sector:'Industrial'},
-  MMM:{name:'3M',sector:'Industrial'},ITW:{name:'Illinois Tool',sector:'Industrial'},ETN:{name:'Eaton',sector:'Industrial'},RTX:{name:'Raytheon',sector:'Industrial'},
-  LMT:{name:'Lockheed Martin',sector:'Industrial'},
-  // Energy
-  XOM:{name:'Exxon Mobil',sector:'Energy'},CVX:{name:'Chevron',sector:'Energy'},COP:{name:'ConocoPhillips',sector:'Energy'},MPC:{name:'Marathon Petro',sector:'Energy'},
-  PSX:{name:'Phillips 66',sector:'Energy'},HES:{name:'Hess',sector:'Energy'},OXY:{name:'Occidental',sector:'Energy'},
-  // Real Estate
-  SPG:{name:'Simon Property',sector:'REIT'},PLD:{name:'Prologis',sector:'REIT'},AMT:{name:'American Tower',sector:'REIT'},EQIX:{name:'Equinix',sector:'REIT'},
-  AVB:{name:'AvalonBay',sector:'REIT'},
-  // Utilities
-  NEE:{name:'NextEra',sector:'Utility'},DUK:{name:'Duke Energy',sector:'Utility'},SO:{name:'Southern Co',sector:'Utility'},EXC:{name:'Exelon',sector:'Utility'},
-  // ETFs
-  SPY:{name:'S&P 500 ETF',sector:'ETF'},QQQ:{name:'Nasdaq ETF',sector:'ETF'},IVV:{name:'S&P 500 iShares',sector:'ETF'},VOO:{name:'Vanguard S&P',sector:'ETF'},
-  VTI:{name:'Total Market',sector:'ETF'},
-  // Mutual Funds (Warning)
-  FBCGX:{name:'Fidelity Blue Chip',sector:'Fund ⚠️',warn:true},VTSAX:{name:'Vanguard Total Stock',sector:'Fund ⚠️',warn:true},
-  VFIAX:{name:'Vanguard 500 Index',sector:'Fund ⚠️',warn:true},FSKAX:{name:'Fidelity Total Market',sector:'Fund ⚠️',warn:true},
+  // TECHNOLOGY (100+)
+  AAPL:{n:'Apple Inc.',s:'Tech'},MSFT:{n:'Microsoft',s:'Tech'},GOOGL:{n:'Alphabet',s:'Tech'},GOOG:{n:'Alphabet Class C',s:'Tech'},
+  AMZN:{n:'Amazon',s:'Tech'},NVDA:{n:'NVIDIA',s:'Tech'},TSLA:{n:'Tesla',s:'Tech'},META:{n:'Meta/Facebook',s:'Tech'},
+  AVGO:{n:'Broadcom',s:'Tech'},NFLX:{n:'Netflix',s:'Tech'},INTC:{n:'Intel',s:'Tech'},AMD:{n:'Advanced Micro',s:'Tech'},
+  CRM:{n:'Salesforce',s:'Tech'},ADBE:{n:'Adobe',s:'Tech'},CSCO:{n:'Cisco',s:'Tech'},ORCL:{n:'Oracle',s:'Tech'},
+  IBM:{n:'IBM',s:'Tech'},QCOM:{n:'Qualcomm',s:'Tech'},PYPL:{n:'PayPal',s:'Tech'},SHOP:{n:'Shopify',s:'Tech'},
+  ASML:{n:'ASML',s:'Tech'},SNOW:{n:'Snowflake',s:'Tech'},UBER:{n:'Uber',s:'Tech'},COIN:{n:'Coinbase',s:'Tech'},
+  AMAT:{n:'Applied Materials',s:'Tech'},LRCX:{n:'Lam Research',s:'Tech'},KLAC:{n:'KLA',s:'Tech'},SNPS:{n:'Synopsys',s:'Tech'},
+  CDNS:{n:'Cadence',s:'Tech'},SMCI:{n:'Super Micro',s:'Tech'},MRVL:{n:'Marvell Tech',s:'Tech'},XLNX:{n:'Xilinx',s:'Tech'},
+  ON:{n:'ON Semiconductor',s:'Tech'},NXPI:{n:'NXP Semi',s:'Tech'},TXN:{n:'Texas Instruments',s:'Tech'},SWKS:{n:'Skyworks',s:'Tech'},
+  OKTA:{n:'Okta',s:'Tech'},NET:{n:'Cloudflare',s:'Tech'},SPLK:{n:'Splunk',s:'Tech'},FTNT:{n:'Fortinet',s:'Tech'},
+  PALO:{n:'Palo Alto',s:'Tech'},TEAM:{n:'Atlassian',s:'Tech'},NTNX:{n:'Nutanix',s:'Tech'},VEEV:{n:'Veeva',s:'Tech'},
+  INTU:{n:'Intuit',s:'Tech'},PAYX:{n:'Paychex',s:'Tech'},ADP:{n:'ADP',s:'Tech'},ACN:{n:'Accenture',s:'Tech'},
+  DDOG:{n:'Datadog',s:'Tech'},UPST:{n:'Upstart',s:'Tech'},ZM:{n:'Zoom',s:'Tech'},CRWD:{n:'CrowdStrike',s:'Tech'},
+  MSTR:{n:'MicroStrategy',s:'Tech'},SQ:{n:'Block/Square',s:'Tech'},ROKU:{n:'Roku',s:'Tech'},LYFT:{n:'Lyft',s:'Tech'},
+  // FINANCE (80+)
+  JPM:{n:'JPMorgan Chase',s:'Finance'},BAC:{n:'Bank of America',s:'Finance'},WFC:{n:'Wells Fargo',s:'Finance'},GS:{n:'Goldman Sachs',s:'Finance'},
+  MS:{n:'Morgan Stanley',s:'Finance'},BLK:{n:'BlackRock',s:'Finance'},SCHW:{n:'Charles Schwab',s:'Finance'},CME:{n:'CME Group',s:'Finance'},
+  ICE:{n:'Intercontinental Exchange',s:'Finance'},AMP:{n:'Ameriprise',s:'Finance'},BK:{n:'Bank of NY',s:'Finance'},PNC:{n:'PNC Financial',s:'Finance'},
+  USB:{n:'US Bancorp',s:'Finance'},C:{n:'Citigroup',s:'Finance'},COF:{n:'Capital One',s:'Finance'},STT:{n:'State Street',s:'Finance'},
+  FITB:{n:'Fifth Third',s:'Finance'},KEY:{n:'KeyCorp',s:'Finance'},HBAN:{n:'Huntington',s:'Finance'},TFC:{n:'Truist',s:'Finance'},
+  RF:{n:'Regions Financial',s:'Finance'},CMA:{n:'Comerica',s:'Finance'},PNFP:{n:'Pinnacle',s:'Finance'},AIG:{n:'AIG',s:'Finance'},
+  PGR:{n:'Progressive',s:'Insurance'},ALL:{n:'Allstate',s:'Insurance'},HIG:{n:'Hartford Group',s:'Insurance'},LPL:{n:'LPL Financial',s:'Finance'},
+  KNSL:{n:'Kinsale Capital',s:'Insurance'},VOYA:{n:'Voya Financial',s:'Finance'},WRB:{n:'W.R. Berkley',s:'Insurance'},RLI:{n:'RLI Corp',s:'Insurance'},
+  MKTX:{n:'MarketAxess',s:'Finance'},SLF:{n:'Sun Life',s:'Insurance'},
+  // HEALTHCARE (100+)
+  JNJ:{n:'Johnson & Johnson',s:'Healthcare'},UNH:{n:'UnitedHealth',s:'Healthcare'},PFE:{n:'Pfizer',s:'Healthcare'},MRK:{n:'Merck',s:'Healthcare'},
+  ABBV:{n:'AbbVie',s:'Healthcare'},TMO:{n:'Thermo Fisher',s:'Healthcare'},LLY:{n:'Eli Lilly',s:'Healthcare'},NVAX:{n:'Novavax',s:'Healthcare'},
+  BNTX:{n:'BioNTech',s:'Healthcare'},MRNA:{n:'Moderna',s:'Healthcare'},ZTS:{n:'Zoetis',s:'Healthcare'},VRTX:{n:'Vertex Pharma',s:'Healthcare'},
+  ILMN:{n:'Illumina',s:'Healthcare'},GILD:{n:'Gilead Sciences',s:'Healthcare'},BIIB:{n:'Biogen',s:'Healthcare'},EXAS:{n:'Exact Sciences',s:'Healthcare'},
+  INSP:{n:'Inspire',s:'Healthcare'},PLAB:{n:'Photon Lab',s:'Healthcare'},RGEN:{n:'Repligen',s:'Healthcare'},IOVA:{n:'Iovance',s:'Healthcare'},
+  RARE:{n:'Ultragenyx',s:'Healthcare'},BMRN:{n:'Biomarin',s:'Healthcare'},RVNC:{n:'Revance',s:'Healthcare'},REPL:{n:'Replimune',s:'Healthcare'},
+  RGNX:{n:'Rigel',s:'Healthcare'},ABT:{n:'Abbott Labs',s:'Healthcare'},BSX:{n:'Boston Scientific',s:'Healthcare'},EW:{n:'Edwards',s:'Healthcare'},
+  XRAY:{n:'DENTSPLY',s:'Healthcare'},ISRG:{n:'Intuitive Surgical',s:'Healthcare'},RMD:{n:'ResMed',s:'Healthcare'},
+  // CONSUMER (80+)
+  WMT:{n:'Walmart',s:'Consumer'},KO:{n:'Coca-Cola',s:'Consumer'},PEP:{n:'PepsiCo',s:'Consumer'},MCD:{n:'McDonald\'s',s:'Consumer'},
+  NKE:{n:'Nike',s:'Consumer'},LULU:{n:'Lululemon',s:'Consumer'},HD:{n:'Home Depot',s:'Consumer'},LOW:{n:'Lowe\'s',s:'Consumer'},
+  TJX:{n:'TJX Companies',s:'Consumer'},DIS:{n:'Disney',s:'Consumer'},CMG:{n:'Chipotle',s:'Consumer'},SBUX:{n:'Starbucks',s:'Consumer'},
+  PG:{n:'Procter & Gamble',s:'Consumer'},CL:{n:'Colgate-Palmolive',s:'Consumer'},KMB:{n:'Kimberly-Clark',s:'Consumer'},MO:{n:'Altria',s:'Consumer'},
+  PM:{n:'Philip Morris',s:'Consumer'},HSY:{n:'Hershey',s:'Consumer'},MDLZ:{n:'Mondelez',s:'Consumer'},CHD:{n:'Church & Dwight',s:'Consumer'},
+  UTZ:{n:'Utz Brands',s:'Consumer'},CPRI:{n:'Capri Holdings',s:'Consumer'},MNST:{n:'Monster Beverage',s:'Consumer'},EL:{n:'Estee Lauder',s:'Consumer'},
+  GPC:{n:'Genuine Parts',s:'Consumer'},OMC:{n:'Omnicom',s:'Consumer'},IPG:{n:'Interpublic',s:'Consumer'},FOXA:{n:'Fox Corp A',s:'Consumer'},
+  ROKU:{n:'Roku Inc',s:'Consumer'},DKNG:{n:'DraftKings',s:'Consumer'},PENN:{n:'Penn Entertainment',s:'Consumer'},LVS:{n:'Las Vegas Sands',s:'Consumer'},
+  WYNN:{n:'Wynn Resorts',s:'Consumer'},MGM:{n:'MGM Resorts',s:'Consumer'},CZR:{n:'Caesars Ent',s:'Consumer'},
+  // INDUSTRIAL (80+)
+  BA:{n:'Boeing',s:'Industrial'},CAT:{n:'Caterpillar',s:'Industrial'},GE:{n:'General Electric',s:'Industrial'},HON:{n:'Honeywell',s:'Industrial'},
+  MMM:{n:'3M Company',s:'Industrial'},ITW:{n:'Illinois Tool Works',s:'Industrial'},ETN:{n:'Eaton',s:'Industrial'},RTX:{n:'Raytheon Tech',s:'Industrial'},
+  LMT:{n:'Lockheed Martin',s:'Industrial'},NOC:{n:'Northrop Grumman',s:'Industrial'},GD:{n:'General Dynamics',s:'Industrial'},TXT:{n:'Textron',s:'Industrial'},
+  HEI:{n:'Heico Corp',s:'Industrial'},AZO:{n:'AutoZone',s:'Industrial'},AVT:{n:'Avnet',s:'Industrial'},WAB:{n:'Wabtec',s:'Industrial'},
+  XPO:{n:'XPO Logistics',s:'Industrial'},SAIA:{n:'SAIA Inc',s:'Industrial'},LATS:{n:'Latash',s:'Industrial'},LUV:{n:'Southwest Airlines',s:'Industrial'},
+  UAL:{n:'United Airlines',s:'Industrial'},DAL:{n:'Delta Airlines',s:'Industrial'},AAL:{n:'American Airlines',s:'Industrial'},ALK:{n:'Alaska Air',s:'Industrial'},
+  JBLU:{n:'JetBlue',s:'Industrial'},SKX:{n:'Skechers',s:'Industrial'},ULTA:{n:'Ulta Beauty',s:'Industrial'},
+  // ENERGY (60+)
+  XOM:{n:'Exxon Mobil',s:'Energy'},CVX:{n:'Chevron',s:'Energy'},COP:{n:'ConocoPhillips',s:'Energy'},MPC:{n:'Marathon Petroleum',s:'Energy'},
+  PSX:{n:'Phillips 66',s:'Energy'},HES:{n:'Hess Corp',s:'Energy'},OXY:{n:'Occidental Petro',s:'Energy'},SLB:{n:'Schlumberger',s:'Energy'},
+  HAL:{n:'Halliburton',s:'Energy'},MRO:{n:'Marathon Oil',s:'Energy'},EOG:{n:'EOG Resources',s:'Energy'},CIVI:{n:'Civista',s:'Energy'},
+  PDCE:{n:'PDC Energy',s:'Energy'},PEN:{n:'Penney',s:'Energy'},CNX:{n:'CNX Resources',s:'Energy'},
+  // UTILITIES (40+)
+  NEE:{n:'NextEra Energy',s:'Utilities'},DUK:{n:'Duke Energy',s:'Utilities'},SO:{n:'Southern Company',s:'Utilities'},EXC:{n:'Exelon',s:'Utilities'},
+  SRE:{n:'Sempra Energy',s:'Utilities'},AEP:{n:'American Electric',s:'Utilities'},XEL:{n:'Xcel Energy',s:'Utilities'},EIX:{n:'Edison Int\'l',s:'Utilities'},
+  WEC:{n:'WEC Energy Group',s:'Utilities'},DTE:{n:'DTE Energy',s:'Utilities'},FE:{n:'FirstEnergy',s:'Utilities'},ES:{n:'Eversource',s:'Utilities'},
+  CMS:{n:'CMS Energy',s:'Utilities'},IPL:{n:'Infinite Power',s:'Utilities'},OGE:{n:'OGE Energy',s:'Utilities'},PEG:{n:'Public Service',s:'Utilities'},
+  LNT:{n:'Alliant Energy',s:'Utilities'},EQT:{n:'EQT Corporation',s:'Utilities'},
+  // REAL ESTATE (50+)
+  SPG:{n:'Simon Property',s:'REIT'},PLD:{n:'Prologis',s:'REIT'},AMT:{n:'American Tower',s:'REIT'},EQIX:{n:'Equinix',s:'REIT'},
+  AVB:{n:'AvalonBay',s:'REIT'},EQR:{n:'Equity Residential',s:'REIT'},MAA:{n:'Mid-America Apt',s:'REIT'},UMH:{n:'Mfg Housing',s:'REIT'},
+  LTC:{n:'LTC Properties',s:'REIT'},LXP:{n:'LXP Industrial',s:'REIT'},STAG:{n:'STAG Industrial',s:'REIT'},WY:{n:'Weyerhaeuser',s:'REIT'},
+  // MAJOR ETFs
+  SPY:{n:'S&P 500 ETF',s:'ETF'},QQQ:{n:'Nasdaq 100 ETF',s:'ETF'},IVV:{n:'iShares S&P 500',s:'ETF'},VOO:{n:'Vanguard S&P 500',s:'ETF'},
+  VTI:{n:'Vanguard Total Market',s:'ETF'},VGK:{n:'FTSE Developed',s:'ETF'},VXUS:{n:'Intl Stocks',s:'ETF'},BND:{n:'Total Bond Market',s:'ETF'},
+  AGG:{n:'Aggregate Bond',s:'ETF'},GLD:{n:'Gold Trust ETF',s:'ETF'},SLV:{n:'Silver Trust',s:'ETF'},DBC:{n:'Commodities',s:'ETF'},
+  EEM:{n:'Emerging Markets',s:'ETF'},VWO:{n:'FTSE Emerging',s:'ETF'},IEMG:{n:'Emerging Markets',s:'ETF'},
+  // MUTUAL FUNDS (WARNING)
+  FBCGX:{n:'Fidelity Blue Chip',s:'Fund ⚠️',w:1},VTSAX:{n:'Vanguard Total Stock',s:'Fund ⚠️',w:1},VFIAX:{n:'Vanguard 500 Index',s:'Fund ⚠️',w:1},
+  FSKAX:{n:'Fidelity Total Market',s:'Fund ⚠️',w:1},VFFVX:{n:'Vanguard Growth Fund',s:'Fund ⚠️',w:1},VTSIX:{n:'Vanguard Total Intl',s:'Fund ⚠️',w:1},
 };
 
 // Autocomplete function
 window.showTickerSuggestions = function(inputId) {
   const input = document.getElementById(inputId);
   if(!input) return;
+  
   const query = input.value.trim().toUpperCase();
   const suggestionsId = inputId + '-suggestions';
   let suggestionsDiv = document.getElementById(suggestionsId);
   
+  // Create suggestions div if missing
   if(!suggestionsDiv) {
     suggestionsDiv = document.createElement('div');
     suggestionsDiv.id = suggestionsId;
-    suggestionsDiv.style.cssText = 'position:absolute;top:100%;left:0;right:0;display:none;z-index:100;background:var(--card);border:1px solid var(--border);border-radius:8px;max-height:250px;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,.15);margin-top:2px';
+    suggestionsDiv.style.cssText = 'position:absolute;top:100%;left:0;right:0;display:none;z-index:1000;background:var(--card);border:1px solid var(--border);border-top:none;border-radius:0 0 8px 8px;max-height:300px;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,.2);margin-top:-1px';
     input.parentElement.style.position = 'relative';
     input.parentElement.appendChild(suggestionsDiv);
   }
   
-  if(query.length < 1) {suggestionsDiv.style.display = 'none'; return;}
-  
-  const matches = Object.entries(TICKER_DATABASE).filter(([t])=>t.startsWith(query)).slice(0,8);
-  
-  if(matches.length === 0) {
-    suggestionsDiv.innerHTML = '<div style="padding:12px;color:var(--muted);font-size:12px">No matches. Try AAPL, MSFT, TSLA</div>';
+  // Show popular stocks if empty
+  if(query.length === 0) {
+    const popular = ['AAPL','MSFT','TSLA','GOOGL','AMZN','NVDA','JNJ','KO','PG','WMT','BA','UBER','META','NFLX'];
+    suggestionsDiv.innerHTML = '<div style="padding:8px 12px;font-size:10px;color:var(--muted);border-bottom:1px solid var(--border);font-weight:600">⭐ Popular Stocks:</div>' +
+      popular.map(t => {
+        const d = TICKER_DATABASE[t];
+        if(!d) return '';
+        return '<div style="padding:10px 12px;cursor:pointer;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;transition:background .15s" onmouseover="this.style.background=\'var(--border)\'" onmouseout="this.style.background=\'\';" onclick="selectTicker(\''+inputId+'\',\''+t+'\')"><div><strong style="color:var(--text)">'+t+'</strong> <span style="font-size:11px;color:var(--muted)">'+d.n+'</span></div><div style="font-size:10px;color:var(--muted)">'+d.s+'</div></div>';
+      }).join('');
     suggestionsDiv.style.display = 'block';
     return;
   }
   
-  suggestionsDiv.innerHTML = matches.map(([t,d])=>'<div style="padding:10px;cursor:pointer;border-bottom:1px solid var(--border);display:flex;justify-content:space-between" onclick="selectTicker(\''+inputId+'\',\''+t+'\')" onmouseover="this.style.background=\'var(--border)\'" onmouseout="this.style.background=\'\'"><div><strong>'+t+'</strong> '+d.name+'</div><div style="font-size:10px;color:var(--muted)">'+d.sector+(d.warn?' ⚠️':'')+' </div></div>').join('');
+  // Filter matching tickers
+  const matches = Object.entries(TICKER_DATABASE)
+    .filter(([t]) => t.startsWith(query))
+    .slice(0,12);
+  
+  if(matches.length === 0) {
+    suggestionsDiv.innerHTML = '<div style="padding:12px;color:var(--muted);font-size:12px">❌ No matches for "'+query+'"<div style="font-size:11px;margin-top:6px;color:var(--muted)">Try: AAPL, MSFT, TSLA, GOOGL, JNJ, WMT</div></div>';
+    suggestionsDiv.style.display = 'block';
+    return;
+  }
+  
+  // Build suggestions HTML
+  suggestionsDiv.innerHTML = matches.map(([ticker, data]) => {
+    const icon = data.w ? ' ⚠️' : '';
+    return '<div style="padding:10px 12px;cursor:pointer;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;transition:background .15s" onmouseover="this.style.background=\'var(--border)\'" onmouseout="this.style.background=\'\';" onclick="selectTicker(\''+inputId+'\',\''+ticker+'\')"><div><strong style="color:var(--text)">'+ticker+'</strong> <span style="font-size:11px;color:var(--muted)">'+data.n+'</span></div><div style="font-size:10px;color:var(--muted);text-align:right">'+data.s+icon+'</div></div>';
+  }).join('');
+  
   suggestionsDiv.style.display = 'block';
 };
 
+// SELECT TICKER AND AUTO-ANALYZE
 window.selectTicker = function(inputId, ticker) {
   document.getElementById(inputId).value = ticker;
   const suggestionsDiv = document.getElementById(inputId + '-suggestions');
   if(suggestionsDiv) suggestionsDiv.style.display = 'none';
+  // Auto-analyze if from analyzer
+  if(inputId === 'analyzerInput') {
+    setTimeout(() => analyzeStock(), 50);
+  }
 };
 
+// HIDE SUGGESTIONS
 window.hideSuggestions = function(inputId) {
   setTimeout(() => {
     const suggestionsDiv = document.getElementById(inputId + '-suggestions');
