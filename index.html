@@ -3604,12 +3604,12 @@ function consensusCard(stock, color) {
         <strong style="color:var(--text)">💡 Plain English Summary:</strong><br>
         <div style="margin-top:4px;color:var(--muted);line-height:1.6">
           ${stock.consensus === 4 ? 
-            `This stock looks good from ALL angles. Like asking 4 financial experts, and all 4 said "YES, buy it!" You can be very confident.` :
+            'This stock looks good from ALL angles. Like asking 4 financial experts, and all 4 said "YES, buy it!" You can be very confident.' :
           stock.consensus === 3 ?
-            `This stock looks good from 3 angles. 1 expert has a different opinion (maybe it doesn't fit their style). Still very safe overall.` :
+            'This stock looks good from 3 angles. 1 expert has a different opinion (maybe it does not fit their style). Still very safe overall.' :
           stock.consensus === 2 ?
-            `This stock has mixed opinions. Some experts like it, some don't. It might be good for certain investors but not others. Do more research.` :
-            `Only 1 expert likes this stock. Other 3 passed. This could be a hidden gem OR it could have problems. Very risky - investigate thoroughly.`
+            'This stock has mixed opinions. Some experts like it, some do not. It might be good for certain investors but not others. Do more research.' :
+            'Only 1 expert likes this stock. Other 3 passed. This could be a hidden gem OR it could have problems. Very risky - investigate thoroughly.'
           }
         </div>
       </div>
@@ -3710,661 +3710,62 @@ function showScannerDetails(ticker) {
 
 function showConsensusInfo() {
   const output = document.getElementById('consensusOutput');
+  let html = '<div style="background:var(--card);padding:16px;border-radius:8px;max-height:90vh;overflow-y:auto">';
+  html += '<div style="font-weight:700;font-size:14px;margin-bottom:16px;color:var(--accent)">📚 Strategy Consensus Guide</div>';
+  html += '<div style="font-size:12px;color:var(--muted);line-height:1.8">';
   
-  output.innerHTML = `
-    <div style="background:var(--card);padding:16px;border-radius:8px;border-left:4px solid var(--accent);max-height:90vh;overflow-y:auto">
-      <div style="font-weight:700;font-size:14px;margin-bottom:12px;color:var(--accent)">📚 Strategy Consensus - Beginner's Guide</div>
-      
-      <div style="font-size:12px;color:var(--muted);line-height:1.8">
-        
-        <div style="margin-bottom:16px;padding:12px;background:rgba(96,165,250,0.1);border-left:3px solid #60a5fa;border-radius:6px">
-          <strong style="color:var(--text);display:block;margin-bottom:8px">🎯 For Beginners: What Does This Do?</strong>
-          <div style="font-size:11px;line-height:1.8">
-            <div style="margin-bottom:8px">
-              <strong>Simple Explanation:</strong><br>
-              Imagine you're thinking about buying a stock (like Apple or Microsoft). Before you buy, you want to make sure it's a good choice. So you ask 4 different financial experts for advice.
-            </div>
-            
-            <div style="margin-bottom:8px">
-              <strong>What Happens:</strong><br>
-              ✓ Expert 1 (Hybrid) looks at: "Is it cheap? Is it profitable? Is it growing?"<br>
-              ✓ Expert 2 (Thematic) looks at: "Is it in a hot trend? (like AI)"<br>
-              ✓ Expert 3 (Sector) looks at: "Is it better than competitors in same industry?"<br>
-              ✓ Expert 4 (Rules) looks at: "Does it fit my investment style?"
-            </div>
-            
-            <div style="margin-bottom:8px">
-              <strong>The Key Insight:</strong><br>
-              If ALL 4 experts say "YES, buy it!" → You can be very confident<br>
-              If only 1 expert says "YES, buy it!" → You need to be careful
-            </div>
-            
-            <div style="margin-bottom:0">
-              <strong>That's It!</strong> It's like asking multiple people before making a big decision.
-            </div>
-          </div>
-        </div>
-
-        <div style="margin-bottom:16px;padding:12px;background:var(--border);border-radius:6px">
-          <strong style="color:var(--text);display:block;margin-bottom:8px">🌍 Real-World Analogy</strong>
-          <div style="font-size:11px;line-height:1.7">
-            <div style="margin-bottom:8px;padding:8px;background:rgba(52,211,153,0.1);border-left:3px solid #34d399">
-              <strong style="color:var(--text)">Buying a House (Not Stocks):</strong><br>
-              Before buying a house, you might ask:<br>
-              ✓ Real Estate Agent: "Is the price fair compared to area?"<br>
-              ✓ Inspector: "Is the house in good condition?"<br>
-              ✓ Neighbor: "Is this neighborhood growing or declining?"<br>
-              ✓ Accountant: "Can I actually afford this long-term?"<br><br>
-              If all 4 say YES → Buy with confidence<br>
-              If only 1 says YES → Be very careful
-            </div>
-            
-            <div style="padding:8px;background:rgba(251,191,36,0.1);border-left:3px solid #fbbf24">
-              <strong style="color:var(--text)">Stock Buying (Same Idea):</strong><br>
-              Before buying a stock, we ask 4 "experts":<br>
-              ✓ Hybrid Scanner: "Is it a good overall investment?"<br>
-              ✓ Thematic Scanner: "Is it in a growing trend?"<br>
-              ✓ Sector Scanner: "Is it better than similar companies?"<br>
-              ✓ Rules Scanner: "Does it match my investing style?"<br><br>
-              If all 4 say YES → Buy with confidence<br>
-              If only 1 says YES → Be very careful
-            </div>
-          </div>
-        </div>
-
-        <div style="margin-bottom:16px;padding:12px;background:var(--border);border-radius:6px">
-          <strong style="color:var(--text);display:block;margin-bottom:8px">📖 Key Terms (In Plain English)</strong>
-          <div style="font-size:11px;line-height:1.8">
-            <div style="margin-bottom:8px">
-              <strong style="color:var(--accent)">Stock:</strong> A small piece of ownership in a company. Like if Apple was a pizza, a stock is one slice.
-            </div>
-            <div style="margin-bottom:8px">
-              <strong style="color:var(--accent)">Valuation:</strong> How expensive is the stock? Like asking "Is this pizza slice worth \\$5 or \\$10?"
-            </div>
-            <div style="margin-bottom:8px">
-              <strong style="color:var(--accent)">Profit Margin:</strong> How much money the company keeps after expenses. Like: You sell lemonade for \\$1. Costs 20¢ to make. Margin = 80¢.
-            </div>
-            <div style="margin-bottom:8px">
-              <strong style="color:var(--accent)">P/E Ratio:</strong> Price vs Earnings. Is the stock expensive compared to how much money the company makes?
-            </div>
-            <div style="margin-bottom:8px">
-              <strong style="color:var(--accent)">ROE (Return on Equity):</strong> How efficient is the company at making money? Higher = Better.
-            </div>
-            <div style="margin-bottom:8px">
-              <strong style="color:var(--accent)">Consensus:</strong> When multiple people agree on something. 4/4 = Everyone agrees.
-            </div>
-            <div style="margin-bottom:0">
-              <strong style="color:var(--accent)">Sector:</strong> An industry group. Like: Healthcare sector, Tech sector, Finance sector.
-            </div>
-          </div>
-        </div>
-
-        <div style="background:var(--border);padding:12px;border-radius:6px;margin-bottom:16px">
-          <strong style="color:var(--text);display:block;margin-bottom:12px">🎯 The 4 "Experts" Explained Simply</strong>
-          
-          <div style="margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid rgba(255,255,255,0.1)">
-            <div style="font-weight:700;color:#60a5fa;font-size:12px;margin-bottom:6px">1️⃣ HYBRID SCANNER - "The Balanced Advisor"</div>
-            <div style="font-size:11px;margin-bottom:6px">
-              <strong>What They Ask:</strong><br>
-              ✓ "Is it cheap or expensive?" (Price check)<br>
-              ✓ "Does the company make good profits?" (Quality check)<br>
-              ✓ "Is the company growing?" (Growth check)<br>
-              ✓ "Is it trending up or down?" (Momentum check)
-            </div>
-            <div style="font-size:11px;background:rgba(96,165,250,0.1);padding:6px;border-radius:4px">
-              <strong>Real Example:</strong> Apple score 87<br>
-              Meaning: Apple is good on ALL counts (price, quality, growth, momentum)
-            </div>
-          </div>
-          
-          <div style="margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid rgba(255,255,255,0.1)">
-            <div style="font-weight:700;color:#34d399;font-size:12px;margin-bottom:6px">2️⃣ THEMATIC SCANNER - "The Trend Spotter"</div>
-            <div style="font-size:11px;margin-bottom:6px">
-              <strong>What They Ask:</strong><br>
-              ✓ "Is this company in a hot trend?" (Like AI, Electric Cars, Green Energy)<br>
-              ✓ "Does this company lead in that trend?"<br>
-              ✓ "Will this trend continue?"
-            </div>
-            <div style="font-size:11px;background:rgba(52,211,153,0.1);padding:6px;border-radius:4px">
-              <strong>Real Example:</strong> Nvidia score 92 in "AI Winners"<br>
-              Meaning: Nvidia is THE leader in AI chips. Perfect AI play.
-            </div>
-          </div>
-          
-          <div style="margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid rgba(255,255,255,0.1)">
-            <div style="font-weight:700;color:#fbbf24;font-size:12px;margin-bottom:6px">3️⃣ SECTOR SCANNER - "The Relative Value Expert"</div>
-            <div style="font-size:11px;margin-bottom:6px">
-              <strong>What They Ask:</strong><br>
-              ✓ "Compare this company to its competitors"<br>
-              ✓ "Is it cheaper than similar companies?"<br>
-              ✓ "Does it make more profit than similar companies?"
-            </div>
-            <div style="font-size:11px;background:rgba(251,191,36,0.1);padding:6px;border-radius:4px">
-              <strong>Real Example:</strong> JPMorgan score 84 vs banking peers<br>
-              Meaning: JPM is cheaper AND more profitable than other banks
-            </div>
-          </div>
-          
-          <div style="margin-bottom:0">
-            <div style="font-weight:700;color:#f87171;font-size:12px;margin-bottom:6px">4️⃣ RULES ENGINE - "The Philosophy Matcher"</div>
-            <div style="font-size:11px;margin-bottom:6px">
-              <strong>What They Ask:</strong><br>
-              ✓ "Does this match YOUR investing style?"<br>
-              ✓ "If you like VALUE stocks, does it qualify?"<br>
-              ✓ "If you like GROWTH stocks, does it qualify?"
-            </div>
-            <div style="font-size:11px;background:rgba(248,113,113,0.1);padding:6px;border-radius:4px">
-              <strong>Real Example:</strong> Apple score 90 in "Quality" style<br>
-              Meaning: Apple is perfect for people who like high-quality, profitable companies
-            </div>
-          </div>
-        </div>
-
-        <div style="background:var(--border);padding:12px;border-radius:6px;margin-bottom:16px">
-          <strong style="color:var(--text);display:block;margin-bottom:12px">🎯 Understanding the Results</strong>
-          
-          <div style="margin-bottom:10px;padding:10px;background:rgba(34,197,94,0.1);border-left:3px solid var(--green)">
-            <strong style="color:var(--green)">🟢 4/4 CONSENSUS = "YES, ALL EXPERTS AGREE!"</strong><br>
-            <div style="font-size:10px;margin-top:6px;color:var(--muted)">
-              <strong>What It Means:</strong> All 4 experts examined the stock from different angles and ALL said it's good.<br><br>
-              <strong>In House Terms:</strong> You asked 4 people (realtor, inspector, neighbor, accountant) about a house, and ALL 4 said it's a great buy.<br><br>
-              <strong>Your Action:</strong> This is safe to buy. Maximum confidence.
-            </div>
-          </div>
-          
-          <div style="margin-bottom:10px;padding:10px;background:rgba(251,191,36,0.1);border-left:3px solid #fbbf24">
-            <strong style="color:#fbbf24">🟡 3/4 CONSENSUS = "MOSTLY YES, ONE MAYBE"</strong><br>
-            <div style="font-size:10px;margin-top:6px;color:var(--muted)">
-              <strong>What It Means:</strong> 3 experts say yes, 1 expert says "it's okay but not my style"<br><br>
-              <strong>In House Terms:</strong> Realtor, Inspector, Accountant all say YES. Neighbor says "it's in a quiet area, not for everyone"<br><br>
-              <strong>Your Action:</strong> This is still very safe. The one expert probably just has a different preference. Go ahead.
-            </div>
-          </div>
-          
-          <div style="margin-bottom:10px;padding:10px;background:rgba(96,165,250,0.1);border-left:3px solid #60a5fa">
-            <strong style="color:#60a5fa">🔵 2/4 CONSENSUS = "MIXED OPINIONS"</strong><br>
-            <div style="font-size:10px;margin-top:6px;color:var(--muted)">
-              <strong>What It Means:</strong> 2 experts like it, 2 experts don't (or like it less)<br><br>
-              <strong>In House Terms:</strong> Realtor & Inspector say YES. Accountant says "expensive" and Neighbor says "noisy street"<br><br>
-              <strong>Your Action:</strong> Think more carefully. It has pros and cons. Maybe it's right for you, maybe not. Do more research.
-            </div>
-          </div>
-          
-          <div style="margin-bottom:0;padding:10px;background:rgba(107,114,128,0.1);border-left:3px solid #6b7280">
-            <strong style="color:var(--muted)">🔴 1/4 CONSENSUS = "ONE EXPERT ONLY"</strong><br>
-            <div style="font-size:10px;margin-top:6px;color:var(--muted)">
-              <strong>What It Means:</strong> Only 1 expert likes it, other 3 are silent or don't like it<br><br>
-              <strong>In House Terms:</strong> Only the realtor (who wants a commission) says YES. Everyone else is quiet.<br><br>
-              <strong>Your Action:</strong> Be careful! This could be a hidden gem OR a trap. Ask more questions. Do serious research before buying.
-            </div>
-          </div>
-        </div>
-
-        <div style="background:var(--border);padding:12px;border-radius:6px;margin-bottom:16px">
-          <strong style="color:var(--text);display:block;margin-bottom:10px">📊 Reading the Comparison Bars (What the Numbers Mean)</strong>
-          
-          <div style="font-size:11px;margin-bottom:10px;padding:8px;background:rgba(0,0,0,0.2);border-radius:4px">
-            <div style="margin-bottom:8px">
-              <strong>Example: MSFT Scores</strong><br>
-              🎯 Thematic: 88 ← What does 88 mean?
-            </div>
-            
-            <div style="margin-bottom:8px;padding:8px;background:var(--card);border-radius:4px">
-              <strong style="color:var(--accent)">Score Scale (0-100):</strong><br>
-              90-100 = Excellent, very bullish (Strong buy signal)<br>
-              80-89 = Good, bullish (Good candidate)<br>
-              70-79 = Fair, okay (Maybe consider)<br>
-              60-69 = Weak, not ideal (Be cautious)<br>
-              Below 60 = Poor, avoid (Skip this one)
-            </div>
-            
-            <div style="margin-bottom:8px;padding:8px;background:var(--card);border-radius:4px">
-              <strong style="color:var(--accent)">So MSFT score 88 means:</strong><br>
-              • 88 out of 100<br>
-              • In the "Good" range<br>
-              • Thematic scanner is bullish about it<br>
-              • Confidence level: High
-            </div>
-            
-            <div style="padding:8px;background:var(--card);border-radius:4px">
-              <strong style="color:var(--accent)">Visual Bar:</strong><br>
-              🎯 Thematic: █████████ 88<br>
-              (Bar fills up 88% = 88 out of 100)
-            </div>
-          </div>
-        </div>
-
-        <div style="background:var(--border);padding:12px;border-radius:6px;margin-bottom:16px">
-          <strong style="color:var(--text);display:block;margin-bottom:8px">⭐ What Does the Star Mean?</strong>
-          <div style="font-size:11px;line-height:1.7">
-            <div style="margin-bottom:10px;padding:8px;background:rgba(251,191,36,0.1);border-left:3px solid #fbbf24">
-              <strong style="color:#fbbf24">⭐ HIGHEST SCORE</strong><br>
-              The star shows which expert was MOST bullish about this stock.
-            </div>
-            
-            <div style="margin-bottom:10px;padding:8px;background:var(--card);border-radius:4px">
-              <strong>Example:</strong><br>
-              🎯 Thematic: 88 ⭐<br>
-              ⚙️ Rules: 90<br>
-              📈 Sector: 87<br>
-              📊 Hybrid: 87
-            </div>
-            
-            <div style="padding:8px;background:var(--card);border-radius:4px">
-              <strong style="color:var(--text)">Wait! Rules scored 90 (highest), but Thematic has the star?</strong><br>
-              The star shows: Thematic is the most confident about THIS SPECIFIC REASON.<br>
-              But Rules scored slightly higher overall.
-            </div>
-          </div>
-        </div>
-
-        <div style="background:var(--border);padding:12px;border-radius:6px;margin-bottom:16px">
-          <strong style="color:var(--text);display:block;margin-bottom:8px">✅ Beginner Action Plan</strong>
-          <div style="font-size:11px;line-height:1.8">
-            <div style="margin-bottom:8px;padding:8px;background:rgba(34,197,94,0.1);border-radius:4px">
-              <strong style="color:var(--green)">Step 1: Look for 4/4 Stocks</strong><br>
-              These have maximum confidence. All 4 experts agree. Safest choices.
-            </div>
-            
-            <div style="margin-bottom:8px;padding:8px;background:rgba(251,191,36,0.1);border-radius:4px">
-              <strong style="color:#fbbf24">Step 2: Check Individual Scores</strong><br>
-              All scores above 80? Very good.<br>
-              Scores mixed (70, 85, 92)? Mixed signals.
-            </div>
-            
-            <div style="margin-bottom:8px;padding:8px;background:rgba(96,165,250,0.1);border-radius:4px">
-              <strong style="color:#60a5fa">Step 3: Click "ℹ️ Details" for Explanation</strong><br>
-              Understand which expert likes it most and why.
-            </div>
-            
-            <div style="padding:8px;background:rgba(52,211,153,0.1);border-radius:4px">
-              <strong style="color:var(--green)">Step 4: Click "📊 Analyze" for Deep Research</strong><br>
-              See detailed financial metrics to understand the stock better.
-            </div>
-          </div>
-        </div>
-
-        <div style="background:var(--border);padding:12px;border-radius:6px">
-          <strong style="color:var(--text);display:block;margin-bottom:8px">❓ Still Confused? Remember This</strong>
-          <div style="font-size:11px;line-height:1.8;color:var(--muted)">
-            <div style="margin-bottom:8px">
-              You don't need to understand all the financial details!<br>
-              Just remember:
-            </div>
-            <div style="padding:8px;background:var(--card);border-radius:4px;margin-bottom:8px">
-              <strong style="color:var(--accent)">4/4 = All experts agree = Safe to buy</strong><br>
-              <strong style="color:var(--accent)">3/4 = Most agree = Probably safe</strong><br>
-              <strong style="color:var(--accent)">2/4 = Mixed = Be careful</strong><br>
-              <strong style="color:var(--accent)">1/4 = One expert only = Very risky</strong>
-            </div>
-            
-            <div>
-              That's the main takeaway!<br>
-              The detailed explanations are there when you need them.<br>
-              Start simple, learn more as you go.
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border);text-align:center">
-        <button class="btn btn-go" style="font-size:12px" onclick="runConsensusAnalysis()">🔗 Run All Scanners</button>
-      </div>
-    </div>
-  `;
+  // Simple explanation
+  html += '<div style="margin-bottom:16px;padding:12px;background:rgba(96,165,250,0.1);border-radius:6px">';
+  html += '<strong style="color:var(--text)">🎯 How This Works:</strong><br>';
+  html += 'We ask 4 expert systems to analyze each stock from different angles:<br>';
+  html += '✓ <strong>Hybrid:</strong> Overall quality (price, profit, growth)<br>';
+  html += '✓ <strong>Thematic:</strong> Trending themes (AI, green energy, etc)<br>';
+  html += '✓ <strong>Sector:</strong> Compared to competitors<br>';
+  html += '✓ <strong>Rules:</strong> Matches your investment style<br>';
+  html += '</div>';
+  
+  // Consensus levels
+  html += '<div style="margin-bottom:16px;padding:12px;background:var(--border);border-radius:6px">';
+  html += '<strong style="color:var(--text);display:block;margin-bottom:8px">📊 Understanding Results:</strong>';
+  html += '<div style="font-size:11px;line-height:1.8;color:var(--muted)">';
+  html += '<div style="margin-bottom:8px">🟢 <strong>4/4</strong> = All experts agree → Very safe<br>';
+  html += '<div style="margin-bottom:8px">🟡 <strong>3/4</strong> = Most agree → Safe<br>';
+  html += '<div style="margin-bottom:8px">🔵 <strong>2/4</strong> = Mixed signals → Need research<br>';
+  html += '<div style="margin-bottom:0">🔴 <strong>1/4</strong> = One expert only → Very risky';
+  html += '</div></div></div>';
+  
+  // Real world analogy
+  html += '<div style="margin-bottom:16px;padding:12px;background:var(--border);border-radius:6px">';
+  html += '<strong style="color:var(--text);display:block;margin-bottom:8px">🏠 Real-World Analogy:</strong>';
+  html += '<div style="font-size:11px;color:var(--muted);line-height:1.7">';
+  html += 'Like asking 4 experts before buying a house:<br>';
+  html += '✓ Realtor: Is price fair?<br>';
+  html += '✓ Inspector: Is condition good?<br>';
+  html += '✓ Neighbor: Is area improving?<br>';
+  html += '✓ Accountant: Can you afford it?<br><br>';
+  html += 'If all 4 say YES → Buy with confidence<br>';
+  html += 'If only 1 says YES → Be very careful';
+  html += '</div></div>';
+  
+  // Score interpretation
+  html += '<div style="margin-bottom:16px;padding:12px;background:var(--border);border-radius:6px">';
+  html += '<strong style="color:var(--text);display:block;margin-bottom:8px">📈 Score Meaning:</strong>';
+  html += '<div style="font-size:11px;color:var(--muted);line-height:1.7">';
+  html += '90-100 = Excellent ✅<br>';
+  html += '80-89 = Good ✅<br>';
+  html += '70-79 = Fair ⚠️<br>';
+  html += 'Below 70 = Weak ❌';
+  html += '</div></div>';
+  
+  html += '<div style="text-align:center;margin-top:16px">';
+  html += '<button class="btn btn-go" onclick="runConsensusAnalysis()">🔗 Run All Scanners</button>';
+  html += '</div></div>';
+  
+  output.innerHTML = html;
 }
-      
-      <div style="font-size:12px;color:var(--muted);line-height:1.8">
-        <div style="margin-bottom:16px;padding:12px;background:var(--border);border-radius:6px">
-          <strong style="color:var(--text);display:block;margin-bottom:6px">🎯 Core Concept</strong>
-          Instead of relying on ONE screening method (which may have blind spots), we run FOUR completely independent approaches. If multiple approaches find the same stock from different angles, that's STRONG validation. It's like asking 4 different financial analysts and counting how many agree.
-        </div>
-        
-        <div style="background:var(--border);padding:12px;border-radius:6px;margin-bottom:16px">
-          <strong style="color:var(--text);display:block;margin-bottom:12px">📈 Deep Dive: The 4 Validation Methods</strong>
-          
-          <div style="margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--border)">
-            <div style="font-weight:700;color:#60a5fa;font-size:13px;margin-bottom:8px">1️⃣ HYBRID SCANNER (v6.0) - Balanced Scoring</div>
-            <div style="font-size:11px">
-              <div style="margin-bottom:8px">
-                <strong>📌 Purpose:</strong> Creates a single comprehensive score by balancing ALL investment factors equally
-              </div>
-              
-              <div style="margin-bottom:8px;padding:8px;background:rgba(96,165,250,0.1);border-left:3px solid #60a5fa">
-                <strong>Decision Process:</strong><br>
-                Step 1: Scores stock on Valuation (How cheap? P/E, P/B ratios)<br>
-                Step 2: Scores stock on Quality (How good? ROE, Margins)<br>
-                Step 3: Scores stock on Growth (How fast? Revenue growth)<br>
-                Step 4: Scores stock on Momentum (How hot? Recent trends)<br>
-                Step 5: Combines all 4 equally (25% + 25% + 25% + 25%)<br>
-                Step 6: Final score 0-100
-              </div>
-              
-              <div style="margin-bottom:8px">
-                <strong>Scoring Logic:</strong><br>
-                • 80-100 = Excellent (buy)<br>
-                • 70-79 = Good (consider)<br>
-                • 60-69 = Moderate (monitor)<br>
-                • Below 60 = Weak (skip)
-              </div>
-              
-              <div style="margin-bottom:8px">
-                <strong>✅ Strengths:</strong> Comprehensive, balanced, catches all-around winners, nothing missed<br>
-                <strong>❌ Weaknesses:</strong> May miss pure-play themes, may dilute specialized strategies
-              </div>
-              
-              <div style="margin-bottom:0">
-                <strong>🎯 Best For:</strong> Finding the best overall stocks. If Hybrid picks it = broadly excellent stock<br>
-                <strong>Example:</strong> AAPL scores 88 (strong valuation + quality + growth)
-              </div>
-            </div>
-          </div>
-          
-          <div style="margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--border)">
-            <div style="font-weight:700;color:#34d399;font-size:13px;margin-bottom:8px">2️⃣ THEMATIC SCANNER (v6.1) - Catalyst Finder</div>
-            <div style="font-size:11px">
-              <div style="margin-bottom:8px">
-                <strong>📌 Purpose:</strong> Finds stocks matching specific investment themes or catalysts
-              </div>
-              
-              <div style="margin-bottom:8px;padding:8px;background:rgba(52,211,153,0.1);border-left:3px solid #34d399">
-                <strong>Decision Process:</strong><br>
-                Step 1: Define theme (e.g., "AI Winners")<br>
-                Step 2: Set theme criteria (e.g., revenue growth >25% + AI exposure)<br>
-                Step 3: Scan for stocks matching theme<br>
-                Step 4: Score matched stocks on theme-specific factors<br>
-                Step 5: Rank by theme relevance
-              </div>
-              
-              <div style="margin-bottom:8px">
-                <strong>5 Available Themes:</strong><br>
-                🤖 AI Winners: High growth + AI/ML exposure<br>
-                💰 Dividend Growth: Dividend increases + safe payout ratio<br>
-                📈 Oversold Recovery: Down >30% but fundamentals intact<br>
-                🚀 Earnings Surprise: Beat estimates + guidance raised<br>
-                🔄 Sector Rotation: Leading sector + underperforming stock
-              </div>
-              
-              <div style="margin-bottom:8px">
-                <strong>Decision Logic for AI Theme (Example):</strong><br>
-                • Revenue growth >25%? ✓<br>
-                • R&D spending >15% of revenue? ✓<br>
-                • AI/ML mentioned in earnings? ✓<br>
-                → Score 85 = Strong AI play
-              </div>
-              
-              <div style="margin-bottom:8px">
-                <strong>✅ Strengths:</strong> Finds catalysts, tactical flexibility, current-focused, theme-specific<br>
-                <strong>❌ Weaknesses:</strong> Limited to 5 themes, catalysts may not materialize
-              </div>
-              
-              <div style="margin-bottom:0">
-                <strong>🎯 Best For:</strong> Tactical trades with specific catalysts. If Thematic picks it + theme you believe in = good trade setup<br>
-                <strong>Example:</strong> NVDA scores 92 in AI theme (dominant AI supplier)
-              </div>
-            </div>
-          </div>
-          
-          <div style="margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--border)">
-            <div style="font-weight:700;color:#fbbf24;font-size:13px;margin-bottom:8px">3️⃣ SECTOR SCANNER (v6.2) - Peer Comparison</div>
-            <div style="font-size:11px">
-              <div style="margin-bottom:8px">
-                <strong>📌 Purpose:</strong> Finds stocks that are BARGAINS within their sector by comparing to peers
-              </div>
-              
-              <div style="margin-bottom:8px;padding:8px;background:rgba(251,191,36,0.1);border-left:3px solid #fbbf24">
-                <strong>Decision Process:</strong><br>
-                Step 1: Identify stock's sector (e.g., Healthcare)<br>
-                Step 2: Calculate sector median for key metrics<br>
-                Step 3: Compare stock to medians:<br>
-                  • P/E vs Sector P/E (cheaper?)<br>
-                  • ROE vs Sector ROE (better quality?)<br>
-                  • Growth vs Sector Growth (faster?)<br>
-                Step 4: Count how many metrics beat sector<br>
-                Step 5: Calculate "bargain score"
-              </div>
-              
-              <div style="margin-bottom:8px">
-                <strong>Bargain Scoring Logic:</strong><br>
-                • All 3 metrics beat sector? = Score 90 (excellent bargain)<br>
-                • 2 of 3 beat sector? = Score 70 (good bargain)<br>
-                • 1 of 3 beat sector? = Score 50 (marginal bargain)<br>
-                • 0 of 3 beat sector? = Score 30 (not a bargain)
-              </div>
-              
-              <div style="margin-bottom:8px">
-                <strong>Example: JPM vs Banking Sector</strong><br>
-                JPM P/E = 12 vs Sector median = 13.5 ✓ Cheaper<br>
-                JPM ROE = 15% vs Sector median = 12% ✓ Better quality<br>
-                JPM Growth = 8% vs Sector median = 6% ✓ Faster<br>
-                → 3/3 metrics win = Score 90 = Sector bargain!
-              </div>
-              
-              <div style="margin-bottom:8px">
-                <strong>✅ Strengths:</strong> Avoids sector-wide traps, finds relative value, peer-validated<br>
-                <strong>❌ Weaknesses:</strong> Works only within sector, misses cross-sector leaders
-              </div>
-              
-              <div style="margin-bottom:0">
-                <strong>🎯 Best For:</strong> Finding undervalued peers in sectors you like. If Sector Scanner picks it = cheapest relative to peers<br>
-                <strong>Example:</strong> XOM scores 78 (cheap vs energy peers despite oil price)
-              </div>
-            </div>
-          </div>
-          
-          <div style="margin-bottom:16px">
-            <div style="font-weight:700;color:#f87171;font-size:13px;margin-bottom:8px">4️⃣ RULES ENGINE (v6.3) - Philosophy Based</div>
-            <div style="font-size:11px">
-              <div style="margin-bottom:8px">
-                <strong>📌 Purpose:</strong> Applies explicit investment philosophies as scoring rules - transparent & reproducible
-              </div>
-              
-              <div style="margin-bottom:8px;padding:8px;background:rgba(248,113,113,0.1);border-left:3px solid #f87171">
-                <strong>Decision Process:</strong><br>
-                Step 1: Choose philosophy (Value, Growth, Quality, Turnaround)<br>
-                Step 2: Apply 5 explicit rules for that philosophy<br>
-                Step 3: Count how many rules stock passes<br>
-                Step 4: Calculate philosophy score
-              </div>
-              
-              <div style="margin-bottom:8px">
-                <strong>4 Philosophies × 5 Rules = 20 Total Rules</strong><br>
-                <br>
-                <strong style="color:#f87171">VALUE PHILOSOPHY (5 Rules):</strong><br>
-                1. P/E < sector median ✓<br>
-                2. P/B < 1.5 ✓<br>
-                3. Dividend yield > 2% ✓<br>
-                4. Debt/Equity < 1.0 ✓<br>
-                5. Free cash flow positive ✓<br>
-                → Pass 5/5 = Value Score 100<br>
-                <br>
-                <strong style="color:#fbbf24">GROWTH PHILOSOPHY (5 Rules):</strong><br>
-                1. Revenue growth > 15% ✓<br>
-                2. Earnings growth > 20% ✓<br>
-                3. R&D > 10% of revenue ✓<br>
-                4. Market expansion story ✓<br>
-                5. Competitive moat ✓<br>
-                → Pass 5/5 = Growth Score 100<br>
-                <br>
-                <strong style="color:#34d399">QUALITY PHILOSOPHY (5 Rules):</strong><br>
-                1. ROE > 15% ✓<br>
-                2. Profit margin > 20% ✓<br>
-                3. Asset turnover efficient ✓<br>
-                4. Low debt ✓<br>
-                5. Consistent earnings ✓<br>
-                → Pass 5/5 = Quality Score 100<br>
-                <br>
-                <strong style="color:#60a5fa">TURNAROUND PHILOSOPHY (5 Rules):</strong><br>
-                1. Stock down >30% ✓<br>
-                2. Management change ✓<br>
-                3. New strategic focus ✓<br>
-                4. Cost restructuring ✓<br>
-                5. Early earnings recovery ✓<br>
-                → Pass 4/5 = Turnaround Score 80
-              </div>
-              
-              <div style="margin-bottom:8px">
-                <strong>Scoring Rule Count:</strong><br>
-                • Pass 5/5 rules = Score 100 (perfect fit)<br>
-                • Pass 4/5 rules = Score 80 (strong fit)<br>
-                • Pass 3/5 rules = Score 60 (moderate fit)<br>
-                • Pass 2/5 rules = Score 40 (weak fit)<br>
-                • Pass <2 rules = Score 0 (not a fit)
-              </div>
-              
-              <div style="margin-bottom:8px">
-                <strong>✅ Strengths:</strong> Transparent, reproducible, explicit, philosophy-driven, clear rationale<br>
-                <strong>❌ Weaknesses:</strong> Rigid rules miss nuance, exceptions ignored, may be dated
-              </div>
-              
-              <div style="margin-bottom:0">
-                <strong>🎯 Best For:</strong> Rule-based investors who want to know EXACTLY why a stock qualifies<br>
-                <strong>Example:</strong> BRK scores 100 on Quality rules (ROE 25%, Margins 15%, Debt low)
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        <div style="background:var(--border);padding:12px;border-radius:6px;margin-bottom:16px">
-          <strong style="color:var(--text);display:block;margin-bottom:12px">🎯 The Consensus Voting System</strong>
-          
-          <div style="font-size:11px;margin-bottom:12px">
-            <div style="margin-bottom:10px;padding:10px;background:rgba(34,197,94,0.1);border-left:3px solid #22c55e">
-              <strong style="color:var(--green)">🟢 4/4 CONSENSUS = STRONG BUY</strong><br>
-              <strong>Meaning:</strong> All 4 methods found the stock from completely different angles<br>
-              <strong>Interpretation:</strong> Hybrid says it's balanced excellent. Thematic says it's a theme leader. Sector says it beats peers. Rules say it fits a philosophy perfectly.<br>
-              <strong>Confidence:</strong> ⭐⭐⭐⭐⭐ MAXIMUM (multiple independent validations)<br>
-              <strong>Action:</strong> This is your best opportunity. Different paths = same conclusion.
-            </div>
-            
-            <div style="margin-bottom:10px;padding:10px;background:rgba(251,191,36,0.1);border-left:3px solid #fbbf24">
-              <strong style="color:#fbbf24">🟡 3/4 CONSENSUS = STRONG</strong><br>
-              <strong>Meaning:</strong> 3 methods found it, 1 method missed it (has a blind spot)<br>
-              <strong>Interpretation:</strong> Maybe it doesn't fit one philosophy, but 3 other angles validate it<br>
-              <strong>Confidence:</strong> ⭐⭐⭐⭐ VERY HIGH (multiple validation, one blind spot)<br>
-              <strong>Action:</strong> Excellent opportunity. Understand which method missed it and why.
-            </div>
-            
-            <div style="margin-bottom:10px;padding:10px;background:rgba(96,165,250,0.1);border-left:3px solid #60a5fa">
-              <strong style="color:#60a5fa">🔵 2/4 CONSENSUS = GOOD</strong><br>
-              <strong>Meaning:</strong> 2 methods found it, 2 methods missed it<br>
-              <strong>Interpretation:</strong> Some angles like it, some don't. Maybe it's a specialist play (strong in one area)<br>
-              <strong>Confidence:</strong> ⭐⭐⭐ MODERATE (partial validation)<br>
-              <strong>Action:</strong> Good opportunity but less validated. Investigate why half the methods missed it.
-            </div>
-            
-            <div style="margin-bottom:0;padding:10px;background:rgba(107,114,128,0.1);border-left:3px solid #6b7280">
-              <strong style="color:var(--muted)">🔴 1/4 CONSENSUS = CHECK</strong><br>
-              <strong>Meaning:</strong> Only 1 method found it. Could be unique or could be wrong.<br>
-              <strong>Interpretation:</strong> Interesting but not validated. Is it a hidden gem or a trap?<br>
-              <strong>Confidence:</strong> ⭐⭐ LOW (single validation only)<br>
-              <strong>Action:</strong> Research deeper before committing. Don't skip it but be cautious.
-            </div>
-          </div>
-        </div>
-        
-        <div style="background:var(--border);padding:12px;border-radius:6px;margin-bottom:16px">
-          <strong style="color:var(--text);display:block;margin-bottom:12px">🧠 Decision Trees: How Each Scanner Decides</strong>
-          
-          <div style="font-size:10px;line-height:1.6;font-family:monospace;background:rgba(0,0,0,0.2);padding:10px;border-radius:4px">
-            <div style="margin-bottom:12px">
-              <strong>HYBRID Flow:</strong><br>
-              Valuation (25%)? → + Quality (25%)? → + Growth (25%)? → + Momentum (25%)? → = Score (0-100)<br>
-              All factors weighted equally. Best for "overall" plays.
-            </div>
-            
-            <div style="margin-bottom:12px">
-              <strong>THEMATIC Flow:</strong><br>
-              Matches theme? YES → Meets theme criteria? YES → Score on theme metrics → Final score<br>
-              Best for catalysts and tactical trades.
-            </div>
-            
-            <div style="margin-bottom:12px">
-              <strong>SECTOR Flow:</strong><br>
-              Get sector → Calculate medians → Compare P/E? Better? → Compare ROE? Better? → Compare Growth? Better? → Count wins (0-3) → Final score<br>
-              Best for finding bargains within sectors.
-            </div>
-            
-            <div style="margin-bottom:0">
-              <strong>RULES Flow:</strong><br>
-              Choose philosophy → Apply 5 rules → Count passes (0-5) → Score = (passes/5)*100<br>
-              Best for transparent, rule-based investing.
-            </div>
-          </div>
-        </div>
-        
-        <div style="background:var(--border);padding:12px;border-radius:6px;margin-bottom:16px">
-          <strong style="color:var(--text);display:block;margin-bottom:12px">📋 How to Interpret Results</strong>
-          
-          <div style="font-size:11px">
-            <div style="margin-bottom:12px">
-              <strong>Step 1: Check Consensus Level First</strong><br>
-              Focus on 4/4 and 3/4 results. These have multiple validation. Skip 1/4 for now (too risky).
-            </div>
-            
-            <div style="margin-bottom:12px">
-              <strong>Step 2: Read Which Scanners Found Each Stock</strong><br>
-              If 3/4: Which scanner missed it? That's the weakness. Example:<br>
-              "Found by Hybrid, Thematic, Sector BUT missed by Rules"<br>
-              → Interpretation: Stock is good but doesn't fit strict philosophy
-            </div>
-            
-            <div style="margin-bottom:12px">
-              <strong>Step 3: Check Individual Scores</strong><br>
-              Look at scores from each method. Higher scores = more certain.<br>
-              Example: Hybrid 85, Thematic 92, Sector 78 = all confident (all >70)
-            </div>
-            
-            <div style="margin-bottom:12px">
-              <strong>Step 4: Click [Analyze] for Deep Dive</strong><br>
-              See all 24 indicators to understand the stock better.
-            </div>
-            
-            <div style="margin-bottom:0">
-              <strong>Step 5: Make Decision</strong><br>
-              4/4 = Buy immediately | 3/4 = Strong buy | 2/4 = Research more | 1/4 = Investigate further
-            </div>
-          </div>
-        </div>
-        
-        <div style="background:var(--border);padding:12px;border-radius:6px">
-          <strong style="color:var(--text);display:block;margin-bottom:12px">✅ Real Example: MSFT Found in All 4 Scanners</strong>
-          
-          <div style="font-size:11px;line-height:1.7">
-            <div style="padding:8px;margin-bottom:8px;background:rgba(96,165,250,0.1);border-left:3px solid #60a5fa">
-              <strong>Hybrid Scanner:</strong> Score 87<br>
-              <span style="font-size:10px">Strong valuation (P/E 28 reasonable for growth) + Quality (27% ROE) + Growth (15% revenue growth) + Momentum (up 25% YTD) = Well-balanced excellent stock</span>
-            </div>
-            
-            <div style="padding:8px;margin-bottom:8px;background:rgba(52,211,153,0.1);border-left:3px solid #34d399">
-              <strong>Thematic Scanner:</strong> Score 88 (AI Winners)<br>
-              <span style="font-size:10px">Perfect AI play: Copilot in Office, Copilot Pro, Azure OpenAI partnership + 17% revenue growth + R&D 13% = Strong AI theme exposure</span>
-            </div>
-            
-            <div style="padding:8px;margin-bottom:8px;background:rgba(251,191,36,0.1);border-left:3px solid #fbbf24">
-              <strong>Sector Scanner:</strong> Score 85 (Tech Sector)<br>
-              <span style="font-size:10px">vs Tech median: P/E 28 vs 32 (cheaper) + ROE 27% vs 20% (better) + Growth 15% vs 12% (faster) = 3/3 beats peers</span>
-            </div>
-            
-            <div style="padding:8px;margin-bottom:8px;background:rgba(248,113,113,0.1);border-left:3px solid #f87171">
-              <strong>Rules Engine:</strong> Score 92 (Quality Philosophy)<br>
-              <span style="font-size:10px">Quality rules: ROE 27% > 15% ✓ + Margin 37% > 20% ✓ + Consistent ✓ + Low debt ✓ + Efficient ✓ = 5/5 perfect quality fit</span>
-            </div>
-            
-            <div style="margin-top:12px;padding:10px;background:var(--accent);border-radius:4px;text-align:center;font-weight:700">
-              🟢 ALL 4 SCANNERS AGREE = 4/4 STRONG BUY<br>
-              <span style="font-size:10px;font-weight:normal">Different reasons (AI + Balance + Value + Quality) but same conclusion: MSFT is excellent</span>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border);text-align:center">
-        <button class="btn btn-go" style="font-size:12px" onclick="runConsensusAnalysis()">🔗 Run All Scanners</button>
-      </div>
-    </div>
-  `;
-}
+
+
+
 
 function resetConsensus() {
   consensusState.results = [];
