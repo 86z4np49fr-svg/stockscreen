@@ -81,7 +81,7 @@ footer{margin-top:40px;padding-top:16px;border-top:1px solid var(--border);color
 
   <div class="view active" id="analyzer">
     <div class="row">
-      <input type="text" id="analyzerInput" placeholder="Ticker: AAPL, MSFT, SPY...">
+      <input type="text" id="analyzerInput" placeholder="Ticker: AAPL, MSFT, SPY..." oninput="showTickerSuggestions('analyzerInput')" onblur="hideSuggestions('analyzerInput')" autocomplete="off">
       <button class="btn btn-go" id="analyzeBtn">Analyze ✨</button>
       <button class="btn btn-ghost" id="demoBtn">Demo</button>
     </div>
@@ -448,6 +448,92 @@ footer{margin-top:40px;padding-top:16px;border-top:1px solid var(--border);color
 <script>
 const API_KEY = "d8dhhbhr01qhm4aepfd0d8dhhbhr01qhm4aepfdg";
 const TD_KEY = "70c82e55e8b9458892b85ad6bc5f9ed1"; // Twelve Data key (price history)
+
+// TICKER DATABASE - 150+ popular stocks for autocomplete
+const TICKER_DATABASE = {
+  // Tech
+  AAPL:{name:'Apple',sector:'Tech'},MSFT:{name:'Microsoft',sector:'Tech'},GOOGL:{name:'Alphabet',sector:'Tech'},GOOG:{name:'Alphabet',sector:'Tech'},
+  AMZN:{name:'Amazon',sector:'Tech'},NVDA:{name:'NVIDIA',sector:'Tech'},TSLA:{name:'Tesla',sector:'Tech'},META:{name:'Meta',sector:'Tech'},
+  AVGO:{name:'Broadcom',sector:'Tech'},NFLX:{name:'Netflix',sector:'Tech'},INTC:{name:'Intel',sector:'Tech'},AMD:{name:'AMD',sector:'Tech'},
+  CRM:{name:'Salesforce',sector:'Tech'},ADBE:{name:'Adobe',sector:'Tech'},CSCO:{name:'Cisco',sector:'Tech'},ORCL:{name:'Oracle',sector:'Tech'},
+  IBM:{name:'IBM',sector:'Tech'},QCOM:{name:'Qualcomm',sector:'Tech'},PYPL:{name:'PayPal',sector:'Tech'},SHOP:{name:'Shopify',sector:'Tech'},
+  ASML:{name:'ASML',sector:'Tech'},SNOW:{name:'Snowflake',sector:'Tech'},UBER:{name:'Uber',sector:'Tech'},COIN:{name:'Coinbase',sector:'Tech'},
+  // Finance
+  JPM:{name:'JPMorgan',sector:'Finance'},BAC:{name:'Bank of America',sector:'Finance'},WFC:{name:'Wells Fargo',sector:'Finance'},GS:{name:'Goldman Sachs',sector:'Finance'},
+  MS:{name:'Morgan Stanley',sector:'Finance'},BLK:{name:'BlackRock',sector:'Finance'},SCHW:{name:'Schwab',sector:'Finance'},CME:{name:'CME',sector:'Finance'},
+  ICE:{name:'ICE',sector:'Finance'},AMP:{name:'Ameriprise',sector:'Finance'},
+  // Healthcare
+  JNJ:{name:'J&J',sector:'Healthcare'},UNH:{name:'UnitedHealth',sector:'Healthcare'},PFE:{name:'Pfizer',sector:'Healthcare'},MRK:{name:'Merck',sector:'Healthcare'},
+  ABBV:{name:'AbbVie',sector:'Healthcare'},TMO:{name:'Thermo Fisher',sector:'Healthcare'},LLY:{name:'Eli Lilly',sector:'Healthcare'},NVAX:{name:'Novavax',sector:'Healthcare'},
+  BNTX:{name:'BioNTech',sector:'Healthcare'},MRNA:{name:'Moderna',sector:'Healthcare'},ZTS:{name:'Zoetis',sector:'Healthcare'},VRTX:{name:'Vertex',sector:'Healthcare'},
+  ILMN:{name:'Illumina',sector:'Healthcare'},GILD:{name:'Gilead',sector:'Healthcare'},
+  // Consumer
+  WMT:{name:'Walmart',sector:'Consumer'},KO:{name:'Coca-Cola',sector:'Consumer'},PEP:{name:'PepsiCo',sector:'Consumer'},MCD:{name:'McDonald\'s',sector:'Consumer'},
+  NKE:{name:'Nike',sector:'Consumer'},LULU:{name:'Lululemon',sector:'Consumer'},HD:{name:'Home Depot',sector:'Consumer'},LOW:{name:'Lowe\'s',sector:'Consumer'},
+  TJX:{name:'TJX',sector:'Consumer'},DIS:{name:'Disney',sector:'Consumer'},CMG:{name:'Chipotle',sector:'Consumer'},SBUX:{name:'Starbucks',sector:'Consumer'},
+  PG:{name:'P&G',sector:'Consumer'},CL:{name:'Colgate',sector:'Consumer'},
+  // Industrial
+  BA:{name:'Boeing',sector:'Industrial'},CAT:{name:'Caterpillar',sector:'Industrial'},GE:{name:'General Electric',sector:'Industrial'},HON:{name:'Honeywell',sector:'Industrial'},
+  MMM:{name:'3M',sector:'Industrial'},ITW:{name:'Illinois Tool',sector:'Industrial'},ETN:{name:'Eaton',sector:'Industrial'},RTX:{name:'Raytheon',sector:'Industrial'},
+  LMT:{name:'Lockheed Martin',sector:'Industrial'},
+  // Energy
+  XOM:{name:'Exxon Mobil',sector:'Energy'},CVX:{name:'Chevron',sector:'Energy'},COP:{name:'ConocoPhillips',sector:'Energy'},MPC:{name:'Marathon Petro',sector:'Energy'},
+  PSX:{name:'Phillips 66',sector:'Energy'},HES:{name:'Hess',sector:'Energy'},OXY:{name:'Occidental',sector:'Energy'},
+  // Real Estate
+  SPG:{name:'Simon Property',sector:'REIT'},PLD:{name:'Prologis',sector:'REIT'},AMT:{name:'American Tower',sector:'REIT'},EQIX:{name:'Equinix',sector:'REIT'},
+  AVB:{name:'AvalonBay',sector:'REIT'},
+  // Utilities
+  NEE:{name:'NextEra',sector:'Utility'},DUK:{name:'Duke Energy',sector:'Utility'},SO:{name:'Southern Co',sector:'Utility'},EXC:{name:'Exelon',sector:'Utility'},
+  // ETFs
+  SPY:{name:'S&P 500 ETF',sector:'ETF'},QQQ:{name:'Nasdaq ETF',sector:'ETF'},IVV:{name:'S&P 500 iShares',sector:'ETF'},VOO:{name:'Vanguard S&P',sector:'ETF'},
+  VTI:{name:'Total Market',sector:'ETF'},
+  // Mutual Funds (Warning)
+  FBCGX:{name:'Fidelity Blue Chip',sector:'Fund ⚠️',warn:true},VTSAX:{name:'Vanguard Total Stock',sector:'Fund ⚠️',warn:true},
+  VFIAX:{name:'Vanguard 500 Index',sector:'Fund ⚠️',warn:true},FSKAX:{name:'Fidelity Total Market',sector:'Fund ⚠️',warn:true},
+};
+
+// Autocomplete function
+window.showTickerSuggestions = function(inputId) {
+  const input = document.getElementById(inputId);
+  if(!input) return;
+  const query = input.value.trim().toUpperCase();
+  const suggestionsId = inputId + '-suggestions';
+  let suggestionsDiv = document.getElementById(suggestionsId);
+  
+  if(!suggestionsDiv) {
+    suggestionsDiv = document.createElement('div');
+    suggestionsDiv.id = suggestionsId;
+    suggestionsDiv.style.cssText = 'position:absolute;top:100%;left:0;right:0;display:none;z-index:100;background:var(--card);border:1px solid var(--border);border-radius:8px;max-height:250px;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,.15);margin-top:2px';
+    input.parentElement.style.position = 'relative';
+    input.parentElement.appendChild(suggestionsDiv);
+  }
+  
+  if(query.length < 1) {suggestionsDiv.style.display = 'none'; return;}
+  
+  const matches = Object.entries(TICKER_DATABASE).filter(([t])=>t.startsWith(query)).slice(0,8);
+  
+  if(matches.length === 0) {
+    suggestionsDiv.innerHTML = '<div style="padding:12px;color:var(--muted);font-size:12px">No matches. Try AAPL, MSFT, TSLA</div>';
+    suggestionsDiv.style.display = 'block';
+    return;
+  }
+  
+  suggestionsDiv.innerHTML = matches.map(([t,d])=>'<div style="padding:10px;cursor:pointer;border-bottom:1px solid var(--border);display:flex;justify-content:space-between" onclick="selectTicker(\''+inputId+'\',\''+t+'\')" onmouseover="this.style.background=\'var(--border)\'" onmouseout="this.style.background=\'\'"><div><strong>'+t+'</strong> '+d.name+'</div><div style="font-size:10px;color:var(--muted)">'+d.sector+(d.warn?' ⚠️':'')+' </div></div>').join('');
+  suggestionsDiv.style.display = 'block';
+};
+
+window.selectTicker = function(inputId, ticker) {
+  document.getElementById(inputId).value = ticker;
+  const suggestionsDiv = document.getElementById(inputId + '-suggestions');
+  if(suggestionsDiv) suggestionsDiv.style.display = 'none';
+};
+
+window.hideSuggestions = function(inputId) {
+  setTimeout(() => {
+    const suggestionsDiv = document.getElementById(inputId + '-suggestions');
+    if(suggestionsDiv) suggestionsDiv.style.display = 'none';
+  }, 150);
+};
 const state = { portfolio: [], screenerResults: [] };
 
 // Tab switching
