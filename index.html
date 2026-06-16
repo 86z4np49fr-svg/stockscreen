@@ -87,7 +87,7 @@ footer{margin-top:40px;padding-top:16px;border-top:1px solid var(--border);color
       <span id="currentTickerBadge" style="font-size:11px;padding:6px 12px;background:#2a8f3f;color:white;border-radius:4px;margin-left:auto;display:none">🔗 Active: <strong id="activeTicker">-</strong></span>
     </div>
     <div style="margin-top:8px;font-size:11px;color:var(--muted);padding:0 8px">
-      💡 <strong>Tip:</strong> Type a ticker (e.g., "A", "MS", "NV") and it automatically updates ALL tabs! 🔗 Popular stocks: AAPL, MSFT, TSLA, GOOGL, AMZN, NVDA, JNJ, KO
+      💡 <strong>Tip:</strong> Type a ticker (e.g., "A", "MS", "NV") and it automatically updates & refreshes ALL tabs! 🔄 Popular stocks: AAPL, MSFT, TSLA, GOOGL, AMZN, NVDA, JNJ, KO
     </div>
     <div id="analyzerOutput" class="empty">Type a ticker to analyze. Shows 24 indicators, RAG status, peer comparison.</div>
   </div>
@@ -942,14 +942,60 @@ window.selectTicker = function(inputId, ticker) {
   const suggestionsDiv = document.getElementById(inputId + '-suggestions');
   if(suggestionsDiv) suggestionsDiv.style.display = 'none';
   
-  // If selected from Analyzer, broadcast to all other tabs
+  // If selected from Analyzer, broadcast to all other tabs and auto-refresh them
   if(inputId === 'analyzerInput') {
     window.broadcastTicker(ticker);
-    setTimeout(() => analyzeStock(), 50);
+    setTimeout(() => {
+      analyzeStock(); // Run Analyzer analysis
+      window.autoRefreshTabs(ticker); // Auto-refresh other tabs
+    }, 50);
   } else {
     // If selected from other tabs, update analyzer too
     window.broadcastTicker(ticker);
+    setTimeout(() => {
+      window.autoRefreshTabs(ticker); // Auto-refresh relevant tabs
+    }, 50);
   }
+};
+
+// Auto-refresh tabs when ticker is selected
+window.autoRefreshTabs = function(ticker) {
+  if (!ticker || ticker.length === 0) return;
+  
+  // Auto-refresh Decision Hub if visible
+  const dhTab = document.getElementById('decision');
+  if (dhTab && dhTab.style.display !== 'none') {
+    setTimeout(() => {
+      const dhAnalyzeBtn = document.querySelector('[onclick*="runDecisionAnalysis"]');
+      if (dhAnalyzeBtn) {
+        runDecisionAnalysis();
+      }
+    }, 200);
+  }
+  
+  // Auto-refresh Technicals if visible
+  const techTab = document.getElementById('technicals');
+  if (techTab && techTab.style.display !== 'none') {
+    setTimeout(() => {
+      const techBtn = document.querySelector('[onclick*="analyzeTechnical"]');
+      if (techBtn) {
+        analyzeTechnical();
+      }
+    }, 400);
+  }
+  
+  // Auto-refresh News if visible
+  const newsTab = document.getElementById('news');
+  if (newsTab && newsTab.style.display !== 'none') {
+    setTimeout(() => {
+      const newsBtn = document.querySelector('[onclick*="searchNews"]');
+      if (newsBtn) {
+        searchNews();
+      }
+    }, 600);
+  }
+  
+  console.log(`🔄 Auto-refreshed tabs for ${ticker}`);
 };
 
 // HIDE SUGGESTIONS
@@ -3330,8 +3376,85 @@ function displayConsensusResults() {
   const by4 = consensusState.results.filter(r => r.consensus === 4);
   const by3 = consensusState.results.filter(r => r.consensus === 3);
   const by2 = consensusState.results.filter(r => r.consensus === 2);
+  const by1 = consensusState.results.filter(r => r.consensus === 1);
   
-  let html = '<div style="margin-bottom:16px">';
+  // Calculate scanner performance statistics
+  const allScores = consensusState.results.flatMap(r => [
+    { name: 'Hybrid', score: r.hybrid },
+    { name: 'Thematic', score: r.thematic },
+    { name: 'Sector', score: r.sector },
+    { name: 'Rules', score: r.rules }
+  ]).filter(s => s.score > 0);
+  
+  const scannerStats = {};
+  allScores.forEach(s => {
+    if (!scannerStats[s.name]) {
+      scannerStats[s.name] = { total: 0, count: 0, highest: 0 };
+    }
+    scannerStats[s.name].total += s.score;
+    scannerStats[s.name].count += 1;
+    if (s.score > scannerStats[s.name].highest) {
+      scannerStats[s.name].highest = s.score;
+    }
+  });
+  
+  const scannerRanking = Object.entries(scannerStats)
+    .map(([name, stats]) => ({
+      name,
+      avg: Math.round(stats.total / stats.count),
+      count: stats.count,
+      highest: stats.highest
+    }))
+    .sort((a, b) => b.avg - a.avg);
+  
+  // Create summary header
+  let html = `
+    <div style="background:var(--border);padding:12px;border-radius:8px;margin-bottom:16px">
+      <div style="font-weight:700;font-size:13px;margin-bottom:12px;color:var(--accent)">📊 Consensus Summary & Scanner Performance</div>
+      
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:12px">
+        <div style="background:var(--card);padding:10px;border-radius:6px;border-left:4px solid var(--green)">
+          <div style="font-weight:700;font-size:14px;color:var(--green)">${by4.length}</div>
+          <div style="font-size:10px;color:var(--muted)">4/4 Unanimous</div>
+        </div>
+        <div style="background:var(--card);padding:10px;border-radius:6px;border-left:4px solid #fbbf24">
+          <div style="font-weight:700;font-size:14px;color:#fbbf24">${by3.length}</div>
+          <div style="font-size:10px;color:var(--muted)">3/4 Strong</div>
+        </div>
+        <div style="background:var(--card);padding:10px;border-radius:6px;border-left:4px solid #60a5fa">
+          <div style="font-weight:700;font-size:14px;color:#60a5fa">${by2.length}</div>
+          <div style="font-size:10px;color:var(--muted)">2/4 Moderate</div>
+        </div>
+        <div style="background:var(--card);padding:10px;border-radius:6px;border-left:4px solid var(--muted)">
+          <div style="font-weight:700;font-size:14px;color:var(--muted)">${by1.length || 0}</div>
+          <div style="font-size:10px;color:var(--muted)">1/4 Limited</div>
+        </div>
+      </div>
+      
+      <div style="background:var(--card);padding:10px;border-radius:6px;border-left:4px solid var(--accent)">
+        <div style="font-weight:700;font-size:11px;margin-bottom:8px;color:var(--text)">🎯 Scanner Performance Ranking (Most Positive Feeders):</div>
+        ${scannerRanking.map((s, idx) => {
+          const medals = ['🥇', '🥈', '🥉', '4️⃣'];
+          const icon = {
+            'Hybrid': '📊',
+            'Thematic': '🎯',
+            'Sector': '📈',
+            'Rules': '⚙️'
+          }[s.name] || '•';
+          
+          return `
+            <div style="display:flex;justify-content:space-between;font-size:10px;margin-bottom:4px;padding:4px 0">
+              <span>${medals[idx]} ${icon} ${s.name}: <strong style="color:var(--accent)">${s.avg}</strong> avg</span>
+              <span style="color:var(--muted)">${s.count} stocks, highest: ${s.highest}</span>
+            </div>
+          `;
+        }).join('')}
+        <div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.1);font-size:10px;color:var(--muted)">
+          📍 <strong>Most Positive Feeders:</strong> ${scannerRanking.slice(0, 2).map(s => `${s.name} (${s.avg})`).join(', ')} — These scanners are showing strongest signals
+        </div>
+      </div>
+    </div>
+  `;
   
   // 4/4 Consensus
   if (by4.length > 0) {
@@ -3374,31 +3497,183 @@ function displayConsensusResults() {
 }
 
 function consensusCard(stock, color) {
+  // Calculate which scanner is most positive
+  const scores = [
+    { name: 'Hybrid', score: stock.hybrid, icon: '📊' },
+    { name: 'Thematic', score: stock.thematic, icon: '🎯' },
+    { name: 'Sector', score: stock.sector, icon: '📈' },
+    { name: 'Rules', score: stock.rules, icon: '⚙️' }
+  ];
+  
+  const activeScores = scores.filter(s => s.score > 0);
+  const mostPositive = activeScores.length > 0 ? activeScores.reduce((a, b) => a.score > b.score ? a : b) : null;
+  const avgScore = activeScores.length > 0 ? Math.round(activeScores.reduce((sum, s) => sum + s.score, 0) / activeScores.length) : 0;
+  
+  // Determine sentiment
+  let sentiment = '';
+  let sentimentColor = '';
+  if (stock.consensus === 4) {
+    sentiment = '🟢 UNANIMOUS BULLISH';
+    sentimentColor = 'var(--green)';
+  } else if (stock.consensus === 3) {
+    sentiment = '🟡 STRONG BULLISH';
+    sentimentColor = '#fbbf24';
+  } else if (stock.consensus === 2) {
+    sentiment = '🔵 MODERATELY BULLISH';
+    sentimentColor = '#60a5fa';
+  } else {
+    sentiment = '🔴 MIXED SIGNALS';
+    sentimentColor = 'var(--muted)';
+  }
+  
+  // Create scanner comparison bars
+  const scannerBars = scores.map(s => {
+    if (s.score === 0) return '';
+    const barWidth = (s.score / 100) * 100;
+    const isHighest = mostPositive && s.name === mostPositive.name;
+    return `
+      <div style="margin-bottom:6px;font-size:10px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:2px">
+          <span>${s.icon} ${s.name}</span>
+          <strong style="color:${isHighest ? color : 'var(--muted)'}">${s.score}${isHighest ? ' ⭐' : ''}</strong>
+        </div>
+        <div style="background:var(--border);height:6px;border-radius:3px;overflow:hidden">
+          <div style="background:${isHighest ? color : '#666'};height:100%;width:${barWidth}%;transition:width 0.3s"></div>
+        </div>
+      </div>
+    `;
+  }).join('');
+  
   return `
     <div style="background:var(--card);padding:12px;border-radius:8px;border-left:4px solid ${color}">
       <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px">
-        <div style="font-weight:700;font-size:14px">${stock.ticker}</div>
-        <div style="font-weight:700;font-size:14px;color:${color}">${stock.consensus}/4</div>
+        <div>
+          <div style="font-weight:700;font-size:14px">${stock.ticker}</div>
+          <div style="font-size:10px;color:var(--muted)">Consensus: ${stock.consensus}/4</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-weight:700;font-size:13px;color:${sentimentColor}">${sentiment}</div>
+          <div style="font-size:10px;color:var(--muted)">Avg Score: ${avgScore}</div>
+        </div>
       </div>
+      
+      <div style="background:var(--border);padding:8px;border-radius:6px;margin-bottom:8px">
+        <div style="font-size:10px;font-weight:700;color:var(--text);margin-bottom:6px">📊 Scanner Comparison:</div>
+        ${scannerBars}
+        ${mostPositive ? `<div style="margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,0.1);font-size:10px;color:${color}">✅ Most Positive: ${mostPositive.icon} ${mostPositive.name} (${mostPositive.score})</div>` : ''}
+      </div>
+      
       <div style="font-size:10px;color:var(--muted);line-height:1.6;margin-bottom:8px">
-        <strong>Scanners:</strong><br>
+        <strong>Active Scanners:</strong><br>
         ${stock.scanners.map(s => `✓ ${s}`).join('<br>')}
       </div>
-      <div style="font-size:10px;color:var(--muted);margin-bottom:8px;font-style:italic">
-        ${stock.reason}
+      
+      <div style="background:rgba(96,165,250,0.1);padding:8px;border-left:3px solid #60a5fa;border-radius:4px;margin-bottom:8px;font-size:10px">
+        <strong style="color:var(--text)">📋 Outcome Summary:</strong><br>
+        <div style="margin-top:4px;color:var(--muted)">
+          ${stock.consensus === 4 ? 
+            `All 4 scanners unanimous. Maximum confidence. Different validation angles confirm same stock.` :
+          stock.consensus === 3 ?
+            `3 of 4 scanners agree. High confidence. One method has blind spot but majority validates.` :
+          stock.consensus === 2 ?
+            `2 of 4 scanners agree. Moderate confidence. Specialist play or mixed signals - research deeper.` :
+            `Single scanner. Low confidence. Interesting but needs validation. Investigate thoroughly.`
+          }
+        </div>
       </div>
-      <button class="btn" style="width:100%;padding:6px;font-size:11px;cursor:pointer" 
-        onclick="analyzeThematic('${stock.ticker}')">
-        Analyze
-      </button>
+      
+      <div style="display:flex;gap:6px">
+        <button class="btn" style="flex:1;padding:6px;font-size:11px;cursor:pointer" 
+          onclick="analyzeThematic('${stock.ticker}')">
+          📊 Analyze
+        </button>
+        <button class="btn btn-ghost" style="flex:1;padding:6px;font-size:11px;cursor:pointer" 
+          onclick="showScannerDetails('${stock.ticker}')">
+          ℹ️ Details
+        </button>
+      </div>
     </div>
   `;
 }
 
-function showConsensusDemo() {
-  consensusState.results = CONSENSUS_DEMO_DATA;
-  displayConsensusResults();
-  alert_notify('Demo: Multi-strategy consensus results', 'info');
+function showScannerDetails(ticker) {
+  const stock = CONSENSUS_DEMO_DATA.find(d => d.ticker === ticker);
+  if (!stock) return;
+  
+  const output = document.getElementById('consensusOutput');
+  const scores = [
+    { name: '🎯 Hybrid Scanner', score: stock.hybrid, desc: 'Balanced scoring across all factors' },
+    { name: '🤖 Thematic Scanner', score: stock.thematic, desc: 'Catalyst & theme-based selection' },
+    { name: '📊 Sector Scanner', score: stock.sector, desc: 'Peer comparison within sector' },
+    { name: '⚙️ Rules Engine', score: stock.rules, desc: 'Philosophy-based rules matching' }
+  ];
+  
+  const activeScores = scores.filter(s => s.score > 0);
+  const maxScore = Math.max(...activeScores.map(s => s.score));
+  
+  let html = `
+    <div style="background:var(--card);padding:16px;border-radius:8px">
+      <div style="font-weight:700;font-size:14px;margin-bottom:16px;color:var(--accent)">📋 ${ticker} - Scanner Comparison Details</div>
+      
+      <div style="margin-bottom:16px">
+        <div style="font-weight:700;font-size:12px;margin-bottom:8px;color:var(--text)">Scanner Scores:</div>
+  `;
+  
+  scores.forEach(s => {
+    if (s.score === 0) return;
+    const barWidth = (s.score / 100) * 100;
+    const isBest = s.score === maxScore;
+    html += `
+      <div style="margin-bottom:12px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+          <span style="font-weight:${isBest ? 700 : 400}">${s.name}</span>
+          <strong style="color:${isBest ? 'var(--accent)' : 'var(--muted)'}">${s.score}${isBest ? ' ⭐ HIGHEST' : ''}</strong>
+        </div>
+        <div style="font-size:10px;color:var(--muted);margin-bottom:4px">${s.desc}</div>
+        <div style="background:var(--border);height:8px;border-radius:4px;overflow:hidden">
+          <div style="background:${isBest ? 'var(--accent)' : '#666'};height:100%;width:${barWidth}%;transition:width 0.3s"></div>
+        </div>
+      </div>
+    `;
+  });
+  
+  const avgScore = Math.round(activeScores.reduce((sum, s) => sum + s.score, 0) / activeScores.length);
+  
+  html += `
+      </div>
+      
+      <div style="background:var(--border);padding:12px;border-radius:6px;margin-bottom:16px">
+        <div style="font-weight:700;font-size:12px;margin-bottom:8px;color:var(--text)">📊 Statistical Summary:</div>
+        <div style="font-size:11px;color:var(--muted);line-height:1.8">
+          <div>Active Scanners: <strong style="color:var(--text)">${activeScores.length}/4</strong></div>
+          <div>Average Score: <strong style="color:var(--text)">${avgScore}</strong></div>
+          <div>Highest Score: <strong style="color:var(--text)">${maxScore}</strong></div>
+          <div>Consensus Level: <strong style="color:var(--text)">${stock.consensus}/4</strong></div>
+        </div>
+      </div>
+      
+      <div style="background:rgba(34,197,94,0.1);border-left:3px solid var(--green);padding:12px;border-radius:6px;margin-bottom:16px">
+        <div style="font-weight:700;font-size:12px;margin-bottom:8px;color:var(--text)">✅ What This Means:</div>
+        <div style="font-size:11px;color:var(--muted);line-height:1.7">
+          ${stock.consensus === 4 ? 
+            `<strong style="color:var(--green)">UNANIMOUS AGREEMENT (4/4)</strong><br>All scanners agree this is a strong candidate. Different analytical approaches validate the same stock. Maximum confidence for investment decision.` :
+          stock.consensus === 3 ?
+            `<strong style="color:#fbbf24">STRONG AGREEMENT (3/4)</strong><br>Most scanners agree with high confidence. One scanner has a blind spot but doesn't invalidate the conclusion. Safe to proceed with further analysis.` :
+          stock.consensus === 2 ?
+            `<strong style="color:#60a5fa">MODERATE AGREEMENT (2/4)</strong><br>Mixed signals from different approaches. Could be a specialist play or have specific weaknesses. Requires deeper research before decision.` :
+            `<strong style="color:var(--muted)">LIMITED AGREEMENT (1/4)</strong><br>Only one scanner found it. Could be a hidden gem or have blind spots others caught. Significant research required.`
+          }
+        </div>
+      </div>
+      
+      <div style="display:flex;gap:8px">
+        <button class="btn" style="flex:1;padding:8px;font-size:11px" onclick="analyzeThematic('${ticker}')">📊 Analyze Stock</button>
+        <button class="btn btn-ghost" style="flex:1;padding:8px;font-size:11px" onclick="runConsensusAnalysis()">← Back</button>
+      </div>
+    </div>
+  `;
+  
+  output.innerHTML = html;
 }
 
 function showConsensusInfo() {
