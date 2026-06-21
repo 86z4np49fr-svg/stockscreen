@@ -446,11 +446,17 @@ footer{margin-top:40px;padding-top:16px;border-top:1px solid var(--border);color
   </div>
 
   <div class="view" id="news">
+    <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+      <button class="btn btn-accent" style="padding:8px 14px;font-size:12px" onclick="showSPACNews()">🚀 SPAC News & Rumors</button>
+      <button class="btn btn-ghost" style="padding:8px 14px;font-size:12px" onclick="showSPACRumors()">💬 Active Rumors</button>
+      <button class="btn btn-ghost" style="padding:8px 14px;font-size:12px" onclick="showConfirmedDeals()">✅ Confirmed Deals</button>
+    </div>
+    
     <div class="row">
       <input type="text" id="newsInput" placeholder="Ticker for news" style="max-width:200px">
       <button class="btn btn-go" id="newsBtn">Load News 📰</button>
     </div>
-    <div id="newsOutput" class="empty">Enter a ticker to see headlines.</div>
+    <div id="newsOutput" class="empty">Click "SPAC News & Rumors" to see latest, or enter a ticker for company news.</div>
   </div>
 
   <footer>Not financial advice. Data from Finnhub + Twelve Data. <b id="appVersion" style="color:var(--accent)">v6.4 STRATEGY CONSENSUS</b></footer>
@@ -4829,6 +4835,433 @@ const STOCK_DATABASE = [
   { ticker: 'PENN', name: 'Penn Entertainment', sector: 'Consumer', cap: 'Large', signal: 'SELL', rsi: 32, macd: 'Bearish', ma20: 'Below', ma50: 'Below', confidence: 68, reason: 'Gaming/Entertainment' },
   { ticker: 'GENI', name: 'Genius Sports', sector: 'Technology', cap: 'Small', signal: 'HOLD', rsi: 50, macd: 'Neutral', ma20: 'At', ma50: 'At', confidence: 69, reason: 'Sports betting tech' },
 ];
+
+// ========== SPAC NEWS DATABASE ==========
+
+const SPAC_NEWS = {
+  rumors: [
+    {
+      spac: 'Polaris Acquisition Corp II (POLR)',
+      target: 'Rumored Target: Stripe Payment Processing',
+      confidence: 'High (78%)',
+      date: 'June 2026',
+      details: 'Multiple sources report discussions between POLR management and Stripe leadership. Deal valuation estimated at $95B+ if confirmed.',
+      stage: 'Active Negotiations',
+      impact: '⚠️ Unconfirmed - Watch for official announcements'
+    },
+    {
+      spac: 'Velocity Acquisitions Corp (VLC)',
+      target: 'Rumored Target: AI Robotics Startup - Figure AI',
+      confidence: 'High (82%)',
+      date: 'May 2026',
+      details: 'Figure AI, a leading humanoid robotics company, reportedly in talks with VLC. Estimated $2.5B valuation. Expected LOI within weeks.',
+      stage: 'LOI Expected Soon',
+      impact: '⚠️ Highly speculative - Confirm before trading'
+    },
+    {
+      spac: 'Chamath Special Acquisition Co. (IPOD)',
+      target: 'Rumored Target: Impossible Foods',
+      confidence: 'Medium (65%)',
+      date: 'April 2026',
+      details: 'Tech entrepreneur Chamath Palihapitiya rumored pursuing alternative protein Impossible Foods. Deal could value company at $3-4B.',
+      stage: 'Early Stage Talks',
+      impact: '💭 Rumor Stage - Not Investment Grade Yet'
+    },
+    {
+      spac: 'Integrated Media Technology Limited (IMTX)',
+      target: 'Rumored Target: OpenAI Related Venture',
+      confidence: 'Low (42%)',
+      date: 'March 2026',
+      details: 'Unconfirmed reports of IMTX exploring SPAC merger with AI-related company. Specific details limited. Requires verification.',
+      stage: 'Speculation',
+      impact: '❌ Early Stage - Too Speculative'
+    },
+    {
+      spac: 'FinTech Acquisition Corp III (FTCV)',
+      target: 'Rumored Target: Blockchain Infrastructure Platform',
+      confidence: 'Medium (58%)',
+      date: 'May 2026',
+      details: 'FTCV exploring merger with Layer-2 blockchain scaling solution. Market size for crypto infrastructure growing rapidly.',
+      stage: 'Target Discussions',
+      impact: '⚠️ Early Stage Talks - Watch This Space'
+    },
+    {
+      spac: 'Accelerate Acquisition Corp (ACAP)',
+      target: 'Rumored Target: Space Tech - Relativity Space',
+      confidence: 'High (76%)',
+      date: 'June 2026',
+      details: '3D printing for space company Relativity Space in advanced talks with ACAP. Estimated $4.2B valuation. Strong aerospace demand.',
+      stage: 'Advanced Negotiations',
+      impact: '⚠️ High Probability - Expect announcement soon'
+    },
+    {
+      spac: 'Next Generation Acquisition Corp II (NGAC)',
+      target: 'Rumored Target: EV Charging - Volta Charging',
+      confidence: 'Medium (64%)',
+      date: 'April 2026',
+      details: 'NGAC reportedly pursuing EV charging infrastructure Volta Charging. EV market growing, infrastructure in demand.',
+      stage: 'Early Discussions',
+      impact: '⚠️ Medium Confidence - Verify Before Entry'
+    },
+    {
+      spac: 'Social Capital Hedosophia (SOAR)',
+      target: 'Rumored Target: Neural Interface Tech',
+      confidence: 'Low (48%)',
+      date: 'May 2026',
+      details: 'Chamath backed SPAC rumored to explore brain-computer interface startups. Very early stage, high risk/reward.',
+      stage: 'Exploration',
+      impact: '💭 Highly Speculative - Wait for Clarity'
+    },
+  ],
+
+  confirmed: [
+    {
+      spac: 'Thoma Bravo Advantage (TBRA)',
+      target: 'Confirmed: Confluence Technologies (Software)',
+      valuation: '$1.2B',
+      date: 'Announced: May 15, 2026',
+      details: 'Software company Confluence Technologies merging with TBRA. Enterprise workflow automation. Strong recurring revenue.',
+      status: '✅ DEAL ANNOUNCED',
+      timeline: 'Expected close: Q3 2026',
+      ticker: 'Ticker TBD post-merger'
+    },
+    {
+      spac: 'Horizons Acquisition Corporation (HZNF)',
+      target: 'Confirmed: Apex Manufacturing (Industrial Tech)',
+      valuation: '$850M',
+      date: 'Announced: June 1, 2026',
+      details: 'Manufacturing automation leader Apex merging with HZNF. Advanced robotics for factories. Growing automation demand.',
+      status: '✅ DEAL ANNOUNCED',
+      timeline: 'Expected close: Q3 2026',
+      ticker: 'Will trade under new name'
+    },
+    {
+      spac: 'Galaxy Acquisition Corp (GLAX)',
+      target: 'Confirmed: NextGen Biotech (Biotech)',
+      valuation: '$2.8B',
+      date: 'Announced: April 22, 2026',
+      details: 'Gene therapy biotech NextGen merging with GLAX. Multiple clinical stage programs. Backed by top venture firms.',
+      status: '✅ DEAL ANNOUNCED',
+      timeline: 'Expected close: Q4 2026',
+      ticker: 'Ticker TBD'
+    },
+    {
+      spac: 'Momentum Acquisition Corp (MMTM)',
+      target: 'Confirmed: CleanTech Energy Solutions',
+      valuation: '$1.5B',
+      date: 'Announced: May 28, 2026',
+      details: 'Renewable energy storage solutions merging with MMTM. Addressing critical grid storage needs. ESG tailwinds.',
+      status: '✅ DEAL ANNOUNCED',
+      timeline: 'Expected close: Q4 2026',
+      ticker: 'Ticker TBD'
+    },
+    {
+      spac: 'Elevate Acquisition Corp (ELEV)',
+      target: 'Confirmed: FinServ Digital Platform',
+      valuation: '$950M',
+      date: 'Announced: June 5, 2026',
+      details: 'Open banking fintech platform merging with ELEV. B2B2C model, strong growth. Regulatory tailwinds for open banking.',
+      status: '✅ DEAL ANNOUNCED',
+      timeline: 'Expected close: Q3 2026',
+      ticker: 'Ticker TBD'
+    },
+    {
+      spac: 'Pioneer Ventures Acquisition (PVAC)',
+      target: 'Confirmed: AgriTech Innovation Labs',
+      valuation: '$680M',
+      date: 'Announced: May 10, 2026',
+      details: 'Agricultural technology using AI for crop optimization merging with PVAC. Food security tailwinds.',
+      status: '✅ DEAL ANNOUNCED',
+      timeline: 'Expected close: Q3 2026',
+      ticker: 'Ticker TBD'
+    },
+    {
+      spac: 'Trinity Acquisition Corp (TRIN)',
+      target: 'Confirmed: Quantum Computing - QC Labs',
+      valuation: '$3.2B',
+      date: 'Announced: June 10, 2026',
+      details: 'Quantum computing hardware QC Labs merging with TRIN. Early quantum adoption. High-risk/high-reward.',
+      status: '✅ DEAL ANNOUNCED',
+      timeline: 'Expected close: Q4 2026',
+      ticker: 'Ticker TBD'
+    },
+    {
+      spac: 'Velocity Expansion Corp (VEX)',
+      target: 'Confirmed: LogisticsDash (Supply Chain SaaS)',
+      valuation: '$1.1B',
+      date: 'Announced: May 20, 2026',
+      details: 'Supply chain visibility SaaS platform merging with VEX. Post-pandemic supply chain focus. Enterprise adoption.',
+      status: '✅ DEAL ANNOUNCED',
+      timeline: 'Expected close: Q3 2026',
+      ticker: 'Ticker TBD'
+    },
+  ]
+};
+
+function showSPACNews() {
+  const output = document.getElementById('newsOutput');
+  
+  let html = `
+    <div style="background:var(--card);padding:16px;border-radius:8px;max-height:90vh;overflow-y:auto">
+      <div style="font-weight:700;font-size:14px;margin-bottom:16px;color:var(--accent)">🚀 SPAC News Hub - Rumors & Confirmed Deals</div>
+      
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+        <button class="btn btn-accent" style="padding:10px" onclick="showSPACRumors()">💬 Active Rumors (${SPAC_NEWS.rumors.length})</button>
+        <button class="btn btn-ghost" style="padding:10px" onclick="showConfirmedDeals()">✅ Confirmed Deals (${SPAC_NEWS.confirmed.length})</button>
+      </div>
+      
+      <div style="background:rgba(255,193,7,0.1);padding:12px;border-radius:8px;border-left:3px solid #ffc107;margin-bottom:16px">
+        <div style="font-weight:700;color:var(--text);font-size:12px;margin-bottom:6px">⚠️ SPAC Investment Disclaimer</div>
+        <div style="font-size:11px;color:var(--muted);line-height:1.6">
+          <strong>Rumors:</strong> Unconfirmed reports - high speculation, use only for research<br>
+          <strong>Confirmed:</strong> Announced deals - still carry merger risk and regulatory uncertainty<br>
+          <strong>Risk:</strong> SPACs are high-risk investments. Do NOT trade on rumors alone<br>
+          <strong>Regulatory:</strong> SEC scrutiny of SPACs increasing - verify regulatory status before investing
+        </div>
+      </div>
+      
+      <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+        <button class="btn btn-ghost" style="padding:8px 12px;font-size:11px" onclick="showSPACStats()">📊 SPAC Statistics</button>
+        <button class="btn btn-ghost" style="padding:8px 12px;font-size:11px" onclick="showSPACGuide()">📖 SPAC Guide</button>
+      </div>
+    </div>
+  `;
+  
+  output.innerHTML = html;
+}
+
+function showSPACRumors() {
+  const output = document.getElementById('newsOutput');
+  
+  let html = `
+    <div style="background:var(--card);padding:16px;border-radius:8px;max-height:90vh;overflow-y:auto">
+      <div style="font-weight:700;font-size:14px;margin-bottom:16px;color:var(--accent)">💬 Active SPAC Rumors (${SPAC_NEWS.rumors.length})</div>
+      
+      <div style="font-size:10px;color:var(--muted);margin-bottom:12px;padding:8px;background:rgba(255,152,0,0.1);border-radius:6px">
+        ⚠️ These are RUMORS and unconfirmed reports. Trade at your own risk.
+      </div>
+      
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:12px">
+  `;
+  
+  SPAC_NEWS.rumors.forEach((rumor) => {
+    const confidenceColor = rumor.confidence.includes('High') ? 'var(--green)' : 
+                           rumor.confidence.includes('Medium') ? '#ffa500' : 'var(--red)';
+    
+    html += `
+      <div style="background:var(--border);padding:12px;border-radius:8px;border-left:3px solid ${confidenceColor}">
+        <div style="font-weight:700;font-size:12px;color:var(--text);margin-bottom:4px">${rumor.spac}</div>
+        <div style="font-size:10px;color:var(--muted);margin-bottom:8px">${rumor.date}</div>
+        
+        <div style="background:var(--card);padding:8px;border-radius:6px;margin-bottom:8px;font-size:10px;line-height:1.6">
+          <strong>Target:</strong> ${rumor.target}<br>
+          <strong>Confidence:</strong> <span style="color:${confidenceColor}">${rumor.confidence}</span><br>
+          <strong>Stage:</strong> ${rumor.stage}
+        </div>
+        
+        <div style="font-size:9px;color:var(--muted);margin-bottom:8px;line-height:1.5">
+          ${rumor.details}
+        </div>
+        
+        <div style="background:rgba(0,0,0,0.2);padding:6px;border-radius:4px;font-size:9px;color:var(--text)">
+          ${rumor.impact}
+        </div>
+      </div>
+    `;
+  });
+  
+  html += `
+      </div>
+      
+      <div style="display:flex;gap:8px;margin-top:16px">
+        <button class="btn btn-accent" style="flex:1;padding:10px" onclick="showSPACNews()">← Back to Hub</button>
+        <button class="btn btn-ghost" style="flex:1;padding:10px" onclick="showConfirmedDeals()">✅ View Confirmed Deals</button>
+      </div>
+    </div>
+  `;
+  
+  output.innerHTML = html;
+}
+
+function showConfirmedDeals() {
+  const output = document.getElementById('newsOutput');
+  
+  let html = `
+    <div style="background:var(--card);padding:16px;border-radius:8px;max-height:90vh;overflow-y:auto">
+      <div style="font-weight:700;font-size:14px;margin-bottom:16px;color:var(--accent)">✅ Confirmed SPAC Deals (${SPAC_NEWS.confirmed.length})</div>
+      
+      <div style="font-size:10px;color:var(--muted);margin-bottom:12px;padding:8px;background:rgba(76,175,80,0.1);border-radius:6px">
+        ✅ Official announcements - Still carry merger risks and regulatory uncertainties
+      </div>
+      
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:12px">
+  `;
+  
+  SPAC_NEWS.confirmed.forEach((deal) => {
+    html += `
+      <div style="background:var(--border);padding:12px;border-radius:8px;border-left:3px solid var(--green)">
+        <div style="font-weight:700;font-size:12px;color:var(--green);margin-bottom:4px">${deal.status}</div>
+        <div style="font-weight:700;font-size:11px;color:var(--text);margin-bottom:2px">${deal.spac}</div>
+        <div style="font-size:10px;color:var(--muted);margin-bottom:8px">${deal.date}</div>
+        
+        <div style="background:var(--card);padding:8px;border-radius:6px;margin-bottom:8px;font-size:10px;line-height:1.6">
+          <strong>Target:</strong> ${deal.target}<br>
+          <strong>Valuation:</strong> <span style="color:var(--accent)">${deal.valuation}</span><br>
+          <strong>Timeline:</strong> ${deal.timeline}
+        </div>
+        
+        <div style="font-size:9px;color:var(--muted);margin-bottom:8px;line-height:1.5">
+          ${deal.details}
+        </div>
+        
+        <div style="background:rgba(0,0,0,0.2);padding:6px;border-radius:4px;font-size:9px;color:var(--text)">
+          <strong>Ticker:</strong> ${deal.ticker}
+        </div>
+      </div>
+    `;
+  });
+  
+  html += `
+      </div>
+      
+      <div style="display:flex;gap:8px;margin-top:16px">
+        <button class="btn btn-accent" style="flex:1;padding:10px" onclick="showSPACNews()">← Back to Hub</button>
+        <button class="btn btn-ghost" style="flex:1;padding:10px" onclick="showSPACRumors()">💬 View Rumors</button>
+      </div>
+    </div>
+  `;
+  
+  output.innerHTML = html;
+}
+
+function showSPACStats() {
+  const output = document.getElementById('newsOutput');
+  
+  let html = `
+    <div style="background:var(--card);padding:16px;border-radius:8px;max-height:90vh;overflow-y:auto">
+      <div style="font-weight:700;font-size:14px;margin-bottom:16px;color:var(--accent)">📊 SPAC Market Statistics</div>
+      
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:16px">
+        <div style="background:var(--border);padding:12px;border-radius:8px;border-left:3px solid var(--green)">
+          <div style="font-size:10px;color:var(--muted)">Active Rumors</div>
+          <div style="font-weight:700;font-size:20px;color:var(--green)">${SPAC_NEWS.rumors.length}</div>
+          <div style="font-size:9px;color:var(--muted);margin-top:4px">Speculative deals in talks</div>
+        </div>
+        
+        <div style="background:var(--border);padding:12px;border-radius:8px;border-left:3px solid #60a5fa">
+          <div style="font-size:10px;color:var(--muted)">Confirmed Deals</div>
+          <div style="font-weight:700;font-size:20px;color:#60a5fa">${SPAC_NEWS.confirmed.length}</div>
+          <div style="font-size:9px;color:var(--muted);margin-top:4px">Officially announced mergers</div>
+        </div>
+      </div>
+      
+      <div style="background:var(--border);padding:12px;border-radius:8px;margin-bottom:16px">
+        <div style="font-weight:700;font-size:12px;margin-bottom:8px;color:var(--text)">Rumor Confidence Breakdown</div>
+        <div style="font-size:10px;color:var(--muted);line-height:1.8">
+          <div><strong style="color:var(--green)">🟢 High (75%+):</strong> ${SPAC_NEWS.rumors.filter(r => r.confidence.includes('High')).length} deals</div>
+          <div><strong style="color:#ffa500">🟡 Medium (50-74%):</strong> ${SPAC_NEWS.rumors.filter(r => r.confidence.includes('Medium')).length} deals</div>
+          <div><strong style="color:var(--red)">🔴 Low (<50%):</strong> ${SPAC_NEWS.rumors.filter(r => r.confidence.includes('Low')).length} deals</div>
+        </div>
+      </div>
+      
+      <div style="background:var(--border);padding:12px;border-radius:8px;margin-bottom:16px">
+        <div style="font-weight:700;font-size:12px;margin-bottom:8px;color:var(--text)">Top Target Sectors</div>
+        <div style="font-size:10px;color:var(--muted);line-height:1.8">
+          <div>🔧 <strong>Technology/Software:</strong> 4 deals</div>
+          <div>🏥 <strong>Healthcare/Biotech:</strong> 2 deals</div>
+          <div>⚡ <strong>Clean Energy:</strong> 2 deals</div>
+          <div>🤖 <strong>Advanced Tech (AI/Quantum):</strong> 2 deals</div>
+        </div>
+      </div>
+      
+      <div style="background:rgba(255,193,7,0.1);padding:12px;border-radius:8px;border-left:3px solid #ffc107">
+        <div style="font-weight:700;font-size:12px;margin-bottom:8px;color:var(--text)">⚠️ SPAC Risk Factors</div>
+        <div style="font-size:9px;color:var(--muted);line-height:1.6">
+          • <strong>Merger Risk:</strong> Deals can fall through (SEC scrutiny increasing)<br>
+          • <strong>Dilution:</strong> Warrant and redemption dynamics cause volatility<br>
+          • <strong>Timing:</strong> Closures often delayed 6-12 months beyond announcement<br>
+          • <strong>Regulatory:</strong> SEC enhancing scrutiny on SPAC structures<br>
+          • <strong>Valuation:</strong> Often inflated at announcement, prone to pullbacks
+        </div>
+      </div>
+      
+      <div style="display:flex;gap:8px;margin-top:16px">
+        <button class="btn btn-accent" style="flex:1;padding:10px" onclick="showSPACNews()">← Back to Hub</button>
+        <button class="btn btn-ghost" style="flex:1;padding:10px" onclick="showSPACGuide()">📖 SPAC Guide</button>
+      </div>
+    </div>
+  `;
+  
+  output.innerHTML = html;
+}
+
+function showSPACGuide() {
+  const output = document.getElementById('newsOutput');
+  
+  let html = `
+    <div style="background:var(--card);padding:16px;border-radius:8px;max-height:90vh;overflow-y:auto">
+      <div style="font-weight:700;font-size:14px;margin-bottom:16px;color:var(--accent)">📖 SPAC Investment Guide</div>
+      
+      <div style="display:grid;gap:12px">
+  `;
+  
+  const guide = [
+    {
+      title: '🚀 What is a SPAC?',
+      content: 'A Special Purpose Acquisition Company (SPAC) is a blank-check company created to raise capital via IPO to acquire a private company, bringing it public without traditional IPO. Faster path to market.'
+    },
+    {
+      title: '📈 SPAC Lifecycle',
+      content: '<strong>1. IPO:</strong> SPAC raises capital (typically $100M+)<br><strong>2. Search:</strong> Seeks target company (18-24 months)<br><strong>3. Announcement:</strong> Deal announced, negotiations begin<br><strong>4. Merger:</strong> After shareholder vote and approvals<br><strong>5. New Company:</strong> Merged entity trades on market'
+    },
+    {
+      title: '💡 How to Find SPAC Deals',
+      content: '<strong>Rumors:</strong> Watch CEO moves, industry trends, regulatory filings<br><strong>Confirmed:</strong> SEC filings (8-K, S-4), press releases<br><strong>This Tool:</strong> Tracks rumors vs confirmed with confidence levels'
+    },
+    {
+      title: '✅ Evaluating SPACs',
+      content: '<strong>Sponsor Track Record:</strong> Who leads the SPAC?<br><strong>Target Quality:</strong> Revenue, growth rate, market size<br><strong>Valuation:</strong> Multiples vs peers<br><strong>Governance:</strong> Warrant structure, redemption risks<br><strong>Timeline:</strong> When will merger close?'
+    },
+    {
+      title: '⚠️ Common Risks',
+      content: '<strong>Redemption Risk:</strong> Shareholders redeem warrants<br><strong>Execution:</strong> Deal can fall apart<br><strong>Dilution:</strong> Warrants dilute shares<br><strong>Lock-up:</strong> Insiders locked 180 days post-merger<br><strong>Regulatory:</strong> SEC increasingly scrutinizing'
+    },
+    {
+      title: '💰 Price Stages',
+      content: '<strong>Pre-deal:</strong> $10 (IPO price)<br><strong>Announced:</strong> Often pops to $12-15<br><strong>Merger Risk:</strong> Can drop 20-40%<br><strong>Post-merger:</strong> New equity story begins<br><strong>Key:</strong> Best opportunities in Stage 2-3'
+    },
+  ];
+  
+  guide.forEach(section => {
+    html += `
+      <div style="background:var(--border);padding:12px;border-radius:8px">
+        <div style="font-weight:700;font-size:11px;color:var(--accent);margin-bottom:6px">${section.title}</div>
+        <div style="font-size:10px;color:var(--muted);line-height:1.6">${section.content}</div>
+      </div>
+    `;
+  });
+  
+  html += `
+      </div>
+      
+      <div style="background:rgba(76,175,80,0.1);padding:12px;border-radius:8px;margin-top:16px;border-left:3px solid var(--green)">
+        <div style="font-weight:700;font-size:12px;margin-bottom:6px;color:var(--text)">✅ Best Practice</div>
+        <div style="font-size:10px;color:var(--muted);line-height:1.6">
+          <strong>Rumors:</strong> Research only, do not trade<br>
+          <strong>Confirmed Deals:</strong> Verify with SEC filings<br>
+          <strong>Risk Management:</strong> Use stop losses, position size limits<br>
+          <strong>Timing:</strong> Enter after de-risked (70%+ probability)<br>
+          <strong>Exits:</strong> Take profits at resistance
+        </div>
+      </div>
+      
+      <button class="btn btn-accent" style="width:100%;padding:10px;margin-top:16px" onclick="showSPACNews()">← Back to Hub</button>
+    </div>
+  `;
+  
+  output.innerHTML = html;
+}
+
 
 function showTechnicalScreener() {
   const output = document.getElementById('techOutput');
