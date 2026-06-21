@@ -6775,15 +6775,29 @@ function showBreakingNews() {
   
   let html = `
     <div style="background:var(--card);padding:16px;border-radius:8px;max-height:90vh;overflow-y:auto">
-      <div style="font-weight:700;font-size:14px;margin-bottom:16px;color:var(--red)">🔴 BREAKING NEWS - Market Moving Stories</div>
+      <div style="font-weight:700;font-size:14px;margin-bottom:12px;color:var(--red)">🔴 BREAKING NEWS - Market Moving Stories</div>
       
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-bottom:16px;font-size:11px">
-        <button class="btn btn-accent" style="padding:8px" onclick="showCriticalNews()">⚠️⚠️⚠️ CRITICAL (${BREAKING_NEWS.critical.length})</button>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-bottom:16px;font-size:9px">
+        <button class="btn btn-accent" style="padding:8px" onclick="showCriticalNews()">⚠️ CRITICAL (${BREAKING_NEWS.critical.length})</button>
         <button class="btn btn-ghost" style="padding:8px" onclick="showHighImpactNews()">🟠 HIGH (${BREAKING_NEWS.high_impact.length})</button>
         <button class="btn btn-ghost" style="padding:8px" onclick="showEarningsNews()">📊 EARNINGS (${BREAKING_NEWS.earnings.length})</button>
-        <button class="btn btn-ghost" style="padding:8px" onclick="showSectorCatalysts()">🔧 SECTORS</button>
-        <button class="btn btn-ghost" style="padding:8px" onclick="showMergersNews()">💼 M&A</button>
-        <button class="btn btn-ghost" style="padding:8px" onclick="showBankruptcyNews()">🚨 BANKRUPTCY</button>
+        <button class="btn btn-ghost" style="padding:8px" onclick="showSectorCatalysts()">🔧 SECTORS (${BREAKING_NEWS.sector_catalysts.length})</button>
+        <button class="btn btn-ghost" style="padding:8px" onclick="showMergersNews()">💼 M&A (${BREAKING_NEWS.mergers_acquisitions.length})</button>
+        <button class="btn btn-ghost" style="padding:8px" onclick="showBankruptcyNews()">🚨 BANKRUPTCY (${BREAKING_NEWS.bankruptcies_defaults.length})</button>
+        <button class="btn btn-ghost" style="padding:8px" onclick="showLitigationNews()">⚖️ LAWSUITS (${BREAKING_NEWS.lawsuit_litigation.length})</button>
+        <button class="btn btn-ghost" style="padding:8px" onclick="showEnvironmentalNews()">🌍 SAFETY (${BREAKING_NEWS.environmental_safety.length})</button>
+        <button class="btn btn-ghost" style="padding:8px" onclick="showRegulatoryNews()">📋 REGULATORY (${BREAKING_NEWS.regulatory_investigations.length})</button>
+        <button class="btn btn-ghost" style="padding:8px" onclick="showRecallNews()">🔧 RECALLS (${BREAKING_NEWS.product_recalls.length})</button>
+        <button class="btn btn-ghost" style="padding:8px" onclick="showGeopoliticalNews()">🌐 GEO (${BREAKING_NEWS.geopolitical_events.length})</button>
+        <button class="btn btn-ghost" style="padding:8px" onclick="showMacroNews()">📊 MACRO (${BREAKING_NEWS.macro_economic.length})</button>
+        <button class="btn btn-ghost" style="padding:8px" onclick="showTechNews()">🤖 TECH (${BREAKING_NEWS.tech_disruption.length})</button>
+        <button class="btn btn-ghost" style="padding:8px" onclick="showCompetitorNews()">⚔️ COMPETITION (${BREAKING_NEWS.competitor_threats.length})</button>
+        <button class="btn btn-ghost" style="padding:8px" onclick="showDividendNews()">💰 DIVIDENDS (${BREAKING_NEWS.dividend_capital_events.length})</button>
+      </div>
+      
+      <div style="background:rgba(220,53,69,0.1);padding:12px;border-radius:8px;border-left:3px solid var(--red)">
+        <div style="font-weight:700;color:var(--text);font-size:11px;margin-bottom:4px">📋 15 Categories • Select above to view stories</div>
+        <div style="font-size:9px;color:var(--muted)">Click a category to see all stories. Then click any story to view details in the panel below.</div>
       </div>
     </div>
   `;
@@ -7066,33 +7080,85 @@ function showDividendNews() {
   output.innerHTML = html;
 }
 
+// Global function to show detail panel
+function showDetailPanel(news, color) {
+  const panel = document.getElementById('detailPanel');
+  if (!panel) return;
+  
+  let affectedHtml = '';
+  if (news.affectedStocks) {
+    news.affectedStocks.forEach(stock => {
+      affectedHtml += `
+        <div style="background:var(--card);padding:10px;border-radius:6px;border-left:3px solid ${color};margin-bottom:8px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+            <div style="font-weight:700;font-size:12px;color:var(--accent)">${stock.ticker}</div>
+            <div style="font-weight:700;font-size:12px;color:${color}">${stock.move}</div>
+          </div>
+          <div style="font-size:10px;color:var(--muted)">${stock.impact}</div>
+        </div>
+      `;
+    });
+  }
+  
+  let html = `
+    <div style="background:var(--border);padding:16px;border-radius:8px;border-top:4px solid ${color}">
+      <div style="font-weight:700;font-size:13px;color:${color};margin-bottom:12px">${news.headline}</div>
+      
+      <div style="background:var(--card);padding:12px;border-radius:6px;margin-bottom:12px">
+        <div style="font-size:10px;color:var(--text);line-height:1.8;margin-bottom:12px">${news.details}</div>
+        
+        <div style="border-top:1px solid var(--border);padding-top:12px">
+          <div style="font-weight:700;font-size:10px;color:var(--muted);margin-bottom:6px">AFFECTED STOCKS</div>
+          ${affectedHtml}
+        </div>
+      </div>
+      
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+        <div style="background:var(--card);padding:10px;border-radius:6px">
+          <div style="font-size:9px;color:var(--muted);margin-bottom:4px">Price Target</div>
+          <div style="font-weight:700;font-size:11px;color:${color}">${news.priceTarget}</div>
+        </div>
+        <div style="background:var(--card);padding:10px;border-radius:6px">
+          <div style="font-size:9px;color:var(--muted);margin-bottom:4px">Estimated Move</div>
+          <div style="font-weight:700;font-size:11px;color:${color}">${news.estimatedMove}</div>
+        </div>
+      </div>
+      
+      <div style="background:rgba(0,0,0,0.2);padding:10px;border-radius:6px">
+        <div style="font-weight:700;font-size:10px;color:var(--text);margin-bottom:6px">📌 What to Monitor</div>
+        <div style="font-size:10px;color:var(--muted);line-height:1.6">${news.followUp}</div>
+      </div>
+    </div>
+  `;
+  
+  panel.innerHTML = html;
+}
+
 function showCriticalNews() {
   const output = document.getElementById('newsOutput');
   let html = `
-    <div style="background:var(--card);padding:16px;border-radius:8px;max-height:90vh;overflow-y:auto">
-      <div style="font-weight:700;font-size:14px;margin-bottom:16px;color:var(--red)">⚠️⚠️⚠️ CRITICAL NEWS - Severe Market Impact</div>
-      <div style="display:grid;gap:12px">
+    <div style="display:grid;grid-template-rows:1fr auto;gap:16px;height:100%;background:var(--card);padding:16px;border-radius:8px">
+      <!-- News List Panel -->
+      <div style="max-height:50vh;overflow-y:auto;border-radius:8px">
+        <div style="font-weight:700;font-size:13px;color:var(--red);margin-bottom:12px">⚠️⚠️⚠️ CRITICAL NEWS (${BREAKING_NEWS.critical.length})</div>
+        <div style="display:grid;gap:10px">
   `;
   
   BREAKING_NEWS.critical.forEach((news, idx) => {
-    const expandId = 'critical_' + idx;
     html += `
-      <div style="background:var(--border);padding:12px;border-radius:8px;border-left:4px solid var(--red)">
-        <div onclick="document.getElementById('${expandId}').style.display = document.getElementById('${expandId}').style.display === 'none' ? 'block' : 'none'; this.style.cursor='pointer'" style="cursor:pointer">
-          <div style="font-weight:700;font-size:12px;color:var(--red);margin-bottom:4px">${news.headline}</div>
-          <div style="font-size:10px;color:var(--muted);margin-bottom:8px">${news.date} • ${news.category}</div>
-        </div>
+      <div onclick="showDetailPanel({headline:'${news.headline.replace(/'/g, "\\'")}',details:'${news.details.replace(/'/g, "\\'")}',affectedStocks:${JSON.stringify(news.affectedStocks)},priceTarget:'${news.priceTarget}',estimatedMove:'${news.estimatedMove}',followUp:'${news.followUp.replace(/'/g, "\\'")}'}, 'var(--red)')" style="background:var(--border);padding:12px;border-radius:8px;border-left:4px solid var(--red);cursor:pointer;transition:all 0.2s;hover-background:var(--accent)" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
+        <div style="font-weight:700;font-size:11px;color:var(--red);margin-bottom:6px">${news.headline}</div>
+        <div style="font-size:9px;color:var(--muted);margin-bottom:8px">${news.date} • ${news.category}</div>
         
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(80px,1fr));gap:8px;margin-bottom:8px">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(70px,1fr));gap:6px">
   `;
     
     if (news.affectedStocks) {
-      news.affectedStocks.forEach(stock => {
+      news.affectedStocks.slice(0, 3).forEach(stock => {
         html += `
-          <div style="background:var(--card);padding:8px;border-radius:6px;border-left:2px solid var(--red);font-size:10px">
+          <div style="background:var(--card);padding:6px;border-radius:4px;border-left:2px solid var(--red);font-size:9px">
             <div style="font-weight:700;color:var(--accent)">${stock.ticker}</div>
-            <div style="color:var(--red);font-weight:700;font-size:11px">${stock.move}</div>
-            <div style="color:var(--muted);font-size:9px;margin-top:2px">${stock.impact}</div>
+            <div style="color:var(--red);font-weight:700;font-size:10px">${stock.move}</div>
           </div>
         `;
       });
@@ -7100,57 +7166,51 @@ function showCriticalNews() {
     
     html += `
         </div>
-        
-        <div id="${expandId}" style="display:none;background:rgba(220,53,69,0.1);padding:10px;border-radius:6px;margin-top:8px">
-          <div style="font-size:10px;color:var(--muted);line-height:1.6;margin-bottom:8px">${news.details}</div>
-          <div style="background:var(--card);padding:8px;border-radius:4px;font-size:9px;color:var(--text)">
-            <strong style="color:var(--red)">Price Target:</strong> ${news.priceTarget}<br>
-            <strong style="color:var(--red)">Est. Move:</strong> ${news.estimatedMove}<br>
-            <strong style="color:var(--red)">Monitor:</strong> ${news.followUp}
-          </div>
-        </div>
       </div>
     `;
   });
   
   html += `
+        </div>
       </div>
-      <div style="font-size:10px;color:var(--muted);margin-top:12px;padding:8px;background:rgba(220,53,69,0.1);border-radius:6px">
-        💡 Tip: Click on a news item to expand and see details, price targets, and affected stocks
+      
+      <!-- Detail Panel -->
+      <div id="detailPanel" style="max-height:45vh;overflow-y:auto;border-top:1px solid var(--border);padding-top:12px;background:rgba(220,53,69,0.05);padding:12px;border-radius:8px">
+        <div style="text-align:center;color:var(--muted);font-size:11px;padding:20px">
+          👆 Click a story above to view details here
+        </div>
       </div>
-      <button class="btn btn-accent" style="width:100%;padding:10px;margin-top:12px" onclick="showBreakingNews()">← Back to News Hub</button>
     </div>
   `;
+  
   output.innerHTML = html;
 }
 
 function showHighImpactNews() {
   const output = document.getElementById('newsOutput');
   let html = `
-    <div style="background:var(--card);padding:16px;border-radius:8px;max-height:90vh;overflow-y:auto">
-      <div style="font-weight:700;font-size:14px;margin-bottom:16px;color:#ff9800">🟠 HIGH IMPACT NEWS - Significant Market Moves</div>
-      <div style="display:grid;gap:12px">
+    <div style="display:grid;grid-template-rows:1fr auto;gap:16px;height:100%;background:var(--card);padding:16px;border-radius:8px">
+      <!-- News List Panel -->
+      <div style="max-height:50vh;overflow-y:auto;border-radius:8px">
+        <div style="font-weight:700;font-size:13px;color:#ff9800;margin-bottom:12px">🟠 HIGH IMPACT NEWS (${BREAKING_NEWS.high_impact.length})</div>
+        <div style="display:grid;gap:10px">
   `;
   
   BREAKING_NEWS.high_impact.forEach((news, idx) => {
-    const expandId = 'high_' + idx;
     html += `
-      <div style="background:var(--border);padding:12px;border-radius:8px;border-left:4px solid #ff9800">
-        <div onclick="document.getElementById('${expandId}').style.display = document.getElementById('${expandId}').style.display === 'none' ? 'block' : 'none'; this.style.cursor='pointer'" style="cursor:pointer">
-          <div style="font-weight:700;font-size:12px;color:#ff9800;margin-bottom:4px">${news.headline}</div>
-          <div style="font-size:10px;color:var(--muted);margin-bottom:8px">${news.date} • ${news.category}</div>
-        </div>
+      <div onclick="showDetailPanel({headline:'${news.headline.replace(/'/g, "\\'")}',details:'${news.details.replace(/'/g, "\\'")}',affectedStocks:${JSON.stringify(news.affectedStocks)},priceTarget:'${news.priceTarget}',estimatedMove:'${news.estimatedMove}',followUp:'${news.followUp.replace(/'/g, "\\'")}'}, '#ff9800')" style="background:var(--border);padding:12px;border-radius:8px;border-left:4px solid #ff9800;cursor:pointer;transition:all 0.2s" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
+        <div style="font-weight:700;font-size:11px;color:#ff9800;margin-bottom:6px">${news.headline}</div>
+        <div style="font-size:9px;color:var(--muted);margin-bottom:8px">${news.date} • ${news.category}</div>
         
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(80px,1fr));gap:8px;margin-bottom:8px">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(70px,1fr));gap:6px">
   `;
     
     if (news.affectedStocks) {
-      news.affectedStocks.forEach(stock => {
+      news.affectedStocks.slice(0, 3).forEach(stock => {
         html += `
-          <div style="background:var(--card);padding:8px;border-radius:6px;border-left:2px solid #ff9800;font-size:10px">
+          <div style="background:var(--card);padding:6px;border-radius:4px;border-left:2px solid #ff9800;font-size:9px">
             <div style="font-weight:700;color:var(--accent)">${stock.ticker}</div>
-            <div style="color:#ff9800;font-weight:700;font-size:11px">${stock.move}</div>
-            <div style="color:var(--muted);font-size:9px;margin-top:2px">${stock.impact}</div>
+            <div style="color:#ff9800;font-weight:700;font-size:10px">${stock.move}</div>
           </div>
         `;
       });
@@ -7158,27 +7218,23 @@ function showHighImpactNews() {
     
     html += `
         </div>
-        
-        <div id="${expandId}" style="display:none;background:rgba(255,152,0,0.1);padding:10px;border-radius:6px;margin-top:8px">
-          <div style="font-size:10px;color:var(--muted);line-height:1.6;margin-bottom:8px">${news.details}</div>
-          <div style="background:var(--card);padding:8px;border-radius:4px;font-size:9px;color:var(--text)">
-            <strong style="color:#ff9800">Price Target:</strong> ${news.priceTarget}<br>
-            <strong style="color:#ff9800">Est. Move:</strong> ${news.estimatedMove}<br>
-            <strong style="color:#ff9800">Monitor:</strong> ${news.followUp}
-          </div>
-        </div>
       </div>
     `;
   });
   
   html += `
+        </div>
       </div>
-      <div style="font-size:10px;color:var(--muted);margin-top:12px;padding:8px;background:rgba(255,152,0,0.1);border-radius:6px">
-        💡 Tip: Click on a news item to expand and see details, price targets, and affected stocks
+      
+      <!-- Detail Panel -->
+      <div id="detailPanel" style="max-height:45vh;overflow-y:auto;border-top:1px solid var(--border);padding-top:12px;background:rgba(255,152,0,0.05);padding:12px;border-radius:8px">
+        <div style="text-align:center;color:var(--muted);font-size:11px;padding:20px">
+          👆 Click a story above to view details here
+        </div>
       </div>
-      <button class="btn btn-accent" style="width:100%;padding:10px;margin-top:12px" onclick="showBreakingNews()">← Back to News Hub</button>
     </div>
   `;
+  
   output.innerHTML = html;
 }
 
