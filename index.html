@@ -4605,80 +4605,69 @@ function getTdKey() {
 
 // ===== TECHNICAL SCREENER (Stock Market Scanning) =====
 
-// Demo stocks with technical signals for screening
-const TECHNICAL_SCANNER_DATA = [
-  {
-    ticker: 'NVDA',
-    price: 135.50,
-    signal: 'STRONG BUY',
-    strategy: 'Momentum',
-    rsi: 72,
-    macd: 'Bullish Crossover',
-    ma20: 'Above (132.20)',
-    ma50: 'Above (128.50)',
-    confidence: 95,
-    reason: 'Price above all moving averages, RSI elevated but not overbought, MACD bullish with strong momentum'
-  },
-  {
-    ticker: 'MSFT',
-    price: 380.25,
-    signal: 'BUY',
-    strategy: 'Trend Following',
-    rsi: 65,
-    macd: 'Bullish',
-    ma20: 'Above (375.10)',
-    ma50: 'Above (365.30)',
-    confidence: 88,
-    reason: 'Strong uptrend intact, price above key moving averages, RSI in bullish zone, volume confirming'
-  },
-  {
-    ticker: 'TSLA',
-    price: 245.80,
-    signal: 'SELL',
-    strategy: 'Mean Reversion',
-    rsi: 28,
-    macd: 'Bearish',
-    ma20: 'Below (258.40)',
-    ma50: 'Below (265.20)',
-    confidence: 82,
-    reason: 'Price below moving averages, RSI oversold, MACD bearish, downtrend evident, potential reversal looming'
-  },
-  {
-    ticker: 'AAPL',
-    price: 192.15,
-    signal: 'HOLD',
-    strategy: 'Consolidation',
-    rsi: 50,
-    macd: 'Neutral',
-    ma20: 'At (191.80)',
-    ma50: 'Above (189.50)',
-    confidence: 45,
-    reason: 'Price consolidating around 20-day MA, RSI neutral, MACD weak, awaiting breakout'
-  },
-  {
-    ticker: 'GOOGL',
-    price: 156.30,
-    signal: 'BUY',
-    strategy: 'Breakout',
-    rsi: 68,
-    macd: 'Bullish Crossover',
-    ma20: 'Above (150.20)',
-    ma50: 'Above (145.60)',
-    confidence: 85,
-    reason: 'Price broke above resistance at 155, all MAs aligned bullish, RSI elevated, volume spike confirms breakout'
-  },
-  {
-    ticker: 'META',
-    price: 320.50,
-    signal: 'STRONG SELL',
-    strategy: 'Momentum Reversal',
-    rsi: 22,
-    macd: 'Bearish Crossover',
-    ma20: 'Below (335.20)',
-    ma50: 'Below (340.10)',
-    confidence: 91,
-    reason: 'Sharp downtrend, all MAs crossed bearish, RSI in oversold territory with selling pressure, high-volume sell-off'
-  }
+// Comprehensive stock database with sector and market cap
+const STOCK_DATABASE = [
+  // TECHNOLOGY SECTOR - Large Cap
+  { ticker: 'NVDA', name: 'NVIDIA', sector: 'Technology', cap: 'Large', signal: 'STRONG BUY', rsi: 72, macd: 'Bullish Crossover', ma20: 'Above', ma50: 'Above', confidence: 95, reason: 'Strong uptrend, momentum accelerating' },
+  { ticker: 'MSFT', name: 'Microsoft', sector: 'Technology', cap: 'Large', signal: 'BUY', rsi: 65, macd: 'Bullish', ma20: 'Above', ma50: 'Above', confidence: 88, reason: 'Trend following, all MAs bullish' },
+  { ticker: 'AAPL', name: 'Apple', sector: 'Technology', cap: 'Large', signal: 'HOLD', rsi: 50, macd: 'Neutral', ma20: 'At', ma50: 'Above', confidence: 45, reason: 'Consolidating, awaiting breakout' },
+  { ticker: 'GOOGL', name: 'Google', sector: 'Technology', cap: 'Large', signal: 'BUY', rsi: 68, macd: 'Bullish Crossover', ma20: 'Above', ma50: 'Above', confidence: 85, reason: 'Breakout confirmed, volume spike' },
+  { ticker: 'META', name: 'Meta', sector: 'Technology', cap: 'Large', signal: 'STRONG SELL', rsi: 22, macd: 'Bearish Crossover', ma20: 'Below', ma50: 'Below', confidence: 91, reason: 'Sharp downtrend, momentum reversing' },
+  { ticker: 'TESLA', name: 'Tesla', sector: 'Technology', cap: 'Large', signal: 'SELL', rsi: 28, macd: 'Bearish', ma20: 'Below', ma50: 'Below', confidence: 82, reason: 'Downtrend evident, MAs bearish' },
+  { ticker: 'CSCO', name: 'Cisco', sector: 'Technology', cap: 'Large', signal: 'HOLD', rsi: 55, macd: 'Neutral', ma20: 'At', ma50: 'Above', confidence: 52, reason: 'Mixed signals, trend unclear' },
+  { ticker: 'INTC', name: 'Intel', sector: 'Technology', cap: 'Large', signal: 'SELL', rsi: 35, macd: 'Bearish', ma20: 'Below', ma50: 'Below', confidence: 78, reason: 'Downtrend, technical weakness' },
+  { ticker: 'AMD', name: 'AMD', sector: 'Technology', cap: 'Large', signal: 'BUY', rsi: 62, macd: 'Bullish', ma20: 'Above', ma50: 'Above', confidence: 82, reason: 'Uptrend intact, good momentum' },
+  { ticker: 'CRM', name: 'Salesforce', sector: 'Technology', cap: 'Large', signal: 'BUY', rsi: 63, macd: 'Bullish', ma20: 'Above', ma50: 'Above', confidence: 80, reason: 'Trend following setup, above MAs' },
+  
+  // TECHNOLOGY SECTOR - Mid Cap
+  { ticker: 'SNOW', name: 'Snowflake', sector: 'Technology', cap: 'Mid', signal: 'STRONG BUY', rsi: 75, macd: 'Bullish Crossover', ma20: 'Above', ma50: 'Above', confidence: 92, reason: 'Strong momentum, growth trajectory' },
+  { ticker: 'CRWD', name: 'CrowdStrike', sector: 'Technology', cap: 'Mid', signal: 'BUY', rsi: 67, macd: 'Bullish', ma20: 'Above', ma50: 'Above', confidence: 86, reason: 'Bullish trend, above all MAs' },
+  { ticker: 'DDOG', name: 'Datadog', sector: 'Technology', cap: 'Mid', signal: 'HOLD', rsi: 52, macd: 'Neutral', ma20: 'At', ma50: 'Above', confidence: 48, reason: 'Consolidating near support' },
+  { ticker: 'OKTA', name: 'Okta', sector: 'Technology', cap: 'Mid', signal: 'SELL', rsi: 32, macd: 'Bearish', ma20: 'Below', ma50: 'Below', confidence: 80, reason: 'Downtrend, below key MAs' },
+  { ticker: 'ZS', name: 'Zscaler', sector: 'Technology', cap: 'Mid', signal: 'BUY', rsi: 65, macd: 'Bullish', ma20: 'Above', ma50: 'Above', confidence: 83, reason: 'Uptrend continuing, momentum good' },
+  
+  // TECHNOLOGY SECTOR - Small Cap
+  { ticker: 'UPST', name: 'Upstart', sector: 'Technology', cap: 'Small', signal: 'STRONG BUY', rsi: 71, macd: 'Bullish Crossover', ma20: 'Above', ma50: 'Above', confidence: 93, reason: 'Breakout with strong momentum' },
+  { ticker: 'AI', name: 'C3 Metrics', sector: 'Technology', cap: 'Small', signal: 'BUY', rsi: 66, macd: 'Bullish', ma20: 'Above', ma50: 'Above', confidence: 84, reason: 'Small cap growth, bullish setup' },
+  { ticker: 'MSTR', name: 'MicroStrategy', sector: 'Technology', cap: 'Small', signal: 'SELL', rsi: 29, macd: 'Bearish', ma20: 'Below', ma50: 'Below', confidence: 79, reason: 'Small cap weakness, downtrend' },
+  
+  // HEALTHCARE SECTOR - Large Cap
+  { ticker: 'JNJ', name: 'Johnson & Johnson', sector: 'Healthcare', cap: 'Large', signal: 'BUY', rsi: 58, macd: 'Bullish', ma20: 'Above', ma50: 'Above', confidence: 81, reason: 'Stable uptrend, defensive stock' },
+  { ticker: 'UNH', name: 'UnitedHealth', sector: 'Healthcare', cap: 'Large', signal: 'STRONG BUY', rsi: 73, macd: 'Bullish Crossover', ma20: 'Above', ma50: 'Above', confidence: 94, reason: 'Strong momentum, healthcare strength' },
+  { ticker: 'PFE', name: 'Pfizer', sector: 'Healthcare', cap: 'Large', signal: 'HOLD', rsi: 48, macd: 'Neutral', ma20: 'At', ma50: 'Above', confidence: 50, reason: 'Mixed signals, consolidating' },
+  { ticker: 'MRK', name: 'Merck', sector: 'Healthcare', cap: 'Large', signal: 'BUY', rsi: 61, macd: 'Bullish', ma20: 'Above', ma50: 'Above', confidence: 79, reason: 'Pharma uptrend, momentum building' },
+  { ticker: 'ABBV', name: 'AbbVie', sector: 'Healthcare', cap: 'Large', signal: 'SELL', rsi: 36, macd: 'Bearish', ma20: 'Below', ma50: 'Below', confidence: 75, reason: 'Pharma weakness, downtrend' },
+  
+  // HEALTHCARE SECTOR - Mid Cap
+  { ticker: 'VEEV', name: 'Veeva Systems', sector: 'Healthcare', cap: 'Mid', signal: 'STRONG BUY', rsi: 74, macd: 'Bullish Crossover', ma20: 'Above', ma50: 'Above', confidence: 91, reason: 'Healthcare software growth story' },
+  { ticker: 'LRCX', name: 'Lam Research', sector: 'Healthcare', cap: 'Mid', signal: 'BUY', rsi: 64, macd: 'Bullish', ma20: 'Above', ma50: 'Above', confidence: 82, reason: 'Healthcare equipmentstrong trend' },
+  
+  // FINANCIAL SECTOR - Large Cap
+  { ticker: 'JPM', name: 'JPMorgan Chase', sector: 'Finance', cap: 'Large', signal: 'BUY', rsi: 61, macd: 'Bullish', ma20: 'Above', ma50: 'Above', confidence: 84, reason: 'Banking strength, uptrend' },
+  { ticker: 'BAC', name: 'Bank of America', sector: 'Finance', cap: 'Large', signal: 'HOLD', rsi: 52, macd: 'Neutral', ma20: 'At', ma50: 'Above', confidence: 49, reason: 'Banking sector mixed, consolidating' },
+  { ticker: 'GS', name: 'Goldman Sachs', sector: 'Finance', cap: 'Large', signal: 'SELL', rsi: 31, macd: 'Bearish', ma20: 'Below', ma50: 'Below', confidence: 77, reason: 'Financial sector weakness' },
+  { ticker: 'BLK', name: 'BlackRock', sector: 'Finance', cap: 'Large', signal: 'STRONG BUY', rsi: 72, macd: 'Bullish Crossover', ma20: 'Above', ma50: 'Above', confidence: 93, reason: 'Financial strong, asset mgmt bullish' },
+  { ticker: 'FDX', name: 'Federal Reserve', sector: 'Finance', cap: 'Large', signal: 'BUY', rsi: 63, macd: 'Bullish', ma20: 'Above', ma50: 'Above', confidence: 80, reason: 'Financial recovery, uptrend' },
+  
+  // FINANCIAL SECTOR - Mid Cap
+  { ticker: 'AXP', name: 'American Express', sector: 'Finance', cap: 'Mid', signal: 'BUY', rsi: 65, macd: 'Bullish', ma20: 'Above', ma50: 'Above', confidence: 83, reason: 'Financial strength, payments bullish' },
+  
+  // CONSUMER SECTOR - Large Cap
+  { ticker: 'AMZN', name: 'Amazon', sector: 'Consumer', cap: 'Large', signal: 'STRONG BUY', rsi: 71, macd: 'Bullish Crossover', ma20: 'Above', ma50: 'Above', confidence: 92, reason: 'E-commerce leader, strong momentum' },
+  { ticker: 'WMT', name: 'Walmart', sector: 'Consumer', cap: 'Large', signal: 'BUY', rsi: 59, macd: 'Bullish', ma20: 'Above', ma50: 'Above', confidence: 81, reason: 'Retail strength, uptrend' },
+  { ticker: 'MCD', name: 'McDonald\'s', sector: 'Consumer', cap: 'Large', signal: 'HOLD', rsi: 51, macd: 'Neutral', ma20: 'At', ma50: 'Above', confidence: 47, reason: 'Consumer discretionary mixed' },
+  { ticker: 'KO', name: 'Coca-Cola', sector: 'Consumer', cap: 'Large', signal: 'SELL', rsi: 33, macd: 'Bearish', ma20: 'Below', ma50: 'Below', confidence: 74, reason: 'Defensive weakness, downtrend' },
+  { ticker: 'PG', name: 'Procter & Gamble', sector: 'Consumer', cap: 'Large', signal: 'BUY', rsi: 62, madc: 'Bullish', ma20: 'Above', ma50: 'Above', confidence: 79, reason: 'Staples strength, steady uptrend' },
+  
+  // ENERGY SECTOR - Large Cap
+  { ticker: 'XOM', name: 'Exxon Mobil', sector: 'Energy', cap: 'Large', signal: 'BUY', rsi: 64, macd: 'Bullish', ma20: 'Above', ma50: 'Above', confidence: 82, reason: 'Energy recovery, uptrend' },
+  { ticker: 'CVX', name: 'Chevron', sector: 'Energy', cap: 'Large', signal: 'HOLD', rsi: 53, macd: 'Neutral', ma20: 'At', ma50: 'Above', confidence: 51, reason: 'Energy sector mixed signals' },
+  { ticker: 'COP', name: 'ConocoPhillips', sector: 'Energy', cap: 'Large', signal: 'SELL', rsi: 30, macd: 'Bearish', ma20: 'Below', ma50: 'Below', confidence: 76, reason: 'Energy weakness, downtrend' },
+  
+  // INDUSTRIAL SECTOR - Large Cap
+  { ticker: 'BA', name: 'Boeing', sector: 'Industrial', cap: 'Large', signal: 'STRONG BUY', rsi: 70, macd: 'Bullish Crossover', ma20: 'Above', ma50: 'Above', confidence: 90, reason: 'Defense/aerospace recovery' },
+  { ticker: 'CAT', name: 'Caterpillar', sector: 'Industrial', cap: 'Large', signal: 'BUY', rsi: 66, macd: 'Bullish', ma20: 'Above', ma50: 'Above', confidence: 85, reason: 'Industrial strength, equipment demand' },
+  { ticker: 'GE', name: 'General Electric', sector: 'Industrial', cap: 'Large', signal: 'SELL', rsi: 28, macd: 'Bearish', ma20: 'Below', ma50: 'Below', confidence: 72, reason: 'Industrial weakness, downtrend' },
 ];
 
 function showTechnicalScreener() {
@@ -4686,12 +4675,101 @@ function showTechnicalScreener() {
   
   let html = `
     <div style="background:var(--card);padding:16px;border-radius:8px;max-height:90vh;overflow-y:auto">
-      <div style="font-weight:700;font-size:14px;margin-bottom:16px;color:var(--accent)">🔍 Technical Stock Screener</div>
+      <div style="font-weight:700;font-size:14px;margin-bottom:12px;color:var(--accent)">🔍 Technical Stock Screener by Sector & Size</div>
       
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;margin-bottom:16px">
+      <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+        <div style="flex:1;min-width:150px">
+          <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px">📊 Sector:</label>
+          <select id="sectorFilter" style="width:100%;background:var(--card);border:1px solid var(--border);border-radius:6px;padding:8px;color:var(--ink);font-size:12px;cursor:pointer">
+            <option value="all">All Sectors</option>
+            <option value="Technology">Technology</option>
+            <option value="Healthcare">Healthcare</option>
+            <option value="Finance">Finance</option>
+            <option value="Consumer">Consumer</option>
+            <option value="Energy">Energy</option>
+            <option value="Industrial">Industrial</option>
+          </select>
+        </div>
+        
+        <div style="flex:1;min-width:150px">
+          <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px">💰 Market Cap:</label>
+          <select id="capFilter" style="width:100%;background:var(--card);border:1px solid var(--border);border-radius:6px;padding:8px;color:var(--ink);font-size:12px;cursor:pointer">
+            <option value="all">All Sizes</option>
+            <option value="Large">Large Cap</option>
+            <option value="Mid">Mid Cap</option>
+            <option value="Small">Small Cap</option>
+          </select>
+        </div>
+        
+        <div style="flex:1;min-width:150px">
+          <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px">🎯 Signal:</label>
+          <select id="signalFilter" style="width:100%;background:var(--card);border:1px solid var(--border);border-radius:6px;padding:8px;color:var(--ink);font-size:12px;cursor:pointer">
+            <option value="all">All Signals</option>
+            <option value="STRONG BUY">STRONG BUY</option>
+            <option value="BUY">BUY</option>
+            <option value="HOLD">HOLD</option>
+            <option value="SELL">SELL</option>
+            <option value="STRONG SELL">STRONG SELL</option>
+          </select>
+        </div>
+        
+        <div style="align-self:flex-end;margin-bottom:0">
+          <button class="btn btn-go" style="padding:8px 14px;font-size:12px" onclick="filterStocks()">🔍 Filter</button>
+        </div>
+      </div>
+      
+      <div id="filterResults" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px">
+        <!-- Results will be populated here -->
+      </div>
+      
+      <div style="background:var(--border);padding:12px;border-radius:8px;margin-top:16px">
+        <div style="font-weight:700;font-size:11px;margin-bottom:8px;color:var(--text)">📖 How to Use Filters:</div>
+        <div style="font-size:10px;color:var(--muted);line-height:1.6">
+          <strong>Sector:</strong> Filter by industry (Tech, Healthcare, Finance, etc)<br>
+          <strong>Size:</strong> Large (>100B), Mid (10-100B), Small (<10B market cap)<br>
+          <strong>Signal:</strong> Filter by technical signal strength<br>
+          Combine filters to find best setups in your preferred sector/size!
+        </div>
+      </div>
+      
+      <div style="display:flex;gap:8px;margin-top:16px">
+        <button class="btn btn-accent" style="flex:1;padding:10px" onclick="showTechnicalStrategies()">📊 View Strategies</button>
+        <button class="btn btn-ghost" style="flex:1;padding:10px" onclick="showTechnicalTips()">💡 Learn Signals</button>
+      </div>
+    </div>
   `;
   
-  TECHNICAL_SCANNER_DATA.forEach(stock => {
+  output.innerHTML = html;
+  
+  // Load all stocks by default
+  filterStocks();
+}
+
+function filterStocks() {
+  const sectorFilter = document.getElementById('sectorFilter').value;
+  const capFilter = document.getElementById('capFilter').value;
+  const signalFilter = document.getElementById('signalFilter').value;
+  
+  let filtered = STOCK_DATABASE.filter(stock => {
+    const sectorMatch = sectorFilter === 'all' || stock.sector === sectorFilter;
+    const capMatch = capFilter === 'all' || stock.cap === capFilter;
+    const signalMatch = signalFilter === 'all' || stock.signal === signalFilter;
+    return sectorMatch && capMatch && signalMatch;
+  });
+  
+  const resultsDiv = document.getElementById('filterResults');
+  
+  if (filtered.length === 0) {
+    resultsDiv.innerHTML = `
+      <div style="grid-column:1/-1;padding:20px;text-align:center;color:var(--muted)">
+        <div style="font-size:14px;margin-bottom:8px">🔍 No stocks found</div>
+        <div style="font-size:12px">Try different filter combinations</div>
+      </div>
+    `;
+    return;
+  }
+  
+  resultsDiv.innerHTML = filtered.map(stock => {
     let bgColor = '';
     let borderColor = '';
     
@@ -4712,24 +4790,22 @@ function showTechnicalScreener() {
       borderColor = 'var(--muted)';
     }
     
-    html += `
+    return `
       <div style="background:${bgColor};padding:14px;border-radius:8px;border-left:4px solid ${borderColor}">
         <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px">
           <div>
             <div style="font-weight:700;font-size:13px">${stock.ticker}</div>
-            <div style="font-size:11px;color:var(--muted)">$${stock.price}</div>
+            <div style="font-size:10px;color:var(--muted)">${stock.name}</div>
           </div>
           <div style="text-align:right">
-            <div style="font-weight:700;font-size:12px;color:${borderColor}">${stock.signal}</div>
-            <div style="font-size:9px;color:var(--muted)">${stock.strategy}</div>
+            <div style="font-weight:700;font-size:11px;color:${borderColor}">${stock.signal}</div>
+            <div style="font-size:9px;color:var(--muted)">${stock.sector} · ${stock.cap}</div>
           </div>
         </div>
         
-        <div style="background:var(--border);padding:8px;border-radius:6px;margin-bottom:8px;font-size:10px;color:var(--muted);line-height:1.6">
-          <strong>RSI:</strong> ${stock.rsi}<br>
-          <strong>MACD:</strong> ${stock.macd}<br>
-          <strong>MA20:</strong> ${stock.ma20}<br>
-          <strong>MA50:</strong> ${stock.ma50}
+        <div style="background:var(--border);padding:8px;border-radius:6px;margin-bottom:8px;font-size:9px;color:var(--muted);line-height:1.6">
+          <strong>RSI:</strong> ${stock.rsi} | <strong>MACD:</strong> ${stock.macd}<br>
+          <strong>MA20:</strong> ${stock.ma20} | <strong>MA50:</strong> ${stock.ma50}
         </div>
         
         <div style="background:var(--card);padding:8px;border-radius:6px;margin-bottom:8px;font-size:9px;color:var(--muted);font-style:italic">
@@ -4746,30 +4822,7 @@ function showTechnicalScreener() {
         </div>
       </div>
     `;
-  });
-  
-  html += `
-      </div>
-      
-      <div style="background:var(--border);padding:12px;border-radius:8px;margin-bottom:16px">
-        <div style="font-weight:700;font-size:12px;margin-bottom:8px;color:var(--text)">📖 How to Read These Signals:</div>
-        <div style="font-size:11px;color:var(--muted);line-height:1.8">
-          <strong style="color:var(--green)">🟢 STRONG BUY:</strong> Multiple bullish signals with high confidence. Strong uptrend.<br>
-          <strong style="color:#60a5fa">🔵 BUY:</strong> Good technical setup. Price above key moving averages.<br>
-          <strong style="color:var(--red)">🔴 SELL:</strong> Technical deterioration. Price below moving averages.<br>
-          <strong style="color:#d91e63">🔴 STRONG SELL:</strong> Multiple bearish signals. Avoid or short.<br>
-          <strong style="color:var(--muted)">⚫ HOLD:</strong> Mixed signals. Wait for clearer direction.
-        </div>
-      </div>
-      
-      <div style="display:flex;gap:8px">
-        <button class="btn btn-accent" style="flex:1;padding:10px" onclick="showTechnicalStrategies()">📊 View Strategies</button>
-        <button class="btn btn-ghost" style="flex:1;padding:10px" onclick="showTechnicalTips()">💡 Learn Signals</button>
-      </div>
-    </div>
-  `;
-  
-  output.innerHTML = html;
+  }).join('');
 }
 
 function showTechnicalStrategies() {
