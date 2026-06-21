@@ -6805,280 +6805,6 @@ function showBreakingNews() {
   output.innerHTML = html;
 }
 
-function showMergersNews() {
-  const output = document.getElementById('newsOutput');
-  let html = `
-    <div style="background:var(--card);padding:16px;border-radius:8px;max-height:90vh;overflow-y:auto">
-      <div style="font-weight:700;font-size:14px;margin-bottom:16px;color:#4CAF50">💼 M&A NEWS - Mergers & Acquisitions</div>
-      <div style="display:grid;gap:12px">
-  `;
-  
-  BREAKING_NEWS.mergers_acquisitions.forEach((news) => {
-    html += `
-      <div style="background:var(--border);padding:12px;border-radius:8px;border-left:4px solid #4CAF50">
-        <div style="font-weight:700;font-size:11px;color:#4CAF50;margin-bottom:8px">${news.headline}</div>
-        <div style="font-size:9px;color:var(--muted);margin-bottom:8px">${news.date} • ${news.category}</div>
-        <div style="font-size:9px;color:var(--muted);line-height:1.6;margin-bottom:8px">${news.details}</div>
-        <div style="background:rgba(0,0,0,0.2);padding:6px;border-radius:4px;font-size:8px;color:var(--text)">
-          📌 ${news.followUp}
-        </div>
-      </div>
-    `;
-  });
-  
-  html += `</div><button class="btn btn-accent" style="width:100%;padding:10px;margin-top:16px" onclick="showBreakingNews()">← Back</button></div>`;
-  output.innerHTML = html;
-}
-
-function showBankruptcyNews() {
-  const output = document.getElementById('newsOutput');
-  let html = `
-    <div style="background:var(--card);padding:16px;border-radius:8px;max-height:90vh;overflow-y:auto">
-      <div style="font-weight:700;font-size:14px;margin-bottom:16px;color:var(--red)">🚨 BANKRUPTCY & DEFAULTS</div>
-      <div style="display:grid;gap:12px">
-  `;
-  
-  BREAKING_NEWS.bankruptcies_defaults.forEach((news) => {
-    html += `
-      <div style="background:var(--border);padding:12px;border-radius:8px;border-left:4px solid var(--red)">
-        <div style="font-weight:700;font-size:11px;color:var(--red);margin-bottom:8px">${news.headline}</div>
-        <div style="font-size:9px;color:var(--muted);margin-bottom:8px">${news.date} • ${news.category}</div>
-        <div style="font-size:9px;color:var(--muted);margin-bottom:8px">${news.details}</div>
-        <div style="background:rgba(0,0,0,0.2);padding:6px;border-radius:4px;font-size:8px;color:var(--text)">
-          📌 ${news.followUp}
-        </div>
-      </div>
-    `;
-  });
-  
-  html += `</div><button class="btn btn-accent" style="width:100%;padding:10px;margin-top:16px" onclick="showBreakingNews()">← Back</button></div>`;
-  output.innerHTML = html;
-}
-
-function showLitigationNews() {
-  const output = document.getElementById('newsOutput');
-  let html = `
-    <div style="background:var(--card);padding:16px;border-radius:8px;max-height:90vh;overflow-y:auto">
-      <div style="font-weight:700;font-size:14px;margin-bottom:16px;color:#FF9800">⚖️ LAWSUITS & LITIGATION</div>
-      <div style="display:grid;gap:12px">
-  `;
-  
-  BREAKING_NEWS.lawsuit_litigation.forEach((news) => {
-    html += `
-      <div style="background:var(--border);padding:12px;border-radius:8px;border-left:4px solid #FF9800">
-        <div style="font-weight:700;font-size:11px;color:#FF9800;margin-bottom:8px">${news.headline}</div>
-        <div style="font-size:9px;color:var(--muted);margin-bottom:8px">${news.date} • ${news.category}</div>
-        <div style="font-size:9px;color:var(--muted);margin-bottom:8px">${news.details}</div>
-        <div style="background:rgba(0,0,0,0.2);padding:6px;border-radius:4px;font-size:8px;color:var(--text)">
-          📌 ${news.followUp}
-        </div>
-      </div>
-    `;
-  });
-  
-  html += `</div><button class="btn btn-accent" style="width:100%;padding:10px;margin-top:16px" onclick="showBreakingNews()">← Back</button></div>`;
-  output.innerHTML = html;
-}
-
-function showEnvironmentalNews() {
-  const output = document.getElementById('newsOutput');
-  let html = `
-    <div style="background:var(--card);padding:16px;border-radius:8px;max-height:90vh;overflow-y:auto">
-      <div style="font-weight:700;font-size:14px;margin-bottom:16px;color:#2196F3">🌍 ENVIRONMENTAL & SAFETY DISASTERS</div>
-      <div style="display:grid;gap:12px">
-  `;
-  
-  BREAKING_NEWS.environmental_safety.forEach((news) => {
-    html += `
-      <div style="background:var(--border);padding:12px;border-radius:8px;border-left:4px solid #2196F3">
-        <div style="font-weight:700;font-size:11px;color:#2196F3;margin-bottom:8px">${news.headline}</div>
-        <div style="font-size:9px;color:var(--muted);margin-bottom:8px">${news.date} • ${news.category}</div>
-        <div style="font-size:9px;color:var(--muted);margin-bottom:8px">${news.details}</div>
-        <div style="background:rgba(0,0,0,0.2);padding:6px;border-radius:4px;font-size:8px;color:var(--text)">
-          📌 ${news.followUp}
-        </div>
-      </div>
-    `;
-  });
-  
-  html += `</div><button class="btn btn-accent" style="width:100%;padding:10px;margin-top:16px" onclick="showBreakingNews()">← Back</button></div>`;
-  output.innerHTML = html;
-}
-
-function showRegulatoryNews() {
-  const output = document.getElementById('newsOutput');
-  let html = `
-    <div style="background:var(--card);padding:16px;border-radius:8px;max-height:90vh;overflow-y:auto">
-      <div style="font-weight:700;font-size:14px;margin-bottom:16px;color:#9C27B0">📋 REGULATORY & CRIMINAL INVESTIGATIONS</div>
-      <div style="display:grid;gap:12px">
-  `;
-  
-  BREAKING_NEWS.regulatory_investigations.forEach((news) => {
-    html += `
-      <div style="background:var(--border);padding:12px;border-radius:8px;border-left:4px solid #9C27B0">
-        <div style="font-weight:700;font-size:11px;color:#9C27B0;margin-bottom:8px">${news.headline}</div>
-        <div style="font-size:9px;color:var(--muted);margin-bottom:8px">${news.date} • ${news.category}</div>
-        <div style="font-size:9px;color:var(--muted);margin-bottom:8px">${news.details}</div>
-        <div style="background:rgba(0,0,0,0.2);padding:6px;border-radius:4px;font-size:8px;color:var(--text)">
-          📌 ${news.followUp}
-        </div>
-      </div>
-    `;
-  });
-  
-  html += `</div><button class="btn btn-accent" style="width:100%;padding:10px;margin-top:16px" onclick="showBreakingNews()">← Back</button></div>`;
-  output.innerHTML = html;
-}
-
-function showRecallNews() {
-  const output = document.getElementById('newsOutput');
-  let html = `
-    <div style="background:var(--card);padding:16px;border-radius:8px;max-height:90vh;overflow-y:auto">
-      <div style="font-weight:700;font-size:14px;margin-bottom:16px;color:#E91E63">🔧 PRODUCT RECALLS</div>
-      <div style="display:grid;gap:12px">
-  `;
-  
-  BREAKING_NEWS.product_recalls.forEach((news) => {
-    html += `
-      <div style="background:var(--border);padding:12px;border-radius:8px;border-left:4px solid #E91E63">
-        <div style="font-weight:700;font-size:11px;color:#E91E63;margin-bottom:8px">${news.headline}</div>
-        <div style="font-size:9px;color:var(--muted);margin-bottom:8px">${news.date} • ${news.category}</div>
-        <div style="font-size:9px;color:var(--muted);margin-bottom:8px">${news.details}</div>
-        <div style="background:rgba(0,0,0,0.2);padding:6px;border-radius:4px;font-size:8px;color:var(--text)">
-          📌 ${news.followUp}
-        </div>
-      </div>
-    `;
-  });
-  
-  html += `</div><button class="btn btn-accent" style="width:100%;padding:10px;margin-top:16px" onclick="showBreakingNews()">← Back</button></div>`;
-  output.innerHTML = html;
-}
-
-function showGeopoliticalNews() {
-  const output = document.getElementById('newsOutput');
-  let html = `
-    <div style="background:var(--card);padding:16px;border-radius:8px;max-height:90vh;overflow-y:auto">
-      <div style="font-weight:700;font-size:14px;margin-bottom:16px;color:#FF5722">🌐 GEOPOLITICAL EVENTS</div>
-      <div style="display:grid;gap:12px">
-  `;
-  
-  BREAKING_NEWS.geopolitical_events.forEach((news) => {
-    html += `
-      <div style="background:var(--border);padding:12px;border-radius:8px;border-left:4px solid #FF5722">
-        <div style="font-weight:700;font-size:11px;color:#FF5722;margin-bottom:8px">${news.headline}</div>
-        <div style="font-size:9px;color:var(--muted);margin-bottom:8px">${news.date} • ${news.category}</div>
-        <div style="font-size:9px;color:var(--muted);margin-bottom:8px">${news.details}</div>
-        <div style="background:rgba(0,0,0,0.2);padding:6px;border-radius:4px;font-size:8px;color:var(--text)">
-          📌 ${news.followUp}
-        </div>
-      </div>
-    `;
-  });
-  
-  html += `</div><button class="btn btn-accent" style="width:100%;padding:10px;margin-top:16px" onclick="showBreakingNews()">← Back</button></div>`;
-  output.innerHTML = html;
-}
-
-function showMacroNews() {
-  const output = document.getElementById('newsOutput');
-  let html = `
-    <div style="background:var(--card);padding:16px;border-radius:8px;max-height:90vh;overflow-y:auto">
-      <div style="font-weight:700;font-size:14px;margin-bottom:16px;color:#00BCD4">📊 MACRO ECONOMIC EVENTS</div>
-      <div style="display:grid;gap:12px">
-  `;
-  
-  BREAKING_NEWS.macro_economic.forEach((news) => {
-    html += `
-      <div style="background:var(--border);padding:12px;border-radius:8px;border-left:4px solid #00BCD4">
-        <div style="font-weight:700;font-size:11px;color:#00BCD4;margin-bottom:8px">${news.headline}</div>
-        <div style="font-size:9px;color:var(--muted);margin-bottom:8px">${news.date} • ${news.category}</div>
-        <div style="font-size:9px;color:var(--muted);margin-bottom:8px">${news.details}</div>
-        <div style="background:rgba(0,0,0,0.2);padding:6px;border-radius:4px;font-size:8px;color:var(--text)">
-          📌 ${news.followUp}
-        </div>
-      </div>
-    `;
-  });
-  
-  html += `</div><button class="btn btn-accent" style="width:100%;padding:10px;margin-top:16px" onclick="showBreakingNews()">← Back</button></div>`;
-  output.innerHTML = html;
-}
-
-function showTechNews() {
-  const output = document.getElementById('newsOutput');
-  let html = `
-    <div style="background:var(--card);padding:16px;border-radius:8px;max-height:90vh;overflow-y:auto">
-      <div style="font-weight:700;font-size:14px;margin-bottom:16px;color:#673AB7">🤖 TECHNOLOGY BREAKTHROUGHS</div>
-      <div style="display:grid;gap:12px">
-  `;
-  
-  BREAKING_NEWS.tech_disruption.forEach((news) => {
-    html += `
-      <div style="background:var(--border);padding:12px;border-radius:8px;border-left:4px solid #673AB7">
-        <div style="font-weight:700;font-size:11px;color:#673AB7;margin-bottom:8px">${news.headline}</div>
-        <div style="font-size:9px;color:var(--muted);margin-bottom:8px">${news.date} • ${news.category}</div>
-        <div style="font-size:9px;color:var(--muted);margin-bottom:8px">${news.details}</div>
-        <div style="background:rgba(0,0,0,0.2);padding:6px;border-radius:4px;font-size:8px;color:var(--text)">
-          📌 ${news.followUp}
-        </div>
-      </div>
-    `;
-  });
-  
-  html += `</div><button class="btn btn-accent" style="width:100%;padding:10px;margin-top:16px" onclick="showBreakingNews()">← Back</button></div>`;
-  output.innerHTML = html;
-}
-
-function showCompetitorNews() {
-  const output = document.getElementById('newsOutput');
-  let html = `
-    <div style="background:var(--card);padding:16px;border-radius:8px;max-height:90vh;overflow-y:auto">
-      <div style="font-weight:700;font-size:14px;margin-bottom:16px;color:#FF6F00">⚔️ COMPETITIVE THREATS</div>
-      <div style="display:grid;gap:12px">
-  `;
-  
-  BREAKING_NEWS.competitor_threats.forEach((news) => {
-    html += `
-      <div style="background:var(--border);padding:12px;border-radius:8px;border-left:4px solid #FF6F00">
-        <div style="font-weight:700;font-size:11px;color:#FF6F00;margin-bottom:8px">${news.headline}</div>
-        <div style="font-size:9px;color:var(--muted);margin-bottom:8px">${news.date} • ${news.category}</div>
-        <div style="font-size:9px;color:var(--muted);margin-bottom:8px">${news.details}</div>
-        <div style="background:rgba(0,0,0,0.2);padding:6px;border-radius:4px;font-size:8px;color:var(--text)">
-          📌 ${news.followUp}
-        </div>
-      </div>
-    `;
-  });
-  
-  html += `</div><button class="btn btn-accent" style="width:100%;padding:10px;margin-top:16px" onclick="showBreakingNews()">← Back</button></div>`;
-  output.innerHTML = html;
-}
-
-function showDividendNews() {
-  const output = document.getElementById('newsOutput');
-  let html = `
-    <div style="background:var(--card);padding:16px;border-radius:8px;max-height:90vh;overflow-y:auto">
-      <div style="font-weight:700;font-size:14px;margin-bottom:16px;color:#8BC34A">💰 DIVIDEND & CAPITAL ALLOCATION</div>
-      <div style="display:grid;gap:12px">
-  `;
-  
-  BREAKING_NEWS.dividend_capital_events.forEach((news) => {
-    html += `
-      <div style="background:var(--border);padding:12px;border-radius:8px;border-left:4px solid #8BC34A">
-        <div style="font-weight:700;font-size:11px;color:#8BC34A;margin-bottom:8px">${news.headline}</div>
-        <div style="font-size:9px;color:var(--muted);margin-bottom:8px">${news.date} • ${news.category}</div>
-        <div style="font-size:9px;color:var(--muted);margin-bottom:8px">${news.details}</div>
-        <div style="background:rgba(0,0,0,0.2);padding:6px;border-radius:4px;font-size:8px;color:var(--text)">
-          📌 ${news.followUp}
-        </div>
-      </div>
-    `;
-  });
-  
-  html += `</div><button class="btn btn-accent" style="width:100%;padding:10px;margin-top:16px" onclick="showBreakingNews()">← Back</button></div>`;
-  output.innerHTML = html;
-}
 
 // Global function to show detail panel
 function showDetailPanel(news, color) {
@@ -7086,7 +6812,7 @@ function showDetailPanel(news, color) {
   if (!panel) return;
   
   let affectedHtml = '';
-  if (news.affectedStocks) {
+  if (news.affectedStocks && news.affectedStocks.length > 0) {
     news.affectedStocks.forEach(stock => {
       affectedHtml += `
         <div style="background:var(--card);padding:10px;border-radius:6px;border-left:3px solid ${color};margin-bottom:8px">
@@ -7107,10 +6833,10 @@ function showDetailPanel(news, color) {
       <div style="background:var(--card);padding:12px;border-radius:6px;margin-bottom:12px">
         <div style="font-size:10px;color:var(--text);line-height:1.8;margin-bottom:12px">${news.details}</div>
         
-        <div style="border-top:1px solid var(--border);padding-top:12px">
+        ${affectedHtml ? `<div style="border-top:1px solid var(--border);padding-top:12px">
           <div style="font-weight:700;font-size:10px;color:var(--muted);margin-bottom:6px">AFFECTED STOCKS</div>
           ${affectedHtml}
-        </div>
+        </div>` : ''}
       </div>
       
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
@@ -7134,111 +6860,97 @@ function showDetailPanel(news, color) {
   panel.innerHTML = html;
 }
 
-function showCriticalNews() {
-  const output = document.getElementById('newsOutput');
-  let html = `
-    <div style="display:grid;grid-template-rows:1fr auto;gap:16px;height:100%;background:var(--card);padding:16px;border-radius:8px">
-      <!-- News List Panel -->
-      <div style="max-height:50vh;overflow-y:auto;border-radius:8px">
-        <div style="font-weight:700;font-size:13px;color:var(--red);margin-bottom:12px">⚠️⚠️⚠️ CRITICAL NEWS (${BREAKING_NEWS.critical.length})</div>
-        <div style="display:grid;gap:10px">
+// Generic function to create news layout with list above and detail frame below
+function createNewsPanelLayout(title, news, color) {
+  let newsHtml = `
+    <div style="display:grid;gap:10px;max-height:50vh;overflow-y:auto;padding-right:8px">
   `;
   
-  BREAKING_NEWS.critical.forEach((news, idx) => {
-    html += `
-      <div onclick="showDetailPanel({headline:'${news.headline.replace(/'/g, "\\'")}',details:'${news.details.replace(/'/g, "\\'")}',affectedStocks:${JSON.stringify(news.affectedStocks)},priceTarget:'${news.priceTarget}',estimatedMove:'${news.estimatedMove}',followUp:'${news.followUp.replace(/'/g, "\\'")}'}, 'var(--red)')" style="background:var(--border);padding:12px;border-radius:8px;border-left:4px solid var(--red);cursor:pointer;transition:all 0.2s;hover-background:var(--accent)" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
-        <div style="font-weight:700;font-size:11px;color:var(--red);margin-bottom:6px">${news.headline}</div>
-        <div style="font-size:9px;color:var(--muted);margin-bottom:8px">${news.date} • ${news.category}</div>
+  news.forEach((item) => {
+    const itemJson = JSON.stringify({
+      headline: item.headline,
+      details: item.details,
+      affectedStocks: item.affectedStocks || [],
+      priceTarget: item.priceTarget || 'N/A',
+      estimatedMove: item.estimatedMove || 'N/A',
+      followUp: item.followUp || 'Monitor for updates'
+    });
+    
+    newsHtml += `
+      <div onclick='showDetailPanel(${itemJson}, "${color}")' style="background:var(--border);padding:12px;border-radius:8px;border-left:4px solid ${color};cursor:pointer;transition:all 0.2s" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
+        <div style="font-weight:700;font-size:11px;color:${color};margin-bottom:6px">${item.headline}</div>
+        <div style="font-size:9px;color:var(--muted);margin-bottom:8px">${item.date || ''} • ${item.category || ''}</div>
         
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(70px,1fr));gap:6px">
-  `;
+    `;
     
-    if (news.affectedStocks) {
-      news.affectedStocks.slice(0, 3).forEach(stock => {
-        html += `
-          <div style="background:var(--card);padding:6px;border-radius:4px;border-left:2px solid var(--red);font-size:9px">
+    if (item.affectedStocks) {
+      item.affectedStocks.slice(0, 3).forEach(stock => {
+        newsHtml += `
+          <div style="background:var(--card);padding:6px;border-radius:4px;border-left:2px solid ${color};font-size:9px">
             <div style="font-weight:700;color:var(--accent)">${stock.ticker}</div>
-            <div style="color:var(--red);font-weight:700;font-size:10px">${stock.move}</div>
+            <div style="color:${color};font-weight:700;font-size:10px">${stock.move}</div>
           </div>
         `;
       });
     }
     
-    html += `
+    newsHtml += `
         </div>
       </div>
     `;
   });
   
-  html += `
-        </div>
+  newsHtml += `
+    </div>
+  `;
+  
+  let html = `
+    <div style="display:flex;flex-direction:column;height:100%;gap:0;background:var(--card);padding:16px;border-radius:8px">
+      <!-- News List Section -->
+      <div style="margin-bottom:16px;border-bottom:2px solid var(--border);padding-bottom:16px">
+        <div style="font-weight:700;font-size:13px;color:${color};margin-bottom:12px">${title} (${news.length})</div>
+        ${newsHtml}
       </div>
       
-      <!-- Detail Panel -->
-      <div id="detailPanel" style="max-height:45vh;overflow-y:auto;border-top:1px solid var(--border);padding-top:12px;background:rgba(220,53,69,0.05);padding:12px;border-radius:8px">
-        <div style="text-align:center;color:var(--muted);font-size:11px;padding:20px">
-          👆 Click a story above to view details here
+      <!-- Detail Frame Section Below -->
+      <div id="detailPanel" style="flex:1;overflow-y:auto;background:rgba(${color === 'var(--red)' ? '220,53,69' : color.includes('ff9800') ? '255,152,0' : color.includes('4CAF50') ? '76,175,80' : color.includes('60a5fa') ? '96,165,250' : '100,150,200'},0.05);padding:16px;border-radius:8px;border-top:2px solid var(--border)">
+        <div style="text-align:center;color:var(--muted);font-size:11px;padding:40px 20px">
+          👆 Click a story above to view details here in this frame
         </div>
       </div>
     </div>
   `;
   
-  output.innerHTML = html;
+  return html;
+}
+
+function showCriticalNews() {
+  const output = document.getElementById('newsOutput');
+  output.innerHTML = createNewsPanelLayout('⚠️ CRITICAL NEWS', BREAKING_NEWS.critical, 'var(--red)');
 }
 
 function showHighImpactNews() {
   const output = document.getElementById('newsOutput');
-  let html = `
-    <div style="display:grid;grid-template-rows:1fr auto;gap:16px;height:100%;background:var(--card);padding:16px;border-radius:8px">
-      <!-- News List Panel -->
-      <div style="max-height:50vh;overflow-y:auto;border-radius:8px">
-        <div style="font-weight:700;font-size:13px;color:#ff9800;margin-bottom:12px">🟠 HIGH IMPACT NEWS (${BREAKING_NEWS.high_impact.length})</div>
-        <div style="display:grid;gap:10px">
-  `;
-  
-  BREAKING_NEWS.high_impact.forEach((news, idx) => {
-    html += `
-      <div onclick="showDetailPanel({headline:'${news.headline.replace(/'/g, "\\'")}',details:'${news.details.replace(/'/g, "\\'")}',affectedStocks:${JSON.stringify(news.affectedStocks)},priceTarget:'${news.priceTarget}',estimatedMove:'${news.estimatedMove}',followUp:'${news.followUp.replace(/'/g, "\\'")}'}, '#ff9800')" style="background:var(--border);padding:12px;border-radius:8px;border-left:4px solid #ff9800;cursor:pointer;transition:all 0.2s" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
-        <div style="font-weight:700;font-size:11px;color:#ff9800;margin-bottom:6px">${news.headline}</div>
-        <div style="font-size:9px;color:var(--muted);margin-bottom:8px">${news.date} • ${news.category}</div>
-        
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(70px,1fr));gap:6px">
-  `;
-    
-    if (news.affectedStocks) {
-      news.affectedStocks.slice(0, 3).forEach(stock => {
-        html += `
-          <div style="background:var(--card);padding:6px;border-radius:4px;border-left:2px solid #ff9800;font-size:9px">
-            <div style="font-weight:700;color:var(--accent)">${stock.ticker}</div>
-            <div style="color:#ff9800;font-weight:700;font-size:10px">${stock.move}</div>
-          </div>
-        `;
-      });
-    }
-    
-    html += `
-        </div>
-      </div>
-    `;
-  });
-  
-  html += `
-        </div>
-      </div>
-      
-      <!-- Detail Panel -->
-      <div id="detailPanel" style="max-height:45vh;overflow-y:auto;border-top:1px solid var(--border);padding-top:12px;background:rgba(255,152,0,0.05);padding:12px;border-radius:8px">
-        <div style="text-align:center;color:var(--muted);font-size:11px;padding:20px">
-          👆 Click a story above to view details here
-        </div>
-      </div>
-    </div>
-  `;
-  
-  output.innerHTML = html;
+  output.innerHTML = createNewsPanelLayout('🟠 HIGH IMPACT NEWS', BREAKING_NEWS.high_impact, '#ff9800');
 }
 
+function showEarningsNews() {
+  const output = document.getElementById('newsOutput');
+  output.innerHTML = createNewsPanelLayout('📊 EARNINGS NEWS', BREAKING_NEWS.earnings, '#60a5fa');
+}
 
+function showMergersNews() { const output = document.getElementById('newsOutput'); output.innerHTML = createNewsPanelLayout('💼 M&A NEWS', BREAKING_NEWS.mergers_acquisitions, '#4CAF50'); }
+function showBankruptcyNews() { const output = document.getElementById('newsOutput'); output.innerHTML = createNewsPanelLayout('🚨 BANKRUPTCY NEWS', BREAKING_NEWS.bankruptcies_defaults, '#e53935'); }
+function showLitigationNews() { const output = document.getElementById('newsOutput'); output.innerHTML = createNewsPanelLayout('⚖️ LAWSUITS', BREAKING_NEWS.lawsuit_litigation, '#d32f2f'); }
+function showEnvironmentalNews() { const output = document.getElementById('newsOutput'); output.innerHTML = createNewsPanelLayout('🌍 ENVIRONMENTAL & SAFETY', BREAKING_NEWS.environmental_safety, '#f57c00'); }
+function showRegulatoryNews() { const output = document.getElementById('newsOutput'); output.innerHTML = createNewsPanelLayout('📋 REGULATORY NEWS', BREAKING_NEWS.regulatory_investigations, '#1976d2'); }
+function showRecallNews() { const output = document.getElementById('newsOutput'); output.innerHTML = createNewsPanelLayout('🔧 PRODUCT RECALLS', BREAKING_NEWS.product_recalls, '#c62828'); }
+function showGeopoliticalNews() { const output = document.getElementById('newsOutput'); output.innerHTML = createNewsPanelLayout('🌐 GEOPOLITICAL EVENTS', BREAKING_NEWS.geopolitical_events, '#FF5722'); }
+function showMacroNews() { const output = document.getElementById('newsOutput'); output.innerHTML = createNewsPanelLayout('📊 MACRO ECONOMIC EVENTS', BREAKING_NEWS.macro_economic, '#00BCD4'); }
+function showTechNews() { const output = document.getElementById('newsOutput'); output.innerHTML = createNewsPanelLayout('🤖 TECH BREAKTHROUGHS', BREAKING_NEWS.tech_disruption, '#4527a0'); }
+function showCompetitorNews() { const output = document.getElementById('newsOutput'); output.innerHTML = createNewsPanelLayout('⚔️ COMPETITOR THREATS', BREAKING_NEWS.competitor_threats, '#e91e63'); }
+function showDividendNews() { const output = document.getElementById('newsOutput'); output.innerHTML = createNewsPanelLayout('💰 DIVIDENDS & CAPITAL EVENTS', BREAKING_NEWS.dividend_capital_events, '#2e7d32'); }
 
 function showNewsEarnings() {
   showEarningsNews();
