@@ -6863,7 +6863,7 @@ function showDetailPanel(news, color) {
 // Generic function to create news layout with list above and detail frame below
 function createNewsPanelLayout(title, news, color) {
   let newsHtml = `
-    <div style="display:grid;gap:10px;max-height:50vh;overflow-y:auto;padding-right:8px">
+    <div style="display:grid;gap:10px;max-height:40vh;overflow-y:auto;padding-right:8px">
   `;
   
   news.forEach((item) => {
@@ -6907,8 +6907,30 @@ function createNewsPanelLayout(title, news, color) {
   
   let html = `
     <div style="display:flex;flex-direction:column;height:100%;gap:0;background:var(--card);padding:16px;border-radius:8px">
+      <!-- Category Buttons (Always Visible) -->
+      <div style="margin-bottom:12px;padding-bottom:12px;border-bottom:2px solid var(--border)">
+        <div style="font-weight:700;font-size:10px;color:var(--muted);margin-bottom:8px">📌 QUICK SWITCH (Click to change category):</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(85px,1fr));gap:6px;font-size:8px">
+          <button class="btn btn-ghost" style="padding:6px;font-size:8px" onclick="showCriticalNews()">⚠️ CRITICAL</button>
+          <button class="btn btn-ghost" style="padding:6px;font-size:8px" onclick="showHighImpactNews()">🟠 HIGH</button>
+          <button class="btn btn-ghost" style="padding:6px;font-size:8px" onclick="showEarningsNews()">📊 EARNINGS</button>
+          <button class="btn btn-ghost" style="padding:6px;font-size:8px" onclick="showSectorCatalysts()">🔧 SECTORS</button>
+          <button class="btn btn-ghost" style="padding:6px;font-size:8px" onclick="showMergersNews()">💼 M&A</button>
+          <button class="btn btn-ghost" style="padding:6px;font-size:8px" onclick="showBankruptcyNews()">🚨 BANKRUPTCY</button>
+          <button class="btn btn-ghost" style="padding:6px;font-size:8px" onclick="showLitigationNews()">⚖️ LAWSUITS</button>
+          <button class="btn btn-ghost" style="padding:6px;font-size:8px" onclick="showEnvironmentalNews()">🌍 SAFETY</button>
+          <button class="btn btn-ghost" style="padding:6px;font-size:8px" onclick="showRegulatoryNews()">📋 REGULATORY</button>
+          <button class="btn btn-ghost" style="padding:6px;font-size:8px" onclick="showRecallNews()">🔧 RECALLS</button>
+          <button class="btn btn-ghost" style="padding:6px;font-size:8px" onclick="showGeopoliticalNews()">🌐 GEO</button>
+          <button class="btn btn-ghost" style="padding:6px;font-size:8px" onclick="showMacroNews()">📊 MACRO</button>
+          <button class="btn btn-ghost" style="padding:6px;font-size:8px" onclick="showTechNews()">🤖 TECH</button>
+          <button class="btn btn-ghost" style="padding:6px;font-size:8px" onclick="showCompetitorNews()">⚔️ COMPETITION</button>
+          <button class="btn btn-ghost" style="padding:6px;font-size:8px" onclick="showDividendNews()">💰 DIVIDENDS</button>
+        </div>
+      </div>
+      
       <!-- News List Section -->
-      <div style="margin-bottom:16px;border-bottom:2px solid var(--border);padding-bottom:16px">
+      <div style="margin-bottom:12px;padding-bottom:12px;border-bottom:2px solid var(--border)">
         <div style="font-weight:700;font-size:13px;color:${color};margin-bottom:12px">${title} (${news.length})</div>
         ${newsHtml}
       </div>
