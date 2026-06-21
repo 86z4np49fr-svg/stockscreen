@@ -402,6 +402,13 @@ footer{margin-top:40px;padding-top:16px;border-top:1px solid var(--border);color
       <button class="btn btn-go" id="tdKeySaveBtn" style="padding:7px 12px">Save</button>
       <span style="font-size:11px;color:var(--muted);width:100%">Finnhub's free plan blocks price history, so this tab uses Twelve Data (free: 800 calls/day). Get a key in ~1 min at twelvedata.com → Sign up → API key. Stored only in your browser.</span>
     </div>
+    
+    <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+      <button class="btn btn-accent" style="padding:8px 14px;font-size:12px" onclick="showTechnicalScreener()">🔍 Technical Screener</button>
+      <button class="btn btn-ghost" style="padding:8px 14px;font-size:12px" onclick="showTechnicalStrategies()">📊 Strategies</button>
+      <button class="btn btn-ghost" style="padding:8px 14px;font-size:12px" onclick="showTechnicalTips()">💡 Learn Signals</button>
+    </div>
+    
     <div class="row">
       <input type="text" id="techInput" placeholder="Ticker for technical analysis">
       <select id="timeframeSelect" style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--ink);font-size:14px;cursor:pointer">
@@ -412,7 +419,7 @@ footer{margin-top:40px;padding-top:16px;border-top:1px solid var(--border);color
       <button class="btn btn-go" id="techBtn">Analyze 📈</button>
       <button class="btn btn-ghost" id="techDemoBtn">Demo</button>
     </div>
-    <div id="techOutput" class="empty">Enter a ticker to see candlestick chart with volume, RSI, MACD, moving averages, and Bollinger Bands.</div>
+    <div id="techOutput" class="empty">Click "Technical Screener" to find stocks with strong buy/sell signals, or enter a ticker to analyze individual chart.</div>
   </div>
 
   <div class="view" id="backtester">
@@ -4594,6 +4601,384 @@ function getTdKey() {
   if (saved) return saved;
   if (TD_KEY && TD_KEY.indexOf('PASTE_YOUR') === -1) return TD_KEY;
   return null;
+}
+
+// ===== TECHNICAL SCREENER (Stock Market Scanning) =====
+
+// Demo stocks with technical signals for screening
+const TECHNICAL_SCANNER_DATA = [
+  {
+    ticker: 'NVDA',
+    price: 135.50,
+    signal: 'STRONG BUY',
+    strategy: 'Momentum',
+    rsi: 72,
+    macd: 'Bullish Crossover',
+    ma20: 'Above (132.20)',
+    ma50: 'Above (128.50)',
+    confidence: 95,
+    reason: 'Price above all moving averages, RSI elevated but not overbought, MACD bullish with strong momentum'
+  },
+  {
+    ticker: 'MSFT',
+    price: 380.25,
+    signal: 'BUY',
+    strategy: 'Trend Following',
+    rsi: 65,
+    macd: 'Bullish',
+    ma20: 'Above (375.10)',
+    ma50: 'Above (365.30)',
+    confidence: 88,
+    reason: 'Strong uptrend intact, price above key moving averages, RSI in bullish zone, volume confirming'
+  },
+  {
+    ticker: 'TSLA',
+    price: 245.80,
+    signal: 'SELL',
+    strategy: 'Mean Reversion',
+    rsi: 28,
+    macd: 'Bearish',
+    ma20: 'Below (258.40)',
+    ma50: 'Below (265.20)',
+    confidence: 82,
+    reason: 'Price below moving averages, RSI oversold, MACD bearish, downtrend evident, potential reversal looming'
+  },
+  {
+    ticker: 'AAPL',
+    price: 192.15,
+    signal: 'HOLD',
+    strategy: 'Consolidation',
+    rsi: 50,
+    macd: 'Neutral',
+    ma20: 'At (191.80)',
+    ma50: 'Above (189.50)',
+    confidence: 45,
+    reason: 'Price consolidating around 20-day MA, RSI neutral, MACD weak, awaiting breakout'
+  },
+  {
+    ticker: 'GOOGL',
+    price: 156.30,
+    signal: 'BUY',
+    strategy: 'Breakout',
+    rsi: 68,
+    macd: 'Bullish Crossover',
+    ma20: 'Above (150.20)',
+    ma50: 'Above (145.60)',
+    confidence: 85,
+    reason: 'Price broke above resistance at 155, all MAs aligned bullish, RSI elevated, volume spike confirms breakout'
+  },
+  {
+    ticker: 'META',
+    price: 320.50,
+    signal: 'STRONG SELL',
+    strategy: 'Momentum Reversal',
+    rsi: 22,
+    macd: 'Bearish Crossover',
+    ma20: 'Below (335.20)',
+    ma50: 'Below (340.10)',
+    confidence: 91,
+    reason: 'Sharp downtrend, all MAs crossed bearish, RSI in oversold territory with selling pressure, high-volume sell-off'
+  }
+];
+
+function showTechnicalScreener() {
+  const output = document.getElementById('techOutput');
+  
+  let html = `
+    <div style="background:var(--card);padding:16px;border-radius:8px;max-height:90vh;overflow-y:auto">
+      <div style="font-weight:700;font-size:14px;margin-bottom:16px;color:var(--accent)">🔍 Technical Stock Screener</div>
+      
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;margin-bottom:16px">
+  `;
+  
+  TECHNICAL_SCANNER_DATA.forEach(stock => {
+    let bgColor = '';
+    let borderColor = '';
+    
+    if (stock.signal === 'STRONG BUY') {
+      bgColor = 'rgba(34,197,94,0.1)';
+      borderColor = 'var(--green)';
+    } else if (stock.signal === 'BUY') {
+      bgColor = 'rgba(96,165,250,0.1)';
+      borderColor = '#60a5fa';
+    } else if (stock.signal === 'SELL') {
+      bgColor = 'rgba(248,113,113,0.1)';
+      borderColor = 'var(--red)';
+    } else if (stock.signal === 'STRONG SELL') {
+      bgColor = 'rgba(159,18,57,0.1)';
+      borderColor = '#d91e63';
+    } else {
+      bgColor = 'rgba(156,163,175,0.1)';
+      borderColor = 'var(--muted)';
+    }
+    
+    html += `
+      <div style="background:${bgColor};padding:14px;border-radius:8px;border-left:4px solid ${borderColor}">
+        <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px">
+          <div>
+            <div style="font-weight:700;font-size:13px">${stock.ticker}</div>
+            <div style="font-size:11px;color:var(--muted)">$${stock.price}</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-weight:700;font-size:12px;color:${borderColor}">${stock.signal}</div>
+            <div style="font-size:9px;color:var(--muted)">${stock.strategy}</div>
+          </div>
+        </div>
+        
+        <div style="background:var(--border);padding:8px;border-radius:6px;margin-bottom:8px;font-size:10px;color:var(--muted);line-height:1.6">
+          <strong>RSI:</strong> ${stock.rsi}<br>
+          <strong>MACD:</strong> ${stock.macd}<br>
+          <strong>MA20:</strong> ${stock.ma20}<br>
+          <strong>MA50:</strong> ${stock.ma50}
+        </div>
+        
+        <div style="background:var(--card);padding:8px;border-radius:6px;margin-bottom:8px;font-size:9px;color:var(--muted);font-style:italic">
+          💡 ${stock.reason}
+        </div>
+        
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div style="font-size:11px;font-weight:700">
+            Confidence: <span style="color:${borderColor}">${stock.confidence}%</span>
+          </div>
+          <button class="btn btn-ghost" style="padding:4px 8px;font-size:10px" onclick="analyzeThematic('${stock.ticker}')">
+            Details →
+          </button>
+        </div>
+      </div>
+    `;
+  });
+  
+  html += `
+      </div>
+      
+      <div style="background:var(--border);padding:12px;border-radius:8px;margin-bottom:16px">
+        <div style="font-weight:700;font-size:12px;margin-bottom:8px;color:var(--text)">📖 How to Read These Signals:</div>
+        <div style="font-size:11px;color:var(--muted);line-height:1.8">
+          <strong style="color:var(--green)">🟢 STRONG BUY:</strong> Multiple bullish signals with high confidence. Strong uptrend.<br>
+          <strong style="color:#60a5fa">🔵 BUY:</strong> Good technical setup. Price above key moving averages.<br>
+          <strong style="color:var(--red)">🔴 SELL:</strong> Technical deterioration. Price below moving averages.<br>
+          <strong style="color:#d91e63">🔴 STRONG SELL:</strong> Multiple bearish signals. Avoid or short.<br>
+          <strong style="color:var(--muted)">⚫ HOLD:</strong> Mixed signals. Wait for clearer direction.
+        </div>
+      </div>
+      
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-accent" style="flex:1;padding:10px" onclick="showTechnicalStrategies()">📊 View Strategies</button>
+        <button class="btn btn-ghost" style="flex:1;padding:10px" onclick="showTechnicalTips()">💡 Learn Signals</button>
+      </div>
+    </div>
+  `;
+  
+  output.innerHTML = html;
+}
+
+function showTechnicalStrategies() {
+  const output = document.getElementById('techOutput');
+  
+  let html = `
+    <div style="background:var(--card);padding:16px;border-radius:8px;max-height:90vh;overflow-y:auto">
+      <div style="font-weight:700;font-size:14px;margin-bottom:16px;color:var(--accent)">📊 Technical Screening Strategies</div>
+      
+      <div style="font-size:12px;color:var(--muted);line-height:1.8">
+  `;
+  
+  const strategies = [
+    {
+      name: '🚀 Momentum Strategy',
+      description: 'Buy stocks with strong upward momentum',
+      signals: [
+        'RSI > 60 (strong momentum)',
+        'Price above 20-day and 50-day moving averages',
+        'MACD bullish crossover or above signal line',
+        'Volume increasing on up days'
+      ],
+      use: 'When: Trending uptrend is strong, good for swing trading (days to weeks)',
+      risk: 'Can reverse suddenly if momentum fades, watch for overbought (RSI > 80)',
+      example: 'NVDA - Price $135.50, RSI 72, MACD bullish - Strong momentum play'
+    },
+    {
+      name: '🔄 Mean Reversion Strategy',
+      description: 'Buy oversold stocks expecting bounce, sell overbought expecting pullback',
+      signals: [
+        'RSI < 30 (oversold - potential buy)',
+        'RSI > 70 (overbought - potential sell)',
+        'Price below 20-day moving average (oversold)',
+        'Bollinger Bands touching lower band'
+      ],
+      use: 'When: Stock is in range, bouncing up and down, good for timing entries/exits',
+      risk: 'Falling knife risk - price keeps dropping after you buy, momentum can extend for weeks',
+      example: 'TSLA - Price $245.80, RSI 28, price below MAs - Oversold, potential bounce'
+    },
+    {
+      name: '📈 Trend Following Strategy',
+      description: 'Follow the direction of the trend, buy uptrends, avoid downtrends',
+      signals: [
+        'Price above 50-day MA (uptrend)',
+        'Price below 50-day MA (downtrend)',
+        'Moving averages aligned (20 > 50 > 200)',
+        'Higher highs and higher lows (uptrend)'
+      ],
+      use: 'When: Clear trend is established, safest approach for longer timeframes',
+      risk: 'Trends can reverse, best used with other confirmation signals',
+      example: 'MSFT - Price $380.25 above all MAs in clean uptrend - Trend follower\'s dream'
+    },
+    {
+      name: '💥 Breakout Strategy',
+      description: 'Buy when price breaks above resistance with volume',
+      signals: [
+        'Price breaks above previous resistance',
+        'Volume spike on breakout day',
+        'Price above 20-day and 50-day MA after breakout',
+        'MACD bullish confirmation'
+      ],
+      use: 'When: Stock consolidating, then breaks out - momentum likely to continue',
+      risk: 'False breakouts - can fizzle quickly if not confirmed by volume',
+      example: 'GOOGL - Broke above resistance, volume spike, RSI 68 - Classic breakout'
+    },
+    {
+      name: '⚠️ Reversal Strategy',
+      description: 'Identify when a trend might reverse and position ahead of it',
+      signals: [
+        'RSI divergence (price higher but RSI lower = weakening)',
+        'Moving average crossover (bearish when 20-MA crosses below 50-MA)',
+        'Double top/bottom pattern',
+        'Volume declining with price movement (weakening trend)'
+      ],
+      use: 'When: Trend has extended far, looking for exit or reversal trade',
+      risk: 'Trends can extend much further than expected, needs patience',
+      example: 'META - RSI 22, all MAs bearish, MACD bearish - Likely further down'
+    }
+  ];
+  
+  strategies.forEach(s => {
+    html += `
+      <div style="background:var(--border);padding:12px;border-radius:6px;margin-bottom:12px;border-left:4px solid var(--accent)">
+        <div style="font-weight:700;color:var(--text);margin-bottom:6px">${s.name}</div>
+        <div style="color:var(--muted);margin-bottom:8px;font-size:11px">${s.description}</div>
+        
+        <div style="background:var(--card);padding:8px;border-radius:4px;margin-bottom:8px;font-size:10px">
+          <strong style="color:var(--accent)">Entry Signals:</strong><br>
+          ${s.signals.map(sig => '✓ ' + sig).join('<br>')}
+        </div>
+        
+        <div style="font-size:10px;color:var(--muted)">
+          <div style="margin-bottom:4px"><strong>💡 Best For:</strong> ${s.use}</div>
+          <div style="margin-bottom:4px"><strong>⚠️ Watch Out:</strong> ${s.risk}</div>
+          <div><strong>📌 Example:</strong> ${s.example}</div>
+        </div>
+      </div>
+    `;
+  });
+  
+  html += `
+      </div>
+      
+      <div style="display:flex;gap:8px;margin-top:16px">
+        <button class="btn btn-accent" style="flex:1;padding:10px" onclick="showTechnicalScreener()">← Back to Screener</button>
+        <button class="btn btn-ghost" style="flex:1;padding:10px" onclick="showTechnicalTips()">💡 Learn Signals</button>
+      </div>
+    </div>
+  `;
+  
+  output.innerHTML = html;
+}
+
+function showTechnicalTips() {
+  const output = document.getElementById('techOutput');
+  
+  let html = `
+    <div style="background:var(--card);padding:16px;border-radius:8px;max-height:90vh;overflow-y:auto">
+      <div style="font-weight:700;font-size:14px;margin-bottom:16px;color:var(--accent)">💡 Technical Analysis Signals Explained</div>
+      
+      <div style="font-size:12px;color:var(--muted);line-height:1.8">
+  `;
+  
+  const signals = [
+    {
+      name: '📊 RSI (Relative Strength Index)',
+      what: 'Measures momentum - how fast price is moving up or down (0-100 scale)',
+      bullish: '60-70 = Strong momentum, >80 = Overbought (reversal risk)',
+      bearish: '30-40 = Weak momentum, <30 = Oversold (bounce possible)',
+      use: 'Overbought (>70) = Be cautious of pullback. Oversold (<30) = Watch for bounce. Golden zone 40-60 = Neutral'
+    },
+    {
+      name: '📈 Moving Averages (MA)',
+      what: 'Average price over N days (20-day = recent, 50-day = medium, 200-day = long-term). Price above = uptrend, below = downtrend',
+      bullish: 'Price above 20-MA > 20-MA above 50-MA > 50-MA above 200-MA (bullish alignment)',
+      bearish: 'Price below 20-MA < 20-MA below 50-MA < 50-MA below 200-MA (bearish alignment)',
+      use: 'Support/Resistance: Price bounces off MAs. Crossovers: 20-MA crosses above 50-MA = Buy signal. 20-MA crosses below 50-MA = Sell signal'
+    },
+    {
+      name: '🎯 MACD (Moving Average Convergence Divergence)',
+      what: 'Compares two moving averages to identify momentum changes (MACD line vs Signal line)',
+      bullish: 'MACD above signal line = Bullish. MACD crosses above signal = Buy signal',
+      bearish: 'MACD below signal line = Bearish. MACD crosses below signal = Sell signal',
+      use: 'Crossovers predict trend changes. Divergence (price up but MACD down) = Momentum weakening'
+    },
+    {
+      name: '📍 Support & Resistance',
+      what: 'Support = Price level where buyers step in (floor). Resistance = Level where sellers appear (ceiling)',
+      bullish: 'Price bounces off support multiple times = Strong support. Breaks above resistance = Bullish breakout',
+      bearish: 'Price bounces down from resistance = Weak resistance. Breaks below support = Bearish breakdown',
+      use: 'Buy near support (if you believe in bounce). Sell near resistance (if you think pullback coming). Breakouts confirm new trends'
+    },
+    {
+      name: '📊 Volume',
+      what: 'Number of shares traded. High volume = Many buyers/sellers involved. Low volume = Few participants',
+      bullish: 'High volume on up days = Strong conviction in move up. Volume spike on breakout = Confirms breakout',
+      bearish: 'High volume on down days = Selling pressure confirmed. Volume declining = Momentum weakening',
+      use: 'Confirms moves: Breakout with high volume = Likely to hold. Breakout with low volume = Likely to fail'
+    },
+    {
+      name: '🎪 Bollinger Bands',
+      what: 'Upper/Lower bands around MA. Price outside bands = Extreme movement. Inside bands = Normal',
+      bullish: 'Price touches lower band = Oversold (potential buy). Price moving toward upper band = Strength',
+      bearish: 'Price touches upper band = Overbought (potential sell). Price collapsing away from bands = Weakness',
+      use: 'Mean reversion: Price at lower band = Buy signal. Price at upper band = Sell signal'
+    }
+  ];
+  
+  signals.forEach(s => {
+    html += `
+      <div style="background:var(--border);padding:12px;border-radius:6px;margin-bottom:12px">
+        <div style="font-weight:700;color:var(--accent);margin-bottom:6px;font-size:11px">${s.name}</div>
+        <div style="font-size:10px;color:var(--muted);margin-bottom:6px">${s.what}</div>
+        
+        <div style="background:var(--card);padding:8px;border-radius:4px;margin-bottom:6px;border-left:3px solid var(--green)">
+          <strong style="color:var(--green);font-size:10px">Bullish:</strong>
+          <div style="font-size:9px;color:var(--muted)">${s.bullish}</div>
+        </div>
+        
+        <div style="background:var(--card);padding:8px;border-radius:4px;margin-bottom:6px;border-left:3px solid var(--red)">
+          <strong style="color:var(--red);font-size:10px">Bearish:</strong>
+          <div style="font-size:9px;color:var(--muted)">${s.bearish}</div>
+        </div>
+        
+        <div style="font-size:9px;color:var(--muted)"><strong>💡 How to Use:</strong> ${s.use}</div>
+      </div>
+    `;
+  });
+  
+  html += `
+      </div>
+      
+      <div style="background:rgba(96,165,250,0.1);padding:12px;border-radius:6px;border-left:3px solid #60a5fa;margin-bottom:16px;font-size:11px;color:var(--muted);line-height:1.6">
+        <strong style="color:var(--text)">⚠️ Important Reminder:</strong><br>
+        Technical analysis is one tool among many. Best results come from combining:<br>
+        ✓ Technicals (price action & momentum)<br>
+        ✓ Fundamentals (company health & growth)<br>
+        ✓ Risk management (position sizing, stop losses)<br>
+        Never risk money you can't afford to lose!
+      </div>
+      
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-accent" style="flex:1;padding:10px" onclick="showTechnicalScreener()">← Back to Screener</button>
+        <button class="btn btn-ghost" style="flex:1;padding:10px" onclick="showTechnicalStrategies()">📊 View Strategies</button>
+      </div>
+    </div>
+  `;
+  
+  output.innerHTML = html;
 }
 
 async function loadTechnicals() {
