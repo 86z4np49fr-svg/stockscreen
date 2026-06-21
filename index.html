@@ -7050,8 +7050,71 @@ function showDividendNews() {
   output.innerHTML = html;
 }
 
+function showCriticalNews() {
+  const output = document.getElementById('newsOutput');
+  let html = `
+    <div style="background:var(--card);padding:16px;border-radius:8px;max-height:90vh;overflow-y:auto">
+      <div style="font-weight:700;font-size:14px;margin-bottom:16px;color:var(--red)">⚠️⚠️⚠️ CRITICAL NEWS - Severe Market Impact</div>
+      <div style="display:grid;gap:12px">
+  `;
+  
+  BREAKING_NEWS.critical.forEach((news) => {
+    html += `
+      <div style="background:var(--border);padding:12px;border-radius:8px;border-left:4px solid var(--red)">
+        <div style="font-weight:700;font-size:12px;color:var(--red);margin-bottom:8px">${news.headline}</div>
+        <div style="font-size:10px;color:var(--muted);margin-bottom:8px">${news.ticker} • ${news.date}</div>
+        <div style="background:rgba(220,53,69,0.1);padding:8px;border-radius:6px;margin-bottom:8px;font-size:10px;color:var(--muted);line-height:1.6">${news.details}</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;font-size:10px">
+          <div style="background:var(--card);padding:6px;border-radius:4px">
+            <div style="color:var(--muted);font-size:9px">Price Target</div>
+            <div style="color:var(--red);font-weight:700">${news.priceTarget}</div>
+          </div>
+          <div style="background:var(--card);padding:6px;border-radius:4px">
+            <div style="color:var(--muted);font-size:9px">Est. Move</div>
+            <div style="color:var(--red);font-weight:700">${news.estimatedMove}</div>
+          </div>
+        </div>
+        <div style="background:rgba(0,0,0,0.2);padding:6px;border-radius:4px;font-size:9px;color:var(--text)">📌 ${news.followUp}</div>
+      </div>
+    `;
+  });
+  
+  html += `</div><button class="btn btn-accent" style="width:100%;padding:10px;margin-top:16px" onclick="showBreakingNews()">← Back</button></div>`;
+  output.innerHTML = html;
+}
 
-
+function showHighImpactNews() {
+  const output = document.getElementById('newsOutput');
+  let html = `
+    <div style="background:var(--card);padding:16px;border-radius:8px;max-height:90vh;overflow-y:auto">
+      <div style="font-weight:700;font-size:14px;margin-bottom:16px;color:#ff9800">🟠 HIGH IMPACT NEWS - Significant Market Moves</div>
+      <div style="display:grid;gap:12px">
+  `;
+  
+  BREAKING_NEWS.high_impact.forEach((news) => {
+    html += `
+      <div style="background:var(--border);padding:12px;border-radius:8px;border-left:4px solid #ff9800">
+        <div style="font-weight:700;font-size:12px;color:#ff9800;margin-bottom:8px">${news.headline}</div>
+        <div style="font-size:10px;color:var(--muted);margin-bottom:8px">${news.ticker} • ${news.date}</div>
+        <div style="background:rgba(255,152,0,0.1);padding:8px;border-radius:6px;margin-bottom:8px;font-size:10px;color:var(--muted);line-height:1.6">${news.details}</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;font-size:10px">
+          <div style="background:var(--card);padding:6px;border-radius:4px">
+            <div style="color:var(--muted);font-size:9px">Price Target</div>
+            <div style="color:#ff9800;font-weight:700">${news.priceTarget}</div>
+          </div>
+          <div style="background:var(--card);padding:6px;border-radius:4px">
+            <div style="color:var(--muted);font-size:9px">Est. Move</div>
+            <div style="color:#ff9800;font-weight:700">${news.estimatedMove}</div>
+          </div>
+        </div>
+        <div style="background:rgba(0,0,0,0.2);padding:6px;border-radius:4px;font-size:9px;color:var(--text)">📌 ${news.followUp}</div>
+      </div>
+    `;
+  });
+  
+  html += `</div><button class="btn btn-accent" style="width:100%;padding:10px;margin-top:16px" onclick="showBreakingNews()">← Back</button></div>`;
+  output.innerHTML = html;
+}
 
 
 
