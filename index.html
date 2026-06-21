@@ -4851,6 +4851,11 @@ const BREAKING_NEWS = {
       priceTarget: '$385 (from $420)',
       sentiment: '📉 Bearish',
       estimatedMove: '-8 to -15%',
+      affectedStocks: [
+        { ticker: 'UNH', move: '-8 to -15%', impact: 'Direct hit - leadership crisis' },
+        { ticker: 'CVS', move: '-2 to -5%', impact: 'Competitor concern' },
+        { ticker: 'CNC', move: '-2 to -5%', impact: 'Healthcare sector weakness' },
+      ],
       details: 'CEO Brian Thompson hospitalized after shooting incident. Major operational uncertainty and investor concern about leadership stability.',
       stocks: ['UNH'],
       followUp: 'Monitor: Leadership transition, policy changes, shareholder confidence'
@@ -4866,6 +4871,12 @@ const BREAKING_NEWS = {
       priceTarget: '$180 (from $245)',
       sentiment: '📉 Bearish',
       estimatedMove: '-25 to -35%',
+      affectedStocks: [
+        { ticker: 'TSLA', move: '-25 to -35%', impact: 'Direct hit - recall risk + litigation' },
+        { ticker: 'GM', move: '-3 to -8%', impact: 'EV competitor concern' },
+        { ticker: 'F', move: '-2 to -6%', impact: 'Auto sector weakness' },
+        { ticker: 'LMT', move: '-1 to -3%', impact: 'Defense tech contagion' },
+      ],
       details: 'Multi-vehicle collision attributed to Autopilot failure. NHTSA investigating. Potential mass recalls and regulatory action.',
       stocks: ['TSLA'],
       followUp: 'Watch: NHTSA reports, recall announcements, litigation risk'
@@ -4881,6 +4892,12 @@ const BREAKING_NEWS = {
       priceTarget: '$28 (from $38)',
       sentiment: '📉 Bearish',
       estimatedMove: '-25 to -30%',
+      affectedStocks: [
+        { ticker: 'PFE', move: '-25 to -30%', impact: 'Direct hit - pipeline failure' },
+        { ticker: 'JNJ', move: '-2 to -5%', impact: 'Pharma sector concern' },
+        { ticker: 'MRK', move: '-2 to -5%', impact: 'Drug approval risk' },
+        { ticker: 'LLY', move: '-1 to -3%', impact: 'Pharma weakness' },
+      ],
       details: 'FDA Accelerated Approval rejected for Phase III cancer drug. Major pipeline setback. Company missed $3B+ revenue opportunity.',
       stocks: ['PFE'],
       followUp: 'Check: Resubmission plans, clinical trial results, pipeline updates'
@@ -4899,6 +4916,12 @@ const BREAKING_NEWS = {
       priceTarget: '$145 (from $135)',
       sentiment: '📈 Bullish',
       estimatedMove: '+10 to +18%',
+      affectedStocks: [
+        { ticker: 'NVDA', move: '+10 to +18%', impact: 'Direct hit - earnings beat' },
+        { ticker: 'AMD', move: '+2 to +6%', impact: 'Chip sector strength' },
+        { ticker: 'AMAT', move: '+1 to +4%', impact: 'Semiconductor demand' },
+        { ticker: 'MSTR', move: '+3 to +8%', impact: 'AI play strength' },
+      ],
       details: 'FY2027 Q3 earnings: Revenue $32.5B (+93% YoY), Data center $28B. Exceeded guidance. AI demand accelerating.',
       stocks: ['NVDA'],
       followUp: 'Monitor: Forward guidance, gross margins, AI capex cycle continuation'
@@ -4914,6 +4937,11 @@ const BREAKING_NEWS = {
       priceTarget: '$215 (from $200)',
       sentiment: '📈 Bullish',
       estimatedMove: '+8 to +15%',
+      affectedStocks: [
+        { ticker: 'AMZN', move: '+8 to +15%', impact: 'Direct hit - AWS growth' },
+        { ticker: 'MSFT', move: '-2 to -5%', impact: 'Azure competitive loss' },
+        { ticker: 'CRM', move: '+1 to +3%', impact: 'Cloud ecosystem strength' },
+      ],
       details: 'AWS Q2 revenue $25B (+25% YoY). Gained market share from Azure. GenAI services ramping. Operating margin expanding.',
       stocks: ['AMZN'],
       followUp: 'Track: AWS growth rate, competitive positioning, AI adoption'
@@ -4929,6 +4957,11 @@ const BREAKING_NEWS = {
       priceTarget: '$320 (from $285)',
       sentiment: '📈 Bullish',
       estimatedMove: '+12 to +20%',
+      affectedStocks: [
+        { ticker: 'META', move: '+12 to +20%', impact: 'Direct hit - AI + profitability' },
+        { ticker: 'GOOGL', move: '+1 to +3%', impact: 'Ad tech growth' },
+        { ticker: 'PINS', move: '+2 to +5%', impact: 'Social media strength' },
+      ],
       details: 'Meta reports $36.2B Q2 revenue (+27% YoY). AI Ads performing strong. $65B capex plan for AI infrastructure confirmed.',
       stocks: ['META'],
       followUp: 'Watch: Capex updates, AI monetization, reels growth'
@@ -6744,30 +6777,13 @@ function showBreakingNews() {
     <div style="background:var(--card);padding:16px;border-radius:8px;max-height:90vh;overflow-y:auto">
       <div style="font-weight:700;font-size:14px;margin-bottom:16px;color:var(--red)">🔴 BREAKING NEWS - Market Moving Stories</div>
       
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:10px;margin-bottom:16px">
-        <button class="btn btn-accent" style="padding:8px;font-size:10px" onclick="showCriticalNews()">⚠️⚠️⚠️ CRITICAL (${BREAKING_NEWS.critical.length})</button>
-        <button class="btn btn-ghost" style="padding:8px;font-size:10px" onclick="showHighImpactNews()">🟠 HIGH (${BREAKING_NEWS.high_impact.length})</button>
-        <button class="btn btn-ghost" style="padding:8px;font-size:10px" onclick="showEarningsNews()">📊 EARNINGS (${BREAKING_NEWS.earnings.length})</button>
-        <button class="btn btn-ghost" style="padding:8px;font-size:10px" onclick="showSectorCatalysts()">🔧 SECTORS (${BREAKING_NEWS.sector_catalysts.length})</button>
-        <button class="btn btn-ghost" style="padding:8px;font-size:10px" onclick="showMergersNews()">💼 M&A (${BREAKING_NEWS.mergers_acquisitions.length})</button>
-        <button class="btn btn-ghost" style="padding:8px;font-size:10px" onclick="showBankruptcyNews()">🚨 BANKRUPTCY (${BREAKING_NEWS.bankruptcies_defaults.length})</button>
-        <button class="btn btn-ghost" style="padding:8px;font-size:10px" onclick="showLitigationNews()">⚖️ LAWSUITS (${BREAKING_NEWS.lawsuit_litigation.length})</button>
-        <button class="btn btn-ghost" style="padding:8px;font-size:10px" onclick="showEnvironmentalNews()">🌍 SAFETY (${BREAKING_NEWS.environmental_safety.length})</button>
-        <button class="btn btn-ghost" style="padding:8px;font-size:10px" onclick="showRegulatoryNews()">📋 REGULATORY (${BREAKING_NEWS.regulatory_investigations.length})</button>
-        <button class="btn btn-ghost" style="padding:8px;font-size:10px" onclick="showRecallNews()">🔧 RECALLS (${BREAKING_NEWS.product_recalls.length})</button>
-        <button class="btn btn-ghost" style="padding:8px;font-size:10px" onclick="showGeopoliticalNews()">🌐 GEOPOLITICAL (${BREAKING_NEWS.geopolitical_events.length})</button>
-        <button class="btn btn-ghost" style="padding:8px;font-size:10px" onclick="showMacroNews()">📊 MACRO (${BREAKING_NEWS.macro_economic.length})</button>
-        <button class="btn btn-ghost" style="padding:8px;font-size:10px" onclick="showTechNews()">🤖 TECH (${BREAKING_NEWS.tech_disruption.length})</button>
-        <button class="btn btn-ghost" style="padding:8px;font-size:10px" onclick="showCompetitorNews()">⚔️ COMPETITION (${BREAKING_NEWS.competitor_threats.length})</button>
-        <button class="btn btn-ghost" style="padding:8px;font-size:10px" onclick="showDividendNews()">💰 DIVIDENDS (${BREAKING_NEWS.dividend_capital_events.length})</button>
-      </div>
-      
-      <div style="background:rgba(220,53,69,0.1);padding:12px;border-radius:8px;border-left:3px solid var(--red)">
-        <div style="font-weight:700;color:var(--text);font-size:11px;margin-bottom:6px">🔴 ${BREAKING_NEWS.critical.length + BREAKING_NEWS.high_impact.length + BREAKING_NEWS.earnings.length + BREAKING_NEWS.sector_catalysts.length + BREAKING_NEWS.mergers_acquisitions.length + BREAKING_NEWS.bankruptcies_defaults.length + BREAKING_NEWS.lawsuit_litigation.length + BREAKING_NEWS.environmental_safety.length + BREAKING_NEWS.regulatory_investigations.length + BREAKING_NEWS.product_recalls.length + BREAKING_NEWS.geopolitical_events.length + BREAKING_NEWS.macro_economic.length + BREAKING_NEWS.tech_disruption.length + BREAKING_NEWS.competitor_threats.length + BREAKING_NEWS.dividend_capital_events.length} MARKET-MOVING STORIES TRACKED</div>
-        <div style="font-size:9px;color:var(--muted);line-height:1.6">
-          15 categories of critical news that can move stocks 5-50%+<br>
-          Updated daily with real market catalysts
-        </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-bottom:16px;font-size:11px">
+        <button class="btn btn-accent" style="padding:8px" onclick="showCriticalNews()">⚠️⚠️⚠️ CRITICAL (${BREAKING_NEWS.critical.length})</button>
+        <button class="btn btn-ghost" style="padding:8px" onclick="showHighImpactNews()">🟠 HIGH (${BREAKING_NEWS.high_impact.length})</button>
+        <button class="btn btn-ghost" style="padding:8px" onclick="showEarningsNews()">📊 EARNINGS (${BREAKING_NEWS.earnings.length})</button>
+        <button class="btn btn-ghost" style="padding:8px" onclick="showSectorCatalysts()">🔧 SECTORS</button>
+        <button class="btn btn-ghost" style="padding:8px" onclick="showMergersNews()">💼 M&A</button>
+        <button class="btn btn-ghost" style="padding:8px" onclick="showBankruptcyNews()">🚨 BANKRUPTCY</button>
       </div>
     </div>
   `;
@@ -7058,28 +7074,53 @@ function showCriticalNews() {
       <div style="display:grid;gap:12px">
   `;
   
-  BREAKING_NEWS.critical.forEach((news) => {
+  BREAKING_NEWS.critical.forEach((news, idx) => {
+    const expandId = 'critical_' + idx;
     html += `
       <div style="background:var(--border);padding:12px;border-radius:8px;border-left:4px solid var(--red)">
-        <div style="font-weight:700;font-size:12px;color:var(--red);margin-bottom:8px">${news.headline}</div>
-        <div style="font-size:10px;color:var(--muted);margin-bottom:8px">${news.ticker} • ${news.date}</div>
-        <div style="background:rgba(220,53,69,0.1);padding:8px;border-radius:6px;margin-bottom:8px;font-size:10px;color:var(--muted);line-height:1.6">${news.details}</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;font-size:10px">
-          <div style="background:var(--card);padding:6px;border-radius:4px">
-            <div style="color:var(--muted);font-size:9px">Price Target</div>
-            <div style="color:var(--red);font-weight:700">${news.priceTarget}</div>
+        <div onclick="document.getElementById('${expandId}').style.display = document.getElementById('${expandId}').style.display === 'none' ? 'block' : 'none'; this.style.cursor='pointer'" style="cursor:pointer">
+          <div style="font-weight:700;font-size:12px;color:var(--red);margin-bottom:4px">${news.headline}</div>
+          <div style="font-size:10px;color:var(--muted);margin-bottom:8px">${news.date} • ${news.category}</div>
+        </div>
+        
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(80px,1fr));gap:8px;margin-bottom:8px">
+  `;
+    
+    if (news.affectedStocks) {
+      news.affectedStocks.forEach(stock => {
+        html += `
+          <div style="background:var(--card);padding:8px;border-radius:6px;border-left:2px solid var(--red);font-size:10px">
+            <div style="font-weight:700;color:var(--accent)">${stock.ticker}</div>
+            <div style="color:var(--red);font-weight:700;font-size:11px">${stock.move}</div>
+            <div style="color:var(--muted);font-size:9px;margin-top:2px">${stock.impact}</div>
           </div>
-          <div style="background:var(--card);padding:6px;border-radius:4px">
-            <div style="color:var(--muted);font-size:9px">Est. Move</div>
-            <div style="color:var(--red);font-weight:700">${news.estimatedMove}</div>
+        `;
+      });
+    }
+    
+    html += `
+        </div>
+        
+        <div id="${expandId}" style="display:none;background:rgba(220,53,69,0.1);padding:10px;border-radius:6px;margin-top:8px">
+          <div style="font-size:10px;color:var(--muted);line-height:1.6;margin-bottom:8px">${news.details}</div>
+          <div style="background:var(--card);padding:8px;border-radius:4px;font-size:9px;color:var(--text)">
+            <strong style="color:var(--red)">Price Target:</strong> ${news.priceTarget}<br>
+            <strong style="color:var(--red)">Est. Move:</strong> ${news.estimatedMove}<br>
+            <strong style="color:var(--red)">Monitor:</strong> ${news.followUp}
           </div>
         </div>
-        <div style="background:rgba(0,0,0,0.2);padding:6px;border-radius:4px;font-size:9px;color:var(--text)">📌 ${news.followUp}</div>
       </div>
     `;
   });
   
-  html += `</div><button class="btn btn-accent" style="width:100%;padding:10px;margin-top:16px" onclick="showBreakingNews()">← Back</button></div>`;
+  html += `
+      </div>
+      <div style="font-size:10px;color:var(--muted);margin-top:12px;padding:8px;background:rgba(220,53,69,0.1);border-radius:6px">
+        💡 Tip: Click on a news item to expand and see details, price targets, and affected stocks
+      </div>
+      <button class="btn btn-accent" style="width:100%;padding:10px;margin-top:12px" onclick="showBreakingNews()">← Back to News Hub</button>
+    </div>
+  `;
   output.innerHTML = html;
 }
 
@@ -7091,28 +7132,53 @@ function showHighImpactNews() {
       <div style="display:grid;gap:12px">
   `;
   
-  BREAKING_NEWS.high_impact.forEach((news) => {
+  BREAKING_NEWS.high_impact.forEach((news, idx) => {
+    const expandId = 'high_' + idx;
     html += `
       <div style="background:var(--border);padding:12px;border-radius:8px;border-left:4px solid #ff9800">
-        <div style="font-weight:700;font-size:12px;color:#ff9800;margin-bottom:8px">${news.headline}</div>
-        <div style="font-size:10px;color:var(--muted);margin-bottom:8px">${news.ticker} • ${news.date}</div>
-        <div style="background:rgba(255,152,0,0.1);padding:8px;border-radius:6px;margin-bottom:8px;font-size:10px;color:var(--muted);line-height:1.6">${news.details}</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;font-size:10px">
-          <div style="background:var(--card);padding:6px;border-radius:4px">
-            <div style="color:var(--muted);font-size:9px">Price Target</div>
-            <div style="color:#ff9800;font-weight:700">${news.priceTarget}</div>
+        <div onclick="document.getElementById('${expandId}').style.display = document.getElementById('${expandId}').style.display === 'none' ? 'block' : 'none'; this.style.cursor='pointer'" style="cursor:pointer">
+          <div style="font-weight:700;font-size:12px;color:#ff9800;margin-bottom:4px">${news.headline}</div>
+          <div style="font-size:10px;color:var(--muted);margin-bottom:8px">${news.date} • ${news.category}</div>
+        </div>
+        
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(80px,1fr));gap:8px;margin-bottom:8px">
+  `;
+    
+    if (news.affectedStocks) {
+      news.affectedStocks.forEach(stock => {
+        html += `
+          <div style="background:var(--card);padding:8px;border-radius:6px;border-left:2px solid #ff9800;font-size:10px">
+            <div style="font-weight:700;color:var(--accent)">${stock.ticker}</div>
+            <div style="color:#ff9800;font-weight:700;font-size:11px">${stock.move}</div>
+            <div style="color:var(--muted);font-size:9px;margin-top:2px">${stock.impact}</div>
           </div>
-          <div style="background:var(--card);padding:6px;border-radius:4px">
-            <div style="color:var(--muted);font-size:9px">Est. Move</div>
-            <div style="color:#ff9800;font-weight:700">${news.estimatedMove}</div>
+        `;
+      });
+    }
+    
+    html += `
+        </div>
+        
+        <div id="${expandId}" style="display:none;background:rgba(255,152,0,0.1);padding:10px;border-radius:6px;margin-top:8px">
+          <div style="font-size:10px;color:var(--muted);line-height:1.6;margin-bottom:8px">${news.details}</div>
+          <div style="background:var(--card);padding:8px;border-radius:4px;font-size:9px;color:var(--text)">
+            <strong style="color:#ff9800">Price Target:</strong> ${news.priceTarget}<br>
+            <strong style="color:#ff9800">Est. Move:</strong> ${news.estimatedMove}<br>
+            <strong style="color:#ff9800">Monitor:</strong> ${news.followUp}
           </div>
         </div>
-        <div style="background:rgba(0,0,0,0.2);padding:6px;border-radius:4px;font-size:9px;color:var(--text)">📌 ${news.followUp}</div>
       </div>
     `;
   });
   
-  html += `</div><button class="btn btn-accent" style="width:100%;padding:10px;margin-top:16px" onclick="showBreakingNews()">← Back</button></div>`;
+  html += `
+      </div>
+      <div style="font-size:10px;color:var(--muted);margin-top:12px;padding:8px;background:rgba(255,152,0,0.1);border-radius:6px">
+        💡 Tip: Click on a news item to expand and see details, price targets, and affected stocks
+      </div>
+      <button class="btn btn-accent" style="width:100%;padding:10px;margin-top:12px" onclick="showBreakingNews()">← Back to News Hub</button>
+    </div>
+  `;
   output.innerHTML = html;
 }
 
