@@ -5040,8 +5040,15 @@ const BREAKING_NEWS = {
       eps: '$2.95 (Beat $2.75)',
       revenue: '$61.8B (Beat $60.2B)',
       guidance: 'Strong FY2027 outlook, AI driving higher growth',
+      details: 'Microsoft reports strong Q3 earnings with cloud business accelerating. Azure revenue growth double digits. Enterprise AI adoption driving subscription growth.',
+      affectedStocks: [
+        { ticker: 'MSFT', move: '+5 to +12%', impact: 'Direct beat - cloud growth' },
+        { ticker: 'GOOGL', move: '+1 to +3%', impact: 'Cloud competition strength' },
+        { ticker: 'CRM', move: '+2 to +5%', impact: 'Enterprise AI demand' }
+      ],
       priceTarget: '$405 (from $380)',
-      estimatedMove: '+5 to +12%'
+      estimatedMove: '+5 to +12%',
+      followUp: 'Monitor cloud margins, Azure growth rates, AI adoption metrics'
     },
     {
       ticker: 'AAPL',
@@ -5054,8 +5061,15 @@ const BREAKING_NEWS = {
       eps: '$1.75 (Beat $1.62)',
       revenue: '$94.2B (Beat $92B)',
       guidance: 'Services growth accelerating, iPhone 16 strong demand',
+      details: 'Apple delivers strong Q3 results with iPhone 16 launch momentum. Services segment showing double-digit growth. Wearables and accessories also performing well.',
+      affectedStocks: [
+        { ticker: 'AAPL', move: '+8 to +15%', impact: 'Direct beat - iPhone strong' },
+        { ticker: 'QCOM', move: '+2 to +4%', impact: 'Chip demand strength' },
+        { ticker: 'AAL', move: '+1 to +3%', impact: 'Consumer tech strength' }
+      ],
       priceTarget: '$225 (from $192)',
-      estimatedMove: '+8 to +15%'
+      estimatedMove: '+8 to +15%',
+      followUp: 'Track iPhone 16 sales, services growth, wearables momentum'
     },
     {
       ticker: 'JNJ',
@@ -5068,8 +5082,15 @@ const BREAKING_NEWS = {
       eps: '$1.95 (Beat $1.85)',
       revenue: '$22.1B (Beat $21.8B)',
       guidance: 'FY2026 guidance raised 3-5%',
+      details: 'J&J reports solid Q2 results with pharma division growth offsetting generics pressure. GLP-1 portfolio showing strength. Raised full-year guidance.',
+      affectedStocks: [
+        { ticker: 'JNJ', move: '+2 to +8%', impact: 'Direct beat - guidance raised' },
+        { ticker: 'PFE', move: '+1 to +2%', impact: 'Healthcare sector strength' },
+        { ticker: 'MRK', move: '+1 to +3%', impact: 'Pharma growth momentum' }
+      ],
       priceTarget: '$162 (from $158)',
-      estimatedMove: '+2 to +8%'
+      estimatedMove: '+2 to +8%',
+      followUp: 'Monitor GLP-1 portfolio, generic pressure, pipeline progress'
     },
   ],
   
@@ -5078,69 +5099,103 @@ const BREAKING_NEWS = {
       sector: 'Technology',
       headline: '🔧 AI Chip Shortage Easing - New Capacity Coming Online',
       date: 'June 2026',
-      details: 'TSMC, Samsung scaling AI chip production. NVIDIA, AMD benefiting. Prices stabilizing.',
-      impact: 'Positive for: NVDA, AMD, AMAT, LRCX',
-      estimatedMove: '+2 to +8% for chip stocks'
+      category: 'Sector Catalyst',
+      details: 'TSMC, Samsung scaling AI chip production. NVIDIA, AMD benefiting. Prices stabilizing. Easing supply constraints driving margin expansion.',
+      affectedStocks: [
+        { ticker: 'NVDA', move: '+5 to +12%', impact: 'Supply easing benefit' },
+        { ticker: 'AMD', move: '+3 to +8%', impact: 'Competitive position strength' },
+        { ticker: 'AMAT', move: '+2 to +6%', impact: 'Equipment demand' }
+      ],
+      priceTarget: 'Positive for sector',
+      estimatedMove: '+2 to +8% for chip stocks',
+      followUp: 'Monitor chip pricing, supply normalization, margin trends'
     },
     {
       sector: 'Healthcare',
       headline: '🏥 GLP-1 Drug Market Explosion - Pharma Competition Heats Up',
       date: 'June 2026',
-      details: 'Novo Nordisk, Eli Lilly, others competing for $100B+ obesity drug market. Price wars emerging.',
-      impact: 'Mixed: LLY, NVO benefit; Pfizer, JNJ need new drugs',
-      estimatedMove: '+15 to +25% for obesity leaders, -5 to -10% for laggards'
+      category: 'Sector Catalyst',
+      details: 'Novo Nordisk, Eli Lilly, others competing for $100B+ obesity drug market. Price wars emerging. Market size expanding rapidly.',
+      affectedStocks: [
+        { ticker: 'LLY', move: '+8 to +15%', impact: 'Obesity drug leader' },
+        { ticker: 'NVO', move: '+5 to +12%', impact: 'Direct competitor win' },
+        { ticker: 'PFE', move: '-3 to -8%', impact: 'Competitive loss' }
+      ],
+      priceTarget: 'Mixed impacts',
+      estimatedMove: '+15 to +25% for obesity leaders, -5 to -10% for laggards',
+      followUp: 'Track market share, pricing pressure, pipeline progress'
     },
     {
       sector: 'Energy',
       headline: '⚡ Oil Prices Rise 15% - Geopolitical Tension in Middle East',
       date: 'June 2026',
-      details: 'Regional tensions reducing crude supplies. Energy stocks rallying. Renewable energy losing momentum.',
-      impact: 'Positive for: XOM, CVX, COP, MPC',
-      estimatedMove: '+8 to +15% for oil majors'
+      category: 'Sector Catalyst',
+      details: 'Regional tensions reducing crude supplies. Energy stocks rallying. Renewable energy losing momentum as oil strength continues.',
+      affectedStocks: [
+        { ticker: 'XOM', move: '+8 to +15%', impact: 'Oil major benefit' },
+        { ticker: 'CVX', move: '+7 to +12%', impact: 'Energy strength' },
+        { ticker: 'COP', move: '+6 to +10%', impact: 'Producer upside' }
+      ],
+      priceTarget: 'Energy strength',
+      estimatedMove: '+8 to +15% for oil majors',
+      followUp: 'Monitor geopolitical developments, crude prices, supply updates'
     },
     {
       sector: 'Consumer',
       headline: '🛍️ Consumer Spending Softens - Q2 Retail Sales Miss',
       date: 'June 2026',
-      details: 'Retail sales +0.1% (expected +0.4%). Discounting pressure increases. Margin concerns.',
-      impact: 'Negative for: WMT, HD, TJX, LOW',
-      estimatedMove: '-5 to -12% for discretionary retailers'
+      category: 'Sector Catalyst',
+      details: 'Retail sales +0.1% (expected +0.4%). Discounting pressure increases. Margin concerns rising. Consumer weakness spreading.',
+      affectedStocks: [
+        { ticker: 'WMT', move: '-5 to -10%', impact: 'Retail weakness hit' },
+        { ticker: 'HD', move: '-5 to -12%', impact: 'Discretionary pressure' },
+        { ticker: 'TJX', move: '-4 to -8%', impact: 'Apparel weakness' }
+      ],
+      priceTarget: 'Negative outlook',
+      estimatedMove: '-5 to -12% for discretionary retailers',
+      followUp: 'Monitor consumer trends, margin pressure, holiday outlook'
     },
   ],
 
-  mergers_acquisitions: [
+    mergers_acquisitions: [
     {
       headline: '💼 Broadcom (AVGO) Acquires Qualcomm (QCOM) for $121B',
       date: 'June 2026',
       category: 'Mega Acquisition',
-      impact: 'Very High',
-      severity: '⚠️⚠️⚠️ SEVERE',
-      qcom: { ticker: 'QCOM', move: '+18%', target: '$185' },
-      avgo: { ticker: 'AVGO', move: '-8%', target: '$168' },
       details: 'Broadcom agrees to acquire Qualcomm in all-stock deal. Creates semiconductor powerhouse. Expected close 2027.',
-      followUp: 'Monitor: Regulatory approval (FCC, CFIUS), integration plans'
+      affectedStocks: [
+        { ticker: 'QCOM', move: '+15 to +20%', impact: 'Acquisition premium' },
+        { ticker: 'AVGO', move: '-3 to -8%', impact: 'Dilution concern' }
+      ],
+      priceTarget: 'QCOM: $185, AVGO: $168',
+      estimatedMove: 'QCOM +15-20%, AVGO -3-8%',
+      followUp: 'Monitor regulatory approval (FCC, CFIUS), integration plans'
     },
     {
       headline: '💼 Microsoft (MSFT) Buys Palantir (PLTR) for $80B',
       date: 'June 2026',
       category: 'Strategic Acquisition',
-      impact: 'Very High',
-      severity: '⚠️⚠️⚠️ SEVERE',
-      pltr: { ticker: 'PLTR', move: '+35%', target: '$32' },
-      msft: { ticker: 'MSFT', move: '-5%', target: '$385' },
-      details: 'Microsoft acquires Palantir for data analytics platform. AI + government contracts combo.',
-      followUp: 'Check: CFIUS approval, integration roadmap'
+      details: 'Microsoft acquires Palantir for data analytics platform. Combines AI capabilities with government contracts.',
+      affectedStocks: [
+        { ticker: 'PLTR', move: '+30 to +40%', impact: 'Acquisition premium' },
+        { ticker: 'MSFT', move: '-2 to -5%', impact: 'Modest dilution' }
+      ],
+      priceTarget: 'PLTR: $32, MSFT: $385',
+      estimatedMove: 'PLTR +30-40%, MSFT -2-5%',
+      followUp: 'Track CFIUS approval, integration roadmap'
     },
     {
       headline: '💼 Apple (AAPL) Acquires Intel (INTC) Chip Division',
       date: 'June 2026',
       category: 'Strategic Acquisition',
-      impact: 'High',
-      severity: '⚠️⚠️ HIGH',
-      intc: { ticker: 'INTC', move: '+45%', target: '$52' },
-      aapl: { ticker: 'AAPL', move: '+3%', target: '$225' },
-      details: 'Apple buys Intel chip fab operations. Self-sufficiency for silicon production.',
-      followUp: 'Monitor: Integration, fab productivity'
+      details: 'Apple buys Intel chip fab operations for silicon self-sufficiency. Vertical integration play.',
+      affectedStocks: [
+        { ticker: 'INTC', move: '+40 to +50%', impact: 'Strategic exit premium' },
+        { ticker: 'AAPL', move: '+1 to +5%', impact: 'Supply security benefit' }
+      ],
+      priceTarget: 'INTC: $52, AAPL: $225',
+      estimatedMove: 'INTC +40-50%, AAPL +1-5%',
+      followUp: 'Monitor fab integration, production ramp'
     },
   ],
 
@@ -6806,21 +6861,29 @@ function showBreakingNews() {
 }
 
 
-// Global function to show detail panel
+// Global function to show detail panel - handles missing fields gracefully
 function showDetailPanel(news, color) {
   const panel = document.getElementById('detailPanel');
   if (!panel) return;
   
+  // Provide default values for missing fields
+  const headline = news.headline || 'News Item';
+  const details = news.details || 'No additional details available.';
+  const affectedStocks = (news.affectedStocks && Array.isArray(news.affectedStocks)) ? news.affectedStocks : [];
+  const priceTarget = news.priceTarget || 'N/A';
+  const estimatedMove = news.estimatedMove || 'N/A';
+  const followUp = news.followUp || 'Monitor for updates';
+  
   let affectedHtml = '';
-  if (news.affectedStocks && news.affectedStocks.length > 0) {
-    news.affectedStocks.forEach(stock => {
+  if (affectedStocks.length > 0) {
+    affectedStocks.forEach(stock => {
       affectedHtml += `
         <div style="background:var(--card);padding:10px;border-radius:6px;border-left:3px solid ${color};margin-bottom:8px">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-            <div style="font-weight:700;font-size:12px;color:var(--accent)">${stock.ticker}</div>
-            <div style="font-weight:700;font-size:12px;color:${color}">${stock.move}</div>
+            <div style="font-weight:700;font-size:12px;color:var(--accent)">${stock.ticker || 'N/A'}</div>
+            <div style="font-weight:700;font-size:12px;color:${color}">${stock.move || 'N/A'}</div>
           </div>
-          <div style="font-size:10px;color:var(--muted)">${stock.impact}</div>
+          <div style="font-size:10px;color:var(--muted)">${stock.impact || 'Impact not specified'}</div>
         </div>
       `;
     });
@@ -6828,10 +6891,10 @@ function showDetailPanel(news, color) {
   
   let html = `
     <div style="background:var(--border);padding:16px;border-radius:8px;border-top:4px solid ${color}">
-      <div style="font-weight:700;font-size:13px;color:${color};margin-bottom:12px">${news.headline}</div>
+      <div style="font-weight:700;font-size:13px;color:${color};margin-bottom:12px">${headline}</div>
       
       <div style="background:var(--card);padding:12px;border-radius:6px;margin-bottom:12px">
-        <div style="font-size:10px;color:var(--text);line-height:1.8;margin-bottom:12px">${news.details}</div>
+        <div style="font-size:10px;color:var(--text);line-height:1.8;margin-bottom:12px">${details}</div>
         
         ${affectedHtml ? `<div style="border-top:1px solid var(--border);padding-top:12px">
           <div style="font-weight:700;font-size:10px;color:var(--muted);margin-bottom:6px">AFFECTED STOCKS</div>
@@ -6842,17 +6905,17 @@ function showDetailPanel(news, color) {
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
         <div style="background:var(--card);padding:10px;border-radius:6px">
           <div style="font-size:9px;color:var(--muted);margin-bottom:4px">Price Target</div>
-          <div style="font-weight:700;font-size:11px;color:${color}">${news.priceTarget}</div>
+          <div style="font-weight:700;font-size:11px;color:${color}">${priceTarget}</div>
         </div>
         <div style="background:var(--card);padding:10px;border-radius:6px">
           <div style="font-size:9px;color:var(--muted);margin-bottom:4px">Estimated Move</div>
-          <div style="font-weight:700;font-size:11px;color:${color}">${news.estimatedMove}</div>
+          <div style="font-weight:700;font-size:11px;color:${color}">${estimatedMove}</div>
         </div>
       </div>
       
       <div style="background:rgba(0,0,0,0.2);padding:10px;border-radius:6px">
         <div style="font-weight:700;font-size:10px;color:var(--text);margin-bottom:6px">📌 What to Monitor</div>
-        <div style="font-size:10px;color:var(--muted);line-height:1.6">${news.followUp}</div>
+        <div style="font-size:10px;color:var(--muted);line-height:1.6">${followUp}</div>
       </div>
     </div>
   `;
@@ -6866,30 +6929,21 @@ function createNewsPanelLayout(title, news, color) {
     <div style="display:grid;gap:10px;max-height:40vh;overflow-y:auto;padding-right:8px">
   `;
   
-  news.forEach((item) => {
-    const itemJson = JSON.stringify({
-      headline: item.headline,
-      details: item.details,
-      affectedStocks: item.affectedStocks || [],
-      priceTarget: item.priceTarget || 'N/A',
-      estimatedMove: item.estimatedMove || 'N/A',
-      followUp: item.followUp || 'Monitor for updates'
-    });
-    
+  news.forEach((item, idx) => {
     newsHtml += `
-      <div onclick='showDetailPanel(${itemJson}, "${color}")' style="background:var(--border);padding:12px;border-radius:8px;border-left:4px solid ${color};cursor:pointer;transition:all 0.2s" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
-        <div style="font-weight:700;font-size:11px;color:${color};margin-bottom:6px">${item.headline}</div>
+      <div data-news-index="${idx}" class="news-item-card" style="background:var(--border);padding:12px;border-radius:8px;border-left:4px solid ${color};cursor:pointer;transition:all 0.2s" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
+        <div style="font-weight:700;font-size:11px;color:${color};margin-bottom:6px">${item.headline || 'News Item'}</div>
         <div style="font-size:9px;color:var(--muted);margin-bottom:8px">${item.date || ''} • ${item.category || ''}</div>
         
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(70px,1fr));gap:6px">
     `;
     
-    if (item.affectedStocks) {
+    if (item.affectedStocks && Array.isArray(item.affectedStocks)) {
       item.affectedStocks.slice(0, 3).forEach(stock => {
         newsHtml += `
           <div style="background:var(--card);padding:6px;border-radius:4px;border-left:2px solid ${color};font-size:9px">
-            <div style="font-weight:700;color:var(--accent)">${stock.ticker}</div>
-            <div style="color:${color};font-weight:700;font-size:10px">${stock.move}</div>
+            <div style="font-weight:700;color:var(--accent)">${stock.ticker || 'N/A'}</div>
+            <div style="color:${color};font-weight:700;font-size:10px">${stock.move || 'N/A'}</div>
           </div>
         `;
       });
@@ -6944,6 +6998,22 @@ function createNewsPanelLayout(title, news, color) {
     </div>
   `;
   
+  // Store news data globally so click handlers can access it safely
+  window.currentNewsData = news;
+  window.currentNewsColor = color;
+  
+  // Attach click handlers after the DOM updates (avoids inline JSON injection errors)
+  setTimeout(() => {
+    document.querySelectorAll('.news-item-card').forEach(card => {
+      card.addEventListener('click', function() {
+        const idx = parseInt(this.getAttribute('data-news-index'), 10);
+        if (window.currentNewsData && window.currentNewsData[idx]) {
+          showDetailPanel(window.currentNewsData[idx], window.currentNewsColor);
+        }
+      });
+    });
+  }, 0);
+  
   return html;
 }
 
@@ -6962,6 +7032,7 @@ function showEarningsNews() {
   output.innerHTML = createNewsPanelLayout('📊 EARNINGS NEWS', BREAKING_NEWS.earnings, '#60a5fa');
 }
 
+function showSectorCatalysts() { const output = document.getElementById('newsOutput'); output.innerHTML = createNewsPanelLayout('🔧 SECTOR CATALYSTS', BREAKING_NEWS.sector_catalysts, '#ffc107'); }
 function showMergersNews() { const output = document.getElementById('newsOutput'); output.innerHTML = createNewsPanelLayout('💼 M&A NEWS', BREAKING_NEWS.mergers_acquisitions, '#4CAF50'); }
 function showBankruptcyNews() { const output = document.getElementById('newsOutput'); output.innerHTML = createNewsPanelLayout('🚨 BANKRUPTCY NEWS', BREAKING_NEWS.bankruptcies_defaults, '#e53935'); }
 function showLitigationNews() { const output = document.getElementById('newsOutput'); output.innerHTML = createNewsPanelLayout('⚖️ LAWSUITS', BREAKING_NEWS.lawsuit_litigation, '#d32f2f'); }
