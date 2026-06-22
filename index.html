@@ -77,6 +77,7 @@ footer{margin-top:40px;padding-top:16px;border-top:1px solid var(--border);color
     <button class="nav-tab" id="tab-technicals">📈 Technicals</button>
     <button class="nav-tab" id="tab-backtester">🧪 Backtester</button>
     <button class="nav-tab" id="tab-news">📰 News</button>
+    <button class="nav-tab" id="tab-cyclical">🔄 Cyclical</button>
   </div>
 
   <div class="view active" id="analyzer">
@@ -457,6 +458,13 @@ footer{margin-top:40px;padding-top:16px;border-top:1px solid var(--border);color
       <button class="btn btn-go" id="newsBtn">Load News 📰</button>
     </div>
     <div id="newsOutput" class="empty">Click "Breaking News" to see critical market-moving stories, or enter a ticker for company news.</div>
+  </div>
+
+  <div class="view" id="cyclical">
+    <div style="font-size:11px;color:var(--muted);margin-bottom:12px;padding:8px 12px;background:rgba(96,165,250,0.1);border-radius:6px;border-left:3px solid var(--accent)">
+      🔄 <strong>Russell 2000 Cyclical Options Scanner:</strong> Combines seasonal/calendar patterns, sector rotation cycle position, and earnings-cycle drift into one score across ~30 liquid, optionable small-caps, then derives a put/call idea with strike, expiry, and target move. Educational/illustrative — not live data.
+    </div>
+    <div id="cyclicalOutput" class="empty">Loading cyclical scanner...</div>
   </div>
 
   <footer>Not financial advice. Data from Finnhub + Twelve Data. <b id="appVersion" style="color:var(--accent)">v6.4 STRATEGY CONSENSUS</b></footer>
@@ -1036,6 +1044,7 @@ document.getElementById('tab-screener').addEventListener('click', () => switchTa
 document.getElementById('tab-technicals').addEventListener('click', () => switchTab('technicals'));
 document.getElementById('tab-backtester').addEventListener('click', () => switchTab('backtester'));
 document.getElementById('tab-news').addEventListener('click', () => switchTab('news'));
+document.getElementById('tab-cyclical').addEventListener('click', () => { switchTab('cyclical'); showCyclicalScanner(); });
 
 function switchTab(name) {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
@@ -5656,6 +5665,474 @@ const SPAC_NEWS = {
     },
   ]
 };
+
+
+// ============================================
+// RUSSELL 2000 CYCLICAL OPTIONS SCANNER
+// Combines three signals into one composite score per stock:
+//   1) Seasonal / calendar pattern (0-100)
+//   2) Sector rotation cycle position (0-100)
+//   3) Earnings-cycle drift (0-100)
+// The combined score then drives the signal, confidence, suggested
+// strike, suggested expiry, and target move directly via formula
+// (see getCyclicalAnalysis). Curated list of ~30 liquid, optionable
+// Russell 2000 small-caps. Illustrative educational pattern data,
+// not a live feed - always verify before trading.
+// ============================================
+const RUSSELL_2000_CYCLICAL = [
+  // --- Consumer Discretionary (Late Expansion - Cyclical Headwind) ---
+  { ticker:'BOOT', company:'Boot Barn Holdings', sector:'Consumer Discretionary', price:142.50,
+    seasonal:{score:30, bestMonths:'Oct-Dec', worstMonths:'May-Jul', pattern:'Western and holiday apparel retailer with strong Q4 seasonality from holiday and boot season; historically the weakest stretch is the early-summer Sell-in-May period common in small-cap retail.'},
+    sectorCycle:{score:38, phase:'Late Expansion - Cyclical Headwind', note:'Small-cap discretionary retail tends to underperform late in the economic cycle as consumer spending growth slows.'},
+    earningsCycle:{score:56, daysToEarnings:22, note:'Average move of about plus 4.1% on earnings day; beat estimates in 6 of the last 8 quarters, though recent same-store-sales growth has decelerated.'}
+  },
+  { ticker:'SCVL', company:'Shoe Carnival', sector:'Consumer Discretionary', price:32.80,
+    seasonal:{score:34, bestMonths:'Aug-Sep, Nov-Dec', worstMonths:'Feb-Apr', pattern:'Back-to-school in August and September and the holiday season in November and December are the seasonal peaks; spring is historically the weakest stretch.'},
+    sectorCycle:{score:38, phase:'Late Expansion - Cyclical Headwind', note:'Small-cap discretionary retail tends to underperform late in the economic cycle as consumer spending growth slows.'},
+    earningsCycle:{score:40, daysToEarnings:35, note:'Guidance was cut last quarter on soft mall traffic; missed estimates in 5 of the last 8 quarters.'}
+  },
+  { ticker:'HIBB', company:'Hibbett Inc', sector:'Consumer Discretionary', price:68.40,
+    seasonal:{score:36, bestMonths:'Aug-Sep, Dec', worstMonths:'Jun-Jul', pattern:'Athletic footwear retailer tied to back-to-school demand and sneaker release calendars; summer is seasonally the softest period.'},
+    sectorCycle:{score:38, phase:'Late Expansion - Cyclical Headwind', note:'Small-cap discretionary retail tends to underperform late in the economic cycle as consumer spending growth slows.'},
+    earningsCycle:{score:62, daysToEarnings:15, note:'Beat EPS estimates in 7 of the last 8 quarters; the sneaker release calendar supports a Q3 seasonal tailwind.'}
+  },
+
+  // --- Industrials (Late Expansion - Mixed, defensive subsegments holding up) ---
+  { ticker:'AAON', company:'AAON Inc', sector:'Industrials', price:95.60,
+    seasonal:{score:80, bestMonths:'Apr-Aug', worstMonths:'Nov-Jan', pattern:'HVAC equipment maker where the summer cooling-demand season drives peak order volume, with data-center cooling demand adding a structural tailwind.'},
+    sectorCycle:{score:58, phase:'Late Expansion - Mixed, Defensive Subsegments Holding Up', note:'Industrial demand is mixed late-cycle, but HVAC and logistics subsegments tied to structural themes like data-center buildout have held up better than the broader group.'},
+    earningsCycle:{score:72, daysToEarnings:40, note:'Nine consecutive quarters of revenue growth; a growing data-center HVAC backlog has been supporting estimate raises.'}
+  },
+  { ticker:'WERN', company:'Werner Enterprises', sector:'Industrials', price:38.20,
+    seasonal:{score:68, bestMonths:'May-Aug', worstMonths:'Jan-Feb', pattern:'Trucking volumes typically peak in the summer shipping season ahead of back-to-school and holiday restocking.'},
+    sectorCycle:{score:58, phase:'Late Expansion - Mixed, Defensive Subsegments Holding Up', note:'Industrial demand is mixed late-cycle, but HVAC and logistics subsegments tied to structural themes like data-center buildout have held up better than the broader group.'},
+    earningsCycle:{score:46, daysToEarnings:28, note:'The freight-rate environment remains soft; missed estimates in 3 of the last 6 quarters on margin pressure.'}
+  },
+  { ticker:'MLI', company:'Mueller Industries', sector:'Industrials', price:78.90,
+    seasonal:{score:64, bestMonths:'Apr-Sep', worstMonths:'Dec-Feb', pattern:'Copper tube and fittings demand tracks the construction season, with summer build activity as the seasonal peak.'},
+    sectorCycle:{score:58, phase:'Late Expansion - Mixed, Defensive Subsegments Holding Up', note:'Industrial demand is mixed late-cycle, but HVAC and logistics subsegments tied to structural themes like data-center buildout have held up better than the broader group.'},
+    earningsCycle:{score:58, daysToEarnings:50, note:'A steady beat-and-raise pattern in 6 of the last 7 quarters; copper price volatility is the main swing factor to watch.'}
+  },
+
+  // --- Financials (Late Expansion - Rate-Sensitive Headwind) ---
+  { ticker:'HOMB', company:'Home BancShares', sector:'Financials', price:28.30,
+    seasonal:{score:46, bestMonths:'Jan, Oct', worstMonths:'Jun-Aug', pattern:'Regional bank with limited calendar seasonality; summer is modestly softer on lower loan demand.'},
+    sectorCycle:{score:42, phase:'Late Expansion - Rate-Sensitive Headwind', note:'Regional banks tend to face net-interest-margin pressure and slower loan growth late in the cycle as rate cuts compress spreads.'},
+    earningsCycle:{score:52, daysToEarnings:20, note:'Net interest margin is stabilizing; beat estimates in 5 of the last 8 quarters, though credit quality remains a watch item.'}
+  },
+  { ticker:'WAFD', company:'WaFd Inc', sector:'Financials', price:31.10,
+    seasonal:{score:42, bestMonths:'Sep-Nov', worstMonths:'Jun-Jul', pattern:'Thrift and mortgage-focused bank where refinancing activity typically picks up in the fall; summer is seasonally the quietest period.'},
+    sectorCycle:{score:42, phase:'Late Expansion - Rate-Sensitive Headwind', note:'Regional banks tend to face net-interest-margin pressure and slower loan growth late in the cycle as rate cuts compress spreads.'},
+    earningsCycle:{score:44, daysToEarnings:33, note:'Deposit-cost pressure has weighed on 4 of the last 6 quarters; integration costs from a recent acquisition are still working through results.'}
+  },
+  { ticker:'PFS', company:'Provident Financial Services', sector:'Financials', price:17.60,
+    seasonal:{score:44, bestMonths:'Oct-Dec', worstMonths:'Jun-Aug', pattern:'Northeast community bank where loan growth is seasonally strongest during the Q4 commercial lending push.'},
+    sectorCycle:{score:42, phase:'Late Expansion - Rate-Sensitive Headwind', note:'Regional banks tend to face net-interest-margin pressure and slower loan growth late in the cycle as rate cuts compress spreads.'},
+    earningsCycle:{score:48, daysToEarnings:18, note:'The net interest margin bottoming process is underway; results were in line or better in 4 of the last 7 quarters.'}
+  },
+
+  // --- Healthcare (Late Expansion - Defensive Favorite) ---
+  { ticker:'SUPN', company:'Supernus Pharmaceuticals', sector:'Healthcare', price:38.70,
+    seasonal:{score:58, bestMonths:'Jan, Sep', worstMonths:'Jul-Aug', pattern:'CNS-focused specialty pharma where new-prescription volumes seasonally pick up around January insurance-plan resets and September back-to-school ADHD prescriptions.'},
+    sectorCycle:{score:64, phase:'Late Expansion - Defensive Favorite', note:'Healthcare tends to be a defensive favorite late in the economic cycle as demand for medicine is largely non-discretionary.'},
+    earningsCycle:{score:68, daysToEarnings:25, note:'Beat EPS estimates in 7 of the last 8 quarters; a Phase 3 pipeline readout is expected within the option window.'}
+  },
+  { ticker:'OMI', company:'Owens and Minor', sector:'Healthcare', price:14.20,
+    seasonal:{score:52, bestMonths:'Q4', worstMonths:'Q2', pattern:'Medical supply distributor where hospital procurement budgets typically refresh in Q4, creating a seasonal demand bump.'},
+    sectorCycle:{score:64, phase:'Late Expansion - Defensive Favorite', note:'Healthcare tends to be a defensive favorite late in the economic cycle as demand for medicine is largely non-discretionary.'},
+    earningsCycle:{score:40, daysToEarnings:42, note:'Leverage concerns have weighed on sentiment; missed estimates in 4 of the last 6 quarters.'}
+  },
+  { ticker:'ICUI', company:'ICU Medical', sector:'Healthcare', price:152.30,
+    seasonal:{score:56, bestMonths:'Jan, Sep-Oct', worstMonths:'Jun-Jul', pattern:'Hospital capital-equipment purchasing cycles cluster around fiscal-year resets, with a secondary bump from the fall budget flush.'},
+    sectorCycle:{score:64, phase:'Late Expansion - Defensive Favorite', note:'Healthcare tends to be a defensive favorite late in the economic cycle as demand for medicine is largely non-discretionary.'},
+    earningsCycle:{score:64, daysToEarnings:31, note:'The margin-recovery story is intact; beat estimates in 5 of the last 6 quarters as integration costs roll off.'}
+  },
+
+  // --- Technology (Late Expansion - Secular Growth Offsetting Macro) ---
+  { ticker:'CALX', company:'Calix Inc', sector:'Technology', price:42.50,
+    seasonal:{score:44, bestMonths:'Sep-Nov', worstMonths:'Jun-Jul', pattern:'Broadband software vendor to small and rural telecom carriers where capex budget cycles favor fall ordering; summer is seasonally the slowest stretch for bookings.'},
+    sectorCycle:{score:55, phase:'Late Expansion - Secular Growth Offsetting Macro', note:'Software names tied to durable secular growth themes have continued to find support even as broader macro conditions soften late-cycle.'},
+    earningsCycle:{score:58, daysToEarnings:24, note:'A subscription-software mix shift is improving margins; beat on gross margin in 5 of the last 7 quarters.'}
+  },
+  { ticker:'PRGS', company:'Progress Software', sector:'Technology', price:64.80,
+    seasonal:{score:48, bestMonths:'Nov-Dec, Feb', worstMonths:'Jun-Aug', pattern:'Enterprise software renewal cycles cluster around calendar year-end and the Q1 budget flush; summer bookings are seasonally light.'},
+    sectorCycle:{score:55, phase:'Late Expansion - Secular Growth Offsetting Macro', note:'Software names tied to durable secular growth themes have continued to find support even as broader macro conditions soften late-cycle.'},
+    earningsCycle:{score:66, daysToEarnings:55, note:'A highly consistent beat-and-raise pattern in 8 of the last 9 quarters; the recurring-revenue base is now over 90% of total revenue.'}
+  },
+  { ticker:'SPSC', company:'SPS Commerce', sector:'Technology', price:178.40,
+    seasonal:{score:50, bestMonths:'Q4', worstMonths:'Q2-Q3', pattern:'Retail-supply-chain SaaS provider where new customer onboarding accelerates ahead of the Q4 holiday retail season.'},
+    sectorCycle:{score:55, phase:'Late Expansion - Secular Growth Offsetting Macro', note:'Software names tied to durable secular growth themes have continued to find support even as broader macro conditions soften late-cycle.'},
+    earningsCycle:{score:70, daysToEarnings:38, note:'Seventeen consecutive quarters of double-digit revenue growth; net-new customer additions have remained a consistent beat driver.'}
+  },
+
+  // --- Energy (Late Expansion - Geopolitical and Inflation-Hedge Tailwind) ---
+  { ticker:'SM', company:'SM Energy', sector:'Energy', price:36.90,
+    seasonal:{score:74, bestMonths:'May-Aug', worstMonths:'Nov-Jan', pattern:'Oil and gas exploration and production company where the summer driving season lifts crude demand and has historically supported E&P equity performance from May through August.'},
+    sectorCycle:{score:62, phase:'Late Expansion - Geopolitical and Inflation-Hedge Tailwind', note:'Energy has tended to benefit late-cycle from both inflation-hedge demand and geopolitical risk premium in crude prices.'},
+    earningsCycle:{score:54, daysToEarnings:19, note:'Free cash flow is inflecting higher; commodity price volatility remains the dominant swing factor on results.'}
+  },
+  { ticker:'CRGY', company:'Crescent Energy', sector:'Energy', price:12.40,
+    seasonal:{score:70, bestMonths:'Apr-Jul', worstMonths:'Oct-Dec', pattern:'Diversified E&P where summer driving-season demand and hurricane-related supply risk premium both support a seasonal tailwind from April through July.'},
+    sectorCycle:{score:62, phase:'Late Expansion - Geopolitical and Inflation-Hedge Tailwind', note:'Energy has tended to benefit late-cycle from both inflation-hedge demand and geopolitical risk premium in crude prices.'},
+    earningsCycle:{score:50, daysToEarnings:27, note:'An acquisition-driven growth story; production-guidance beats have been inconsistent at 4 of the last 7 quarters.'}
+  },
+  { ticker:'REPX', company:'Riley Exploration Permian', sector:'Energy', price:28.10,
+    seasonal:{score:72, bestMonths:'May-Aug', worstMonths:'Dec-Feb', pattern:'Permian-focused E&P with direct crude-price sensitivity, where the summer demand season is the strongest historical stretch.'},
+    sectorCycle:{score:62, phase:'Late Expansion - Geopolitical and Inflation-Hedge Tailwind', note:'Energy has tended to benefit late-cycle from both inflation-hedge demand and geopolitical risk premium in crude prices.'},
+    earningsCycle:{score:60, daysToEarnings:14, note:'Production growth has come in ahead of plan in 5 of the last 6 quarters; an active hedging program limits upside but also cushions downside.'}
+  },
+
+  // --- Materials (Late Expansion - Mixed) ---
+  { ticker:'SXT', company:'Sensient Technologies', sector:'Materials', price:82.30,
+    seasonal:{score:54, bestMonths:'Mar-Jun', worstMonths:'Sep-Oct', pattern:'Flavors and colors ingredient maker where food and beverage customer ordering ramps ahead of the summer beverage season.'},
+    sectorCycle:{score:50, phase:'Late Expansion - Mixed', note:'Materials demand is split late-cycle between soft building-products end markets and a reshoring or infrastructure-related tailwind in select subsegments.'},
+    earningsCycle:{score:56, daysToEarnings:46, note:'A steady, low-volatility beat pattern in 6 of the last 8 quarters; defensive ingredient demand is largely insulated from the broader discretionary cycle.'}
+  },
+  { ticker:'KWR', company:'Quaker Houghton', sector:'Materials', price:168.50,
+    seasonal:{score:58, bestMonths:'Mar-Jun', worstMonths:'Nov-Dec', pattern:'Industrial process-fluids supplier tied to steel and metalworking activity, which typically ramps into summer production schedules.'},
+    sectorCycle:{score:50, phase:'Late Expansion - Mixed', note:'Materials demand is split late-cycle between soft building-products end markets and a reshoring or infrastructure-related tailwind in select subsegments.'},
+    earningsCycle:{score:52, daysToEarnings:33, note:'A margin recovery is underway following raw-material cost relief; beat on gross margin in 4 of the last 6 quarters.'}
+  },
+  { ticker:'ASH', company:'Ashland Inc', sector:'Materials', price:74.60,
+    seasonal:{score:48, bestMonths:'Q1-Q2', worstMonths:'Q4', pattern:'Specialty chemicals supplier to personal care and pharma end markets, where restocking activity is seasonally stronger in the first half ahead of summer personal-care demand.'},
+    sectorCycle:{score:50, phase:'Late Expansion - Mixed', note:'Materials demand is split late-cycle between soft building-products end markets and a reshoring or infrastructure-related tailwind in select subsegments.'},
+    earningsCycle:{score:44, daysToEarnings:29, note:'Demand normalization is still working through channel destocking; results were missed or in line in 4 of the last 6 quarters.'}
+  },
+
+  // --- Real Estate (Late Expansion - Rate Headwind) ---
+  { ticker:'SBRA', company:'Sabra Health Care REIT', sector:'Real Estate', price:17.80,
+    seasonal:{score:42, bestMonths:'Jan, Oct', worstMonths:'Jun-Aug', pattern:'Healthcare and senior-housing REIT with limited calendar seasonality and modestly softer summer leasing activity.'},
+    sectorCycle:{score:36, phase:'Late Expansion - Rate Headwind', note:'REITs have tended to underperform late-cycle as elevated long-term rates pressure valuations and refinancing costs.'},
+    earningsCycle:{score:48, daysToEarnings:23, note:'An occupancy recovery in the senior-housing portfolio is continuing; beat FFO estimates in 5 of the last 7 quarters.'}
+  },
+  { ticker:'UMH', company:'UMH Properties', sector:'Real Estate', price:19.40,
+    seasonal:{score:46, bestMonths:'Mar-Jun', worstMonths:'Nov-Jan', pattern:'Manufactured-housing REIT where spring and summer are the seasonal peak for new home placements and occupancy gains.'},
+    sectorCycle:{score:36, phase:'Late Expansion - Rate Headwind', note:'REITs have tended to underperform late-cycle as elevated long-term rates pressure valuations and refinancing costs.'},
+    earningsCycle:{score:50, daysToEarnings:37, note:'Rent growth and occupancy gains have driven beats in 5 of the last 6 quarters, though new community development adds execution risk.'}
+  },
+  { ticker:'IRT', company:'Independence Realty Trust', sector:'Real Estate', price:16.20,
+    seasonal:{score:44, bestMonths:'May-Aug', worstMonths:'Dec-Feb', pattern:'Multifamily apartment REIT where leasing season peaks from May through August, when most lease turnover occurs.'},
+    sectorCycle:{score:36, phase:'Late Expansion - Rate Headwind', note:'REITs have tended to underperform late-cycle as elevated long-term rates pressure valuations and refinancing costs.'},
+    earningsCycle:{score:42, daysToEarnings:44, note:'Sun Belt supply pressure has weighed on same-store rent growth; missed estimates in 3 of the last 5 quarters.'}
+  },
+
+  // --- Utilities (Late Expansion - Defensive Plus AI Power-Demand Favorite) ---
+  { ticker:'AVA', company:'Avista Corp', sector:'Utilities', price:38.90,
+    seasonal:{score:64, bestMonths:'Jun-Aug, Dec-Jan', worstMonths:'Apr-May', pattern:'Electric and gas utility with a bimodal seasonal demand pattern from summer air-conditioning load and winter heating load; shoulder-season spring is seasonally the softest.'},
+    sectorCycle:{score:67, phase:'Late Expansion - Defensive Plus AI Power-Demand Favorite', note:'Utilities have become a late-cycle defensive favorite, with rising data-center electricity demand adding a structural growth tailwind.'},
+    earningsCycle:{score:54, daysToEarnings:41, note:'Rate-case outcomes are the primary earnings driver; results were in line with guidance in 4 of the last 6 quarters.'}
+  },
+  { ticker:'OGS', company:'ONE Gas', sector:'Utilities', price:74.20,
+    seasonal:{score:58, bestMonths:'Nov-Feb', worstMonths:'Jun-Aug', pattern:'Pure-play natural-gas utility where the winter heating season drives the bulk of annual earnings; summer is seasonally the slowest stretch.'},
+    sectorCycle:{score:67, phase:'Late Expansion - Defensive Plus AI Power-Demand Favorite', note:'Utilities have become a late-cycle defensive favorite, with rising data-center electricity demand adding a structural growth tailwind.'},
+    earningsCycle:{score:56, daysToEarnings:52, note:'A highly predictable rate-base growth model; results were in line or better in 6 of the last 7 quarters.'}
+  },
+  { ticker:'NWN', company:'Northwest Natural Holdings', sector:'Utilities', price:38.50,
+    seasonal:{score:56, bestMonths:'Nov-Feb', worstMonths:'Jun-Aug', pattern:'Natural-gas utility with a pronounced winter-heating earnings skew; summer months are seasonally the quietest for the stock.'},
+    sectorCycle:{score:67, phase:'Late Expansion - Defensive Plus AI Power-Demand Favorite', note:'Utilities have become a late-cycle defensive favorite, with rising data-center electricity demand adding a structural growth tailwind.'},
+    earningsCycle:{score:50, daysToEarnings:48, note:'Water-utility diversification is adding modest growth; results were in line with guidance in 5 of the last 7 quarters.'}
+  },
+
+  // --- Communication Services (Late Expansion - Neutral and Defensive) ---
+  { ticker:'SHEN', company:'Shenandoah Telecommunications', sector:'Communication Services', price:14.60,
+    seasonal:{score:50, bestMonths:'Sep-Nov', worstMonths:'Jun-Jul', pattern:'Rural fiber-broadband provider where subscriber-growth bookings seasonally accelerate in the fall as fiber-build markets reach completion.'},
+    sectorCycle:{score:52, phase:'Late Expansion - Neutral and Defensive', note:'Telecom and communication infrastructure names are generally neutral late-cycle, providing defensive cash flow without a strong cyclical tilt either way.'},
+    earningsCycle:{score:58, daysToEarnings:26, note:'Fiber subscriber growth has driven beats in 5 of the last 7 quarters as legacy cable and copper subscriber counts decline.'}
+  },
+  { ticker:'CCOI', company:'Cogent Communications', sector:'Communication Services', price:58.30,
+    seasonal:{score:52, bestMonths:'Q4', worstMonths:'Q2', pattern:'Internet infrastructure and colocation provider where enterprise bandwidth contracts typically renew or expand around the calendar year-end budget cycle.'},
+    sectorCycle:{score:52, phase:'Late Expansion - Neutral and Defensive', note:'Telecom and communication infrastructure names are generally neutral late-cycle, providing defensive cash flow without a strong cyclical tilt either way.'},
+    earningsCycle:{score:62, daysToEarnings:34, note:'Wavelength and IP-transit growth has supported beating revenue estimates in 6 of the last 8 quarters.'}
+  },
+  { ticker:'TDS', company:'Telephone and Data Systems', sector:'Communication Services', price:24.80,
+    seasonal:{score:46, bestMonths:'Sep-Nov', worstMonths:'Jun-Jul', pattern:'Regional wireless and wireline carrier where promotional device cycles and back-to-school plan switching create a fall seasonal bump.'},
+    sectorCycle:{score:52, phase:'Late Expansion - Neutral and Defensive', note:'Telecom and communication infrastructure names are generally neutral late-cycle, providing defensive cash flow without a strong cyclical tilt either way.'},
+    earningsCycle:{score:44, daysToEarnings:30, note:'Spectrum monetization and tower-sale proceeds are key catalysts, though core wireless subscriber trends have missed in 3 of the last 5 quarters.'}
+  },
+];
+
+// Combines the three component scores into one signal + a computed
+// (not hardcoded) strike/expiry/target-move options idea.
+function getCyclicalAnalysis(stock) {
+  const s = stock.seasonal.score;
+  const c = stock.sectorCycle.score;
+  const e = stock.earningsCycle.score;
+  const combined = Math.round((s + c + e) / 3 * 10) / 10;
+
+  let signal, confidence;
+  if (combined >= 62) {
+    signal = 'BUY CALL';
+    confidence = combined >= 68 ? 'High' : 'Medium';
+  } else if (combined <= 44) {
+    signal = 'BUY PUT';
+    confidence = combined <= 38 ? 'High' : 'Medium';
+  } else {
+    signal = 'NEUTRAL';
+    confidence = 'Low';
+  }
+
+  const price = stock.price;
+  const deviation = Math.abs(combined - 50) / 50;
+  const moveLow = Math.max(Math.round(deviation * 300) / 10, 5);
+  const moveHigh = Math.round((moveLow + 6) * 10) / 10;
+  const dte = stock.earningsCycle.daysToEarnings;
+
+  let strategy, strike, targetMove, expiry;
+
+  if (signal === 'BUY CALL') {
+    strategy = 'Buy Call (Long Call)';
+    strike = '$' + (price * 1.05).toFixed(2) + ' strike (about 5% out of the money)';
+    targetMove = '+' + moveLow.toFixed(1) + '% to +' + moveHigh.toFixed(1) + '%';
+    expiry = dte <= 35 ? (dte + 14) + ' to ' + (dte + 35) + ' days out (captures earnings plus post-earnings drift)' : '30 to 45 days out (seasonal and sector window)';
+  } else if (signal === 'BUY PUT') {
+    strategy = 'Buy Put (Long Put)';
+    strike = '$' + (price * 0.95).toFixed(2) + ' strike (about 5% out of the money)';
+    targetMove = '-' + moveLow.toFixed(1) + '% to -' + moveHigh.toFixed(1) + '%';
+    expiry = dte <= 35 ? (dte + 14) + ' to ' + (dte + 35) + ' days out (captures earnings plus post-earnings drift)' : '30 to 45 days out (seasonal and sector window)';
+  } else {
+    strategy = 'No clear directional edge - the three signals disagree or are weak. Consider a straddle or strangle if expecting volatility, or stay flat.';
+    strike = 'N/A';
+    targetMove = 'Low conviction either direction';
+    expiry = 'N/A';
+  }
+
+  return { combined: combined, signal: signal, confidence: confidence, strategy: strategy, strike: strike, targetMove: targetMove, expiry: expiry };
+}
+
+function cyclicalScoreColor(combined) {
+  if (combined >= 62) return '#22c55e';
+  if (combined <= 44) return '#ef4444';
+  return '#94a3b8';
+}
+
+let cyclicalFilterSignal = 'all';
+let cyclicalFilterSector = 'all';
+
+function showCyclicalScanner() {
+  cyclicalFilterSignal = 'all';
+  cyclicalFilterSector = 'all';
+  renderCyclicalScanner();
+}
+
+function setCyclicalSignalFilter(val) {
+  cyclicalFilterSignal = val;
+  renderCyclicalScanner();
+}
+
+function setCyclicalSectorFilter(val) {
+  cyclicalFilterSector = val;
+  renderCyclicalScanner();
+}
+
+function renderCyclicalScanner() {
+  const output = document.getElementById('cyclicalOutput');
+  if (!output) return;
+
+  const sectors = [];
+  RUSSELL_2000_CYCLICAL.forEach(function(st) {
+    if (sectors.indexOf(st.sector) === -1) sectors.push(st.sector);
+  });
+
+  let combos = RUSSELL_2000_CYCLICAL.map(function(stock) {
+    return { stock: stock, a: getCyclicalAnalysis(stock) };
+  });
+
+  combos = combos.filter(function(item) {
+    if (cyclicalFilterSector !== 'all' && item.stock.sector !== cyclicalFilterSector) return false;
+    if (cyclicalFilterSignal === 'calls' && item.a.signal !== 'BUY CALL') return false;
+    if (cyclicalFilterSignal === 'puts' && item.a.signal !== 'BUY PUT') return false;
+    if (cyclicalFilterSignal === 'neutral' && item.a.signal !== 'NEUTRAL') return false;
+    return true;
+  });
+
+  combos.sort(function(x, y) { return y.a.combined - x.a.combined; });
+
+  let sectorOptions = `<option value="all">All Sectors</option>`;
+  sectors.forEach(function(sec) {
+    sectorOptions += `<option value="${sec}" ${cyclicalFilterSector === sec ? 'selected' : ''}>${sec}</option>`;
+  });
+
+  let listHtml = '';
+  if (combos.length === 0) {
+    listHtml = `<div style="text-align:center;color:var(--muted);font-size:11px;padding:24px">No stocks match the current filters.</div>`;
+  } else {
+    combos.forEach(function(item) {
+      const stock = item.stock;
+      const a = item.a;
+      const color = cyclicalScoreColor(a.combined);
+      listHtml += `
+        <div data-cyc-ticker="${stock.ticker}" class="cyclical-item-card" style="background:var(--border);padding:12px;border-radius:8px;border-left:4px solid ${color};cursor:pointer;transition:all 0.2s" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+            <div>
+              <div style="font-weight:700;font-size:12px;color:var(--accent)">${stock.ticker} - ${stock.company}</div>
+              <div style="font-size:9px;color:var(--muted)">${stock.sector}</div>
+            </div>
+            <div style="text-align:right">
+              <div style="font-weight:700;font-size:13px;color:${color}">${a.combined.toFixed(1)}</div>
+              <div style="font-size:9px;font-weight:700;color:${color}">${a.signal}</div>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;font-size:8px">
+            <div style="background:var(--card);padding:4px;border-radius:4px;text-align:center">
+              <div style="color:var(--muted)">Seasonal</div><div style="font-weight:700">${stock.seasonal.score}</div>
+            </div>
+            <div style="background:var(--card);padding:4px;border-radius:4px;text-align:center">
+              <div style="color:var(--muted)">Sector</div><div style="font-weight:700">${stock.sectorCycle.score}</div>
+            </div>
+            <div style="background:var(--card);padding:4px;border-radius:4px;text-align:center">
+              <div style="color:var(--muted)">Earnings</div><div style="font-weight:700">${stock.earningsCycle.score}</div>
+            </div>
+          </div>
+        </div>
+      `;
+    });
+  }
+
+  const html = `
+    <div style="display:flex;flex-direction:column;height:100%;background:var(--card);padding:16px;border-radius:8px">
+      <div style="margin-bottom:12px;padding-bottom:12px;border-bottom:2px solid var(--border)">
+        <div style="font-weight:700;font-size:13px;color:var(--accent);margin-bottom:8px">🔄 Russell 2000 Cyclical Options Scanner (${combos.length} of ${RUSSELL_2000_CYCLICAL.length})</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
+          <button class="btn ${cyclicalFilterSignal === 'all' ? 'btn-accent' : 'btn-ghost'}" style="padding:6px 10px;font-size:9px" onclick="setCyclicalSignalFilter('all')">All</button>
+          <button class="btn ${cyclicalFilterSignal === 'calls' ? 'btn-accent' : 'btn-ghost'}" style="padding:6px 10px;font-size:9px" onclick="setCyclicalSignalFilter('calls')">📈 Buy Calls</button>
+          <button class="btn ${cyclicalFilterSignal === 'puts' ? 'btn-accent' : 'btn-ghost'}" style="padding:6px 10px;font-size:9px" onclick="setCyclicalSignalFilter('puts')">📉 Buy Puts</button>
+          <button class="btn ${cyclicalFilterSignal === 'neutral' ? 'btn-accent' : 'btn-ghost'}" style="padding:6px 10px;font-size:9px" onclick="setCyclicalSignalFilter('neutral')">➖ Neutral</button>
+          <button class="btn btn-ghost" style="padding:6px 10px;font-size:9px" onclick="showCyclicalMethodology()">ℹ️ How This Works</button>
+        </div>
+        <select onchange="setCyclicalSectorFilter(this.value)" style="width:100%;padding:6px;font-size:10px;background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:6px">${sectorOptions}</select>
+      </div>
+
+      <div style="margin-bottom:12px;padding-bottom:12px;border-bottom:2px solid var(--border)">
+        <div style="display:grid;gap:10px;max-height:40vh;overflow-y:auto;padding-right:8px">${listHtml}</div>
+      </div>
+
+      <div id="cyclicalDetailPanel" style="flex:1;overflow-y:auto;background:rgba(96,165,250,0.05);padding:16px;border-radius:8px;border-top:2px solid var(--border)">
+        <div style="text-align:center;color:var(--muted);font-size:11px;padding:40px 20px">👆 Click a stock above to view its full cyclical breakdown and option idea here.</div>
+      </div>
+    </div>
+  `;
+
+  output.innerHTML = html;
+
+  setTimeout(function() {
+    const cards = document.querySelectorAll('.cyclical-item-card');
+    cards.forEach(function(card) {
+      card.addEventListener('click', function() {
+        const ticker = this.getAttribute('data-cyc-ticker');
+        let found = null;
+        RUSSELL_2000_CYCLICAL.forEach(function(st) { if (st.ticker === ticker) found = st; });
+        if (found) showCyclicalDetail(found);
+      });
+    });
+  }, 0);
+}
+
+function showCyclicalDetail(stock) {
+  const panel = document.getElementById('cyclicalDetailPanel');
+  if (!panel) return;
+
+  const a = getCyclicalAnalysis(stock);
+  const color = cyclicalScoreColor(a.combined);
+
+  panel.innerHTML = `
+    <div style="background:var(--border);padding:16px;border-radius:8px;border-top:4px solid ${color}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
+        <div>
+          <div style="font-weight:700;font-size:14px;color:var(--accent)">${stock.ticker} - ${stock.company}</div>
+          <div style="font-size:10px;color:var(--muted)">${stock.sector} • Illustrative price ~$${stock.price.toFixed(2)}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-weight:700;font-size:18px;color:${color}">${a.combined.toFixed(1)}</div>
+          <div style="font-size:10px;font-weight:700;color:${color}">${a.signal} (${a.confidence})</div>
+        </div>
+      </div>
+
+      <div style="display:grid;gap:10px;margin-bottom:12px">
+        <div style="background:var(--card);padding:10px;border-radius:6px">
+          <div style="font-weight:700;font-size:10px;color:var(--muted);margin-bottom:4px">📅 SEASONAL / CALENDAR PATTERN — Score ${stock.seasonal.score}</div>
+          <div style="font-size:10px;color:var(--text);line-height:1.6;margin-bottom:4px">${stock.seasonal.pattern}</div>
+          <div style="font-size:9px;color:var(--muted)">Best months: ${stock.seasonal.bestMonths} • Worst months: ${stock.seasonal.worstMonths}</div>
+        </div>
+
+        <div style="background:var(--card);padding:10px;border-radius:6px">
+          <div style="font-weight:700;font-size:10px;color:var(--muted);margin-bottom:4px">🔄 SECTOR ROTATION CYCLE — Score ${stock.sectorCycle.score}</div>
+          <div style="font-size:9px;color:var(--accent);margin-bottom:4px">Phase: ${stock.sectorCycle.phase}</div>
+          <div style="font-size:10px;color:var(--text);line-height:1.6">${stock.sectorCycle.note}</div>
+        </div>
+
+        <div style="background:var(--card);padding:10px;border-radius:6px">
+          <div style="font-weight:700;font-size:10px;color:var(--muted);margin-bottom:4px">📊 EARNINGS-CYCLE DRIFT — Score ${stock.earningsCycle.score}</div>
+          <div style="font-size:9px;color:var(--accent);margin-bottom:4px">Next earnings in ~${stock.earningsCycle.daysToEarnings} days</div>
+          <div style="font-size:10px;color:var(--text);line-height:1.6">${stock.earningsCycle.note}</div>
+        </div>
+      </div>
+
+      <div style="background:rgba(0,0,0,0.2);padding:12px;border-radius:8px;margin-bottom:8px">
+        <div style="font-weight:700;font-size:11px;color:${color};margin-bottom:8px">💡 Options Idea: ${a.strategy}</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+          <div style="background:var(--card);padding:8px;border-radius:6px">
+            <div style="font-size:9px;color:var(--muted)">Suggested Strike</div>
+            <div style="font-size:10px;font-weight:700;color:var(--text)">${a.strike}</div>
+          </div>
+          <div style="background:var(--card);padding:8px;border-radius:6px">
+            <div style="font-size:9px;color:var(--muted)">Suggested Expiry</div>
+            <div style="font-size:10px;font-weight:700;color:var(--text)">${a.expiry}</div>
+          </div>
+        </div>
+        <div style="background:var(--card);padding:8px;border-radius:6px">
+          <div style="font-size:9px;color:var(--muted)">Target Move</div>
+          <div style="font-size:11px;font-weight:700;color:${color}">${a.targetMove}</div>
+        </div>
+      </div>
+
+      <div style="font-size:8px;color:var(--muted);line-height:1.5;padding:8px;background:rgba(0,0,0,0.15);border-radius:6px">
+        ⚠️ Educational illustrative analysis combining seasonal, sector-cycle, and earnings-cycle scores. Not a real-time data feed or financial advice. Verify current price, options chain, and fundamentals before trading.
+      </div>
+    </div>
+  `;
+}
+
+function showCyclicalMethodology() {
+  const output = document.getElementById('cyclicalOutput');
+  if (!output) return;
+
+  output.innerHTML = `
+    <div style="background:var(--card);padding:16px;border-radius:8px;max-height:90vh;overflow-y:auto">
+      <div style="font-weight:700;font-size:14px;margin-bottom:12px;color:var(--accent)">ℹ️ How the Cyclical Score Works</div>
+
+      <div style="display:grid;gap:10px;margin-bottom:16px">
+        <div style="background:var(--border);padding:12px;border-radius:8px">
+          <div style="font-weight:700;font-size:11px;color:var(--accent);margin-bottom:6px">1️⃣ Seasonal / Calendar Pattern (0-100)</div>
+          <div style="font-size:10px;color:var(--muted);line-height:1.6">How favorable the current calendar month historically tends to be for this stock or its industry, for example retailers tend to be strong into the holidays, and utilities tend to be strong in peak heating or cooling months.</div>
+        </div>
+        <div style="background:var(--border);padding:12px;border-radius:8px">
+          <div style="font-weight:700;font-size:11px;color:var(--accent);margin-bottom:6px">2️⃣ Sector Rotation Cycle (0-100)</div>
+          <div style="font-size:10px;color:var(--muted);line-height:1.6">Where this sector typically sits in the economic cycle right now. Defensive sectors like utilities and healthcare tend to score higher late in an expansion, while rate-sensitive sectors like small banks and REITs tend to score lower.</div>
+        </div>
+        <div style="background:var(--border);padding:12px;border-radius:8px">
+          <div style="font-weight:700;font-size:11px;color:var(--accent);margin-bottom:6px">3️⃣ Earnings-Cycle Drift (0-100)</div>
+          <div style="font-size:10px;color:var(--muted);line-height:1.6">How this stock has historically behaved heading into and out of earnings. Consistent beat rates and positive average moves score higher.</div>
+        </div>
+      </div>
+
+      <div style="background:rgba(96,165,250,0.1);padding:12px;border-radius:8px;border-left:3px solid var(--accent);margin-bottom:16px">
+        <div style="font-weight:700;font-size:11px;color:var(--text);margin-bottom:6px">Combined Score = Average of all three</div>
+        <div style="font-size:10px;color:var(--muted);line-height:1.6">
+          62 and above → Buy Call idea (High confidence at 68 or above)<br>
+          44 and below → Buy Put idea (High confidence at 38 or below)<br>
+          45 to 61 → Neutral, the signals disagree or are weak, no clear edge
+        </div>
+      </div>
+
+      <div style="font-size:9px;color:var(--muted);line-height:1.6;padding:10px;background:rgba(0,0,0,0.15);border-radius:6px;margin-bottom:16px">
+        ⚠️ This is an educational, illustrative framework built on representative historical tendencies for a curated list of about 30 liquid, optionable Russell 2000 small-caps. It is not live market data and not financial advice. Strike, expiry, and target-move suggestions are computed directly from the combined score and should be verified against a real options chain before trading.
+      </div>
+
+      <button class="btn btn-accent" style="width:100%;padding:10px" onclick="showCyclicalScanner()">← Back to Scanner</button>
+    </div>
+  `;
+}
+
 
 function showSPACNews() {
   const output = document.getElementById('newsOutput');
