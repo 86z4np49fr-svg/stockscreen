@@ -462,7 +462,7 @@ footer{margin-top:40px;padding-top:16px;border-top:1px solid var(--border);color
 
   <div class="view" id="cyclical">
     <div style="font-size:11px;color:var(--muted);margin-bottom:12px;padding:8px 12px;background:rgba(96,165,250,0.1);border-radius:6px;border-left:3px solid var(--accent)">
-      🔄 <strong>Russell 2000 Cyclical Options Scanner:</strong> Combines seasonal/calendar patterns, sector rotation cycle position, and earnings-cycle drift into one score across ~30 liquid, optionable small-caps, then derives a put/call idea with strike, expiry, and target move. Educational/illustrative — not live data.
+      🔄 <strong>Russell 2000 Cyclical Options Scanner:</strong> Combines seasonal/calendar patterns, sector rotation cycle position, and earnings-cycle drift into one score across ~30 liquid, optionable small-caps, then derives a put/call idea with strike, expiry, and target move. Each stock also shows how call and put contracts are currently positioned (put/call ratio, open interest, unusual activity) as a cross-check against the signal. Educational/illustrative — not live data.
     </div>
     <div id="cyclicalOutput" class="empty">Loading cyclical scanner...</div>
   </div>
@@ -5684,170 +5684,200 @@ const RUSSELL_2000_CYCLICAL = [
   { ticker:'BOOT', company:'Boot Barn Holdings', sector:'Consumer Discretionary', price:142.50,
     seasonal:{score:30, bestMonths:'Oct-Dec', worstMonths:'May-Jul', pattern:'Western and holiday apparel retailer with strong Q4 seasonality from holiday and boot season; historically the weakest stretch is the early-summer Sell-in-May period common in small-cap retail.'},
     sectorCycle:{score:38, phase:'Late Expansion - Cyclical Headwind', note:'Small-cap discretionary retail tends to underperform late in the economic cycle as consumer spending growth slows.'},
-    earningsCycle:{score:56, daysToEarnings:22, note:'Average move of about plus 4.1% on earnings day; beat estimates in 6 of the last 8 quarters, though recent same-store-sales growth has decelerated.'}
+    earningsCycle:{score:56, daysToEarnings:22, note:'Average move of about plus 4.1% on earnings day; beat estimates in 6 of the last 8 quarters, though recent same-store-sales growth has decelerated.'},
+    optionsFlow:{putCallRatio:1.42, callOI:2100, putOI:2980, topCallStrike:'$150 (Jul expiry)', topPutStrike:'$135 (Jul expiry)', unusualActivity:'Put volume ran 2.3x the 20-day average on June 17, concentrated in the $135 strike.'}
   },
   { ticker:'SCVL', company:'Shoe Carnival', sector:'Consumer Discretionary', price:32.80,
     seasonal:{score:34, bestMonths:'Aug-Sep, Nov-Dec', worstMonths:'Feb-Apr', pattern:'Back-to-school in August and September and the holiday season in November and December are the seasonal peaks; spring is historically the weakest stretch.'},
     sectorCycle:{score:38, phase:'Late Expansion - Cyclical Headwind', note:'Small-cap discretionary retail tends to underperform late in the economic cycle as consumer spending growth slows.'},
-    earningsCycle:{score:40, daysToEarnings:35, note:'Guidance was cut last quarter on soft mall traffic; missed estimates in 5 of the last 8 quarters.'}
+    earningsCycle:{score:40, daysToEarnings:35, note:'Guidance was cut last quarter on soft mall traffic; missed estimates in 5 of the last 8 quarters.'},
+    optionsFlow:{putCallRatio:1.85, callOI:540, putOI:1000, topCallStrike:'$35 (Aug expiry)', topPutStrike:'$30 (Aug expiry)', unusualActivity:'A block of 800 puts traded at the $30 strike in a single print on June 16, well above typical single-trade size.'}
   },
   { ticker:'HIBB', company:'Hibbett Inc', sector:'Consumer Discretionary', price:68.40,
     seasonal:{score:36, bestMonths:'Aug-Sep, Dec', worstMonths:'Jun-Jul', pattern:'Athletic footwear retailer tied to back-to-school demand and sneaker release calendars; summer is seasonally the softest period.'},
     sectorCycle:{score:38, phase:'Late Expansion - Cyclical Headwind', note:'Small-cap discretionary retail tends to underperform late in the economic cycle as consumer spending growth slows.'},
-    earningsCycle:{score:62, daysToEarnings:15, note:'Beat EPS estimates in 7 of the last 8 quarters; the sneaker release calendar supports a Q3 seasonal tailwind.'}
+    earningsCycle:{score:62, daysToEarnings:15, note:'Beat EPS estimates in 7 of the last 8 quarters; the sneaker release calendar supports a Q3 seasonal tailwind.'},
+    optionsFlow:{putCallRatio:0.95, callOI:610, putOI:580, topCallStrike:'$72.50 (Jul expiry)', topPutStrike:'$65 (Jul expiry)', unusualActivity:'No notable unusual activity; flow has been balanced over the past two weeks.'}
   },
 
   // --- Industrials (Late Expansion - Mixed, defensive subsegments holding up) ---
   { ticker:'AAON', company:'AAON Inc', sector:'Industrials', price:95.60,
     seasonal:{score:80, bestMonths:'Apr-Aug', worstMonths:'Nov-Jan', pattern:'HVAC equipment maker where the summer cooling-demand season drives peak order volume, with data-center cooling demand adding a structural tailwind.'},
     sectorCycle:{score:58, phase:'Late Expansion - Mixed, Defensive Subsegments Holding Up', note:'Industrial demand is mixed late-cycle, but HVAC and logistics subsegments tied to structural themes like data-center buildout have held up better than the broader group.'},
-    earningsCycle:{score:72, daysToEarnings:40, note:'Nine consecutive quarters of revenue growth; a growing data-center HVAC backlog has been supporting estimate raises.'}
+    earningsCycle:{score:72, daysToEarnings:40, note:'Nine consecutive quarters of revenue growth; a growing data-center HVAC backlog has been supporting estimate raises.'},
+    optionsFlow:{putCallRatio:0.45, callOI:3400, putOI:1530, topCallStrike:'$100 (Aug expiry)', topPutStrike:'$90 (Aug expiry)', unusualActivity:'A call sweep of roughly 1,200 contracts hit the $100 strike on June 19, about 3x average call volume.'}
   },
   { ticker:'WERN', company:'Werner Enterprises', sector:'Industrials', price:38.20,
     seasonal:{score:68, bestMonths:'May-Aug', worstMonths:'Jan-Feb', pattern:'Trucking volumes typically peak in the summer shipping season ahead of back-to-school and holiday restocking.'},
     sectorCycle:{score:58, phase:'Late Expansion - Mixed, Defensive Subsegments Holding Up', note:'Industrial demand is mixed late-cycle, but HVAC and logistics subsegments tied to structural themes like data-center buildout have held up better than the broader group.'},
-    earningsCycle:{score:46, daysToEarnings:28, note:'The freight-rate environment remains soft; missed estimates in 3 of the last 6 quarters on margin pressure.'}
+    earningsCycle:{score:46, daysToEarnings:28, note:'The freight-rate environment remains soft; missed estimates in 3 of the last 6 quarters on margin pressure.'},
+    optionsFlow:{putCallRatio:1.05, callOI:870, putOI:910, topCallStrike:'$40 (Jul expiry)', topPutStrike:'$35 (Jul expiry)', unusualActivity:'Flow has been quiet with no notable single-print activity recently.'}
   },
   { ticker:'MLI', company:'Mueller Industries', sector:'Industrials', price:78.90,
     seasonal:{score:64, bestMonths:'Apr-Sep', worstMonths:'Dec-Feb', pattern:'Copper tube and fittings demand tracks the construction season, with summer build activity as the seasonal peak.'},
     sectorCycle:{score:58, phase:'Late Expansion - Mixed, Defensive Subsegments Holding Up', note:'Industrial demand is mixed late-cycle, but HVAC and logistics subsegments tied to structural themes like data-center buildout have held up better than the broader group.'},
-    earningsCycle:{score:58, daysToEarnings:50, note:'A steady beat-and-raise pattern in 6 of the last 7 quarters; copper price volatility is the main swing factor to watch.'}
+    earningsCycle:{score:58, daysToEarnings:50, note:'A steady beat-and-raise pattern in 6 of the last 7 quarters; copper price volatility is the main swing factor to watch.'},
+    optionsFlow:{putCallRatio:0.88, callOI:430, putOI:380, topCallStrike:'$85 (Aug expiry)', topPutStrike:'$75 (Aug expiry)', unusualActivity:'Modest call buying has outpaced put buying over the past week, though volume remains light.'}
   },
 
   // --- Financials (Late Expansion - Rate-Sensitive Headwind) ---
   { ticker:'HOMB', company:'Home BancShares', sector:'Financials', price:28.30,
     seasonal:{score:46, bestMonths:'Jan, Oct', worstMonths:'Jun-Aug', pattern:'Regional bank with limited calendar seasonality; summer is modestly softer on lower loan demand.'},
     sectorCycle:{score:42, phase:'Late Expansion - Rate-Sensitive Headwind', note:'Regional banks tend to face net-interest-margin pressure and slower loan growth late in the cycle as rate cuts compress spreads.'},
-    earningsCycle:{score:52, daysToEarnings:20, note:'Net interest margin is stabilizing; beat estimates in 5 of the last 8 quarters, though credit quality remains a watch item.'}
+    earningsCycle:{score:52, daysToEarnings:20, note:'Net interest margin is stabilizing; beat estimates in 5 of the last 8 quarters, though credit quality remains a watch item.'},
+    optionsFlow:{putCallRatio:1.02, callOI:520, putOI:530, topCallStrike:'$30 (Jul expiry)', topPutStrike:'$26 (Jul expiry)', unusualActivity:'No notable unusual activity detected.'}
   },
   { ticker:'WAFD', company:'WaFd Inc', sector:'Financials', price:31.10,
     seasonal:{score:42, bestMonths:'Sep-Nov', worstMonths:'Jun-Jul', pattern:'Thrift and mortgage-focused bank where refinancing activity typically picks up in the fall; summer is seasonally the quietest period.'},
     sectorCycle:{score:42, phase:'Late Expansion - Rate-Sensitive Headwind', note:'Regional banks tend to face net-interest-margin pressure and slower loan growth late in the cycle as rate cuts compress spreads.'},
-    earningsCycle:{score:44, daysToEarnings:33, note:'Deposit-cost pressure has weighed on 4 of the last 6 quarters; integration costs from a recent acquisition are still working through results.'}
+    earningsCycle:{score:44, daysToEarnings:33, note:'Deposit-cost pressure has weighed on 4 of the last 6 quarters; integration costs from a recent acquisition are still working through results.'},
+    optionsFlow:{putCallRatio:1.15, callOI:310, putOI:357, topCallStrike:'$33 (Jul expiry)', topPutStrike:'$29 (Jul expiry)', unusualActivity:'Put open interest has been building steadily over the past two weeks ahead of the next earnings report.'}
   },
   { ticker:'PFS', company:'Provident Financial Services', sector:'Financials', price:17.60,
     seasonal:{score:44, bestMonths:'Oct-Dec', worstMonths:'Jun-Aug', pattern:'Northeast community bank where loan growth is seasonally strongest during the Q4 commercial lending push.'},
     sectorCycle:{score:42, phase:'Late Expansion - Rate-Sensitive Headwind', note:'Regional banks tend to face net-interest-margin pressure and slower loan growth late in the cycle as rate cuts compress spreads.'},
-    earningsCycle:{score:48, daysToEarnings:18, note:'The net interest margin bottoming process is underway; results were in line or better in 4 of the last 7 quarters.'}
+    earningsCycle:{score:48, daysToEarnings:18, note:'The net interest margin bottoming process is underway; results were in line or better in 4 of the last 7 quarters.'},
+    optionsFlow:{putCallRatio:0.98, callOI:260, putOI:255, topCallStrike:'$19 (Aug expiry)', topPutStrike:'$16 (Aug expiry)', unusualActivity:'No notable unusual activity detected.'}
   },
 
   // --- Healthcare (Late Expansion - Defensive Favorite) ---
   { ticker:'SUPN', company:'Supernus Pharmaceuticals', sector:'Healthcare', price:38.70,
     seasonal:{score:58, bestMonths:'Jan, Sep', worstMonths:'Jul-Aug', pattern:'CNS-focused specialty pharma where new-prescription volumes seasonally pick up around January insurance-plan resets and September back-to-school ADHD prescriptions.'},
     sectorCycle:{score:64, phase:'Late Expansion - Defensive Favorite', note:'Healthcare tends to be a defensive favorite late in the economic cycle as demand for medicine is largely non-discretionary.'},
-    earningsCycle:{score:68, daysToEarnings:25, note:'Beat EPS estimates in 7 of the last 8 quarters; a Phase 3 pipeline readout is expected within the option window.'}
+    earningsCycle:{score:68, daysToEarnings:25, note:'Beat EPS estimates in 7 of the last 8 quarters; a Phase 3 pipeline readout is expected within the option window.'},
+    optionsFlow:{putCallRatio:0.68, callOI:1450, putOI:990, topCallStrike:'$42.50 (Aug expiry)', topPutStrike:'$35 (Aug expiry)', unusualActivity:'Call buying has picked up ahead of the expected pipeline data readout.'}
   },
   { ticker:'OMI', company:'Owens and Minor', sector:'Healthcare', price:14.20,
     seasonal:{score:52, bestMonths:'Q4', worstMonths:'Q2', pattern:'Medical supply distributor where hospital procurement budgets typically refresh in Q4, creating a seasonal demand bump.'},
     sectorCycle:{score:64, phase:'Late Expansion - Defensive Favorite', note:'Healthcare tends to be a defensive favorite late in the economic cycle as demand for medicine is largely non-discretionary.'},
-    earningsCycle:{score:40, daysToEarnings:42, note:'Leverage concerns have weighed on sentiment; missed estimates in 4 of the last 6 quarters.'}
+    earningsCycle:{score:40, daysToEarnings:42, note:'Leverage concerns have weighed on sentiment; missed estimates in 4 of the last 6 quarters.'},
+    optionsFlow:{putCallRatio:1.30, callOI:180, putOI:235, topCallStrike:'$16 (Jul expiry)', topPutStrike:'$12 (Jul expiry)', unusualActivity:'Put open interest is elevated relative to calls, consistent with ongoing leverage concerns.'}
   },
   { ticker:'ICUI', company:'ICU Medical', sector:'Healthcare', price:152.30,
     seasonal:{score:56, bestMonths:'Jan, Sep-Oct', worstMonths:'Jun-Jul', pattern:'Hospital capital-equipment purchasing cycles cluster around fiscal-year resets, with a secondary bump from the fall budget flush.'},
     sectorCycle:{score:64, phase:'Late Expansion - Defensive Favorite', note:'Healthcare tends to be a defensive favorite late in the economic cycle as demand for medicine is largely non-discretionary.'},
-    earningsCycle:{score:64, daysToEarnings:31, note:'The margin-recovery story is intact; beat estimates in 5 of the last 6 quarters as integration costs roll off.'}
+    earningsCycle:{score:64, daysToEarnings:31, note:'The margin-recovery story is intact; beat estimates in 5 of the last 6 quarters as integration costs roll off.'},
+    optionsFlow:{putCallRatio:0.78, callOI:610, putOI:475, topCallStrike:'$160 (Aug expiry)', topPutStrike:'$145 (Aug expiry)', unusualActivity:'Call open interest has crept higher over the past month as the margin-recovery story gains attention.'}
   },
 
   // --- Technology (Late Expansion - Secular Growth Offsetting Macro) ---
   { ticker:'CALX', company:'Calix Inc', sector:'Technology', price:42.50,
     seasonal:{score:44, bestMonths:'Sep-Nov', worstMonths:'Jun-Jul', pattern:'Broadband software vendor to small and rural telecom carriers where capex budget cycles favor fall ordering; summer is seasonally the slowest stretch for bookings.'},
     sectorCycle:{score:55, phase:'Late Expansion - Secular Growth Offsetting Macro', note:'Software names tied to durable secular growth themes have continued to find support even as broader macro conditions soften late-cycle.'},
-    earningsCycle:{score:58, daysToEarnings:24, note:'A subscription-software mix shift is improving margins; beat on gross margin in 5 of the last 7 quarters.'}
+    earningsCycle:{score:58, daysToEarnings:24, note:'A subscription-software mix shift is improving margins; beat on gross margin in 5 of the last 7 quarters.'},
+    optionsFlow:{putCallRatio:1.08, callOI:390, putOI:421, topCallStrike:'$45 (Jul expiry)', topPutStrike:'$38 (Jul expiry)', unusualActivity:'No notable unusual activity detected.'}
   },
   { ticker:'PRGS', company:'Progress Software', sector:'Technology', price:64.80,
     seasonal:{score:48, bestMonths:'Nov-Dec, Feb', worstMonths:'Jun-Aug', pattern:'Enterprise software renewal cycles cluster around calendar year-end and the Q1 budget flush; summer bookings are seasonally light.'},
     sectorCycle:{score:55, phase:'Late Expansion - Secular Growth Offsetting Macro', note:'Software names tied to durable secular growth themes have continued to find support even as broader macro conditions soften late-cycle.'},
-    earningsCycle:{score:66, daysToEarnings:55, note:'A highly consistent beat-and-raise pattern in 8 of the last 9 quarters; the recurring-revenue base is now over 90% of total revenue.'}
+    earningsCycle:{score:66, daysToEarnings:55, note:'A highly consistent beat-and-raise pattern in 8 of the last 9 quarters; the recurring-revenue base is now over 90% of total revenue.'},
+    optionsFlow:{putCallRatio:0.91, callOI:340, putOI:309, topCallStrike:'$70 (Aug expiry)', topPutStrike:'$60 (Aug expiry)', unusualActivity:'Flow is modestly call-leaning but volume remains light for this name.'}
   },
   { ticker:'SPSC', company:'SPS Commerce', sector:'Technology', price:178.40,
     seasonal:{score:50, bestMonths:'Q4', worstMonths:'Q2-Q3', pattern:'Retail-supply-chain SaaS provider where new customer onboarding accelerates ahead of the Q4 holiday retail season.'},
     sectorCycle:{score:55, phase:'Late Expansion - Secular Growth Offsetting Macro', note:'Software names tied to durable secular growth themes have continued to find support even as broader macro conditions soften late-cycle.'},
-    earningsCycle:{score:70, daysToEarnings:38, note:'Seventeen consecutive quarters of double-digit revenue growth; net-new customer additions have remained a consistent beat driver.'}
+    earningsCycle:{score:70, daysToEarnings:38, note:'Seventeen consecutive quarters of double-digit revenue growth; net-new customer additions have remained a consistent beat driver.'},
+    optionsFlow:{putCallRatio:0.85, callOI:480, putOI:408, topCallStrike:'$190 (Aug expiry)', topPutStrike:'$165 (Aug expiry)', unusualActivity:'Call open interest has grown steadily alongside the stock multi-quarter beat streak.'}
   },
 
   // --- Energy (Late Expansion - Geopolitical and Inflation-Hedge Tailwind) ---
   { ticker:'SM', company:'SM Energy', sector:'Energy', price:36.90,
     seasonal:{score:74, bestMonths:'May-Aug', worstMonths:'Nov-Jan', pattern:'Oil and gas exploration and production company where the summer driving season lifts crude demand and has historically supported E&P equity performance from May through August.'},
     sectorCycle:{score:62, phase:'Late Expansion - Geopolitical and Inflation-Hedge Tailwind', note:'Energy has tended to benefit late-cycle from both inflation-hedge demand and geopolitical risk premium in crude prices.'},
-    earningsCycle:{score:54, daysToEarnings:19, note:'Free cash flow is inflecting higher; commodity price volatility remains the dominant swing factor on results.'}
+    earningsCycle:{score:54, daysToEarnings:19, note:'Free cash flow is inflecting higher; commodity price volatility remains the dominant swing factor on results.'},
+    optionsFlow:{putCallRatio:1.35, callOI:2200, putOI:2970, topCallStrike:'$40 (Jul expiry)', topPutStrike:'$33 (Jul expiry)', unusualActivity:'Put buying has been heavier than call buying over the past week, likely hedging activity tied to crude price volatility, a notable contrast with the bullish seasonal read.'}
   },
   { ticker:'CRGY', company:'Crescent Energy', sector:'Energy', price:12.40,
     seasonal:{score:70, bestMonths:'Apr-Jul', worstMonths:'Oct-Dec', pattern:'Diversified E&P where summer driving-season demand and hurricane-related supply risk premium both support a seasonal tailwind from April through July.'},
     sectorCycle:{score:62, phase:'Late Expansion - Geopolitical and Inflation-Hedge Tailwind', note:'Energy has tended to benefit late-cycle from both inflation-hedge demand and geopolitical risk premium in crude prices.'},
-    earningsCycle:{score:50, daysToEarnings:27, note:'An acquisition-driven growth story; production-guidance beats have been inconsistent at 4 of the last 7 quarters.'}
+    earningsCycle:{score:50, daysToEarnings:27, note:'An acquisition-driven growth story; production-guidance beats have been inconsistent at 4 of the last 7 quarters.'},
+    optionsFlow:{putCallRatio:1.10, callOI:290, putOI:319, topCallStrike:'$14 (Aug expiry)', topPutStrike:'$11 (Aug expiry)', unusualActivity:'No notable unusual activity detected.'}
   },
   { ticker:'REPX', company:'Riley Exploration Permian', sector:'Energy', price:28.10,
     seasonal:{score:72, bestMonths:'May-Aug', worstMonths:'Dec-Feb', pattern:'Permian-focused E&P with direct crude-price sensitivity, where the summer demand season is the strongest historical stretch.'},
     sectorCycle:{score:62, phase:'Late Expansion - Geopolitical and Inflation-Hedge Tailwind', note:'Energy has tended to benefit late-cycle from both inflation-hedge demand and geopolitical risk premium in crude prices.'},
-    earningsCycle:{score:60, daysToEarnings:14, note:'Production growth has come in ahead of plan in 5 of the last 6 quarters; an active hedging program limits upside but also cushions downside.'}
+    earningsCycle:{score:60, daysToEarnings:14, note:'Production growth has come in ahead of plan in 5 of the last 6 quarters; an active hedging program limits upside but also cushions downside.'},
+    optionsFlow:{putCallRatio:0.58, callOI:640, putOI:371, topCallStrike:'$31 (Jul expiry)', topPutStrike:'$25 (Jul expiry)', unusualActivity:'Call open interest has built steadily ahead of the upcoming earnings date.'}
   },
 
   // --- Materials (Late Expansion - Mixed) ---
   { ticker:'SXT', company:'Sensient Technologies', sector:'Materials', price:82.30,
     seasonal:{score:54, bestMonths:'Mar-Jun', worstMonths:'Sep-Oct', pattern:'Flavors and colors ingredient maker where food and beverage customer ordering ramps ahead of the summer beverage season.'},
     sectorCycle:{score:50, phase:'Late Expansion - Mixed', note:'Materials demand is split late-cycle between soft building-products end markets and a reshoring or infrastructure-related tailwind in select subsegments.'},
-    earningsCycle:{score:56, daysToEarnings:46, note:'A steady, low-volatility beat pattern in 6 of the last 8 quarters; defensive ingredient demand is largely insulated from the broader discretionary cycle.'}
+    earningsCycle:{score:56, daysToEarnings:46, note:'A steady, low-volatility beat pattern in 6 of the last 8 quarters; defensive ingredient demand is largely insulated from the broader discretionary cycle.'},
+    optionsFlow:{putCallRatio:0.97, callOI:220, putOI:213, topCallStrike:'$87.50 (Aug expiry)', topPutStrike:'$77.50 (Aug expiry)', unusualActivity:'No notable unusual activity detected.'}
   },
   { ticker:'KWR', company:'Quaker Houghton', sector:'Materials', price:168.50,
     seasonal:{score:58, bestMonths:'Mar-Jun', worstMonths:'Nov-Dec', pattern:'Industrial process-fluids supplier tied to steel and metalworking activity, which typically ramps into summer production schedules.'},
     sectorCycle:{score:50, phase:'Late Expansion - Mixed', note:'Materials demand is split late-cycle between soft building-products end markets and a reshoring or infrastructure-related tailwind in select subsegments.'},
-    earningsCycle:{score:52, daysToEarnings:33, note:'A margin recovery is underway following raw-material cost relief; beat on gross margin in 4 of the last 6 quarters.'}
+    earningsCycle:{score:52, daysToEarnings:33, note:'A margin recovery is underway following raw-material cost relief; beat on gross margin in 4 of the last 6 quarters.'},
+    optionsFlow:{putCallRatio:1.04, callOI:160, putOI:166, topCallStrike:'$175 (Aug expiry)', topPutStrike:'$155 (Aug expiry)', unusualActivity:'No notable unusual activity detected.'}
   },
   { ticker:'ASH', company:'Ashland Inc', sector:'Materials', price:74.60,
     seasonal:{score:48, bestMonths:'Q1-Q2', worstMonths:'Q4', pattern:'Specialty chemicals supplier to personal care and pharma end markets, where restocking activity is seasonally stronger in the first half ahead of summer personal-care demand.'},
     sectorCycle:{score:50, phase:'Late Expansion - Mixed', note:'Materials demand is split late-cycle between soft building-products end markets and a reshoring or infrastructure-related tailwind in select subsegments.'},
-    earningsCycle:{score:44, daysToEarnings:29, note:'Demand normalization is still working through channel destocking; results were missed or in line in 4 of the last 6 quarters.'}
+    earningsCycle:{score:44, daysToEarnings:29, note:'Demand normalization is still working through channel destocking; results were missed or in line in 4 of the last 6 quarters.'},
+    optionsFlow:{putCallRatio:1.18, callOI:210, putOI:248, topCallStrike:'$80 (Jul expiry)', topPutStrike:'$70 (Jul expiry)', unusualActivity:'Put open interest has edged higher amid ongoing destocking concerns.'}
   },
 
   // --- Real Estate (Late Expansion - Rate Headwind) ---
   { ticker:'SBRA', company:'Sabra Health Care REIT', sector:'Real Estate', price:17.80,
     seasonal:{score:42, bestMonths:'Jan, Oct', worstMonths:'Jun-Aug', pattern:'Healthcare and senior-housing REIT with limited calendar seasonality and modestly softer summer leasing activity.'},
     sectorCycle:{score:36, phase:'Late Expansion - Rate Headwind', note:'REITs have tended to underperform late-cycle as elevated long-term rates pressure valuations and refinancing costs.'},
-    earningsCycle:{score:48, daysToEarnings:23, note:'An occupancy recovery in the senior-housing portfolio is continuing; beat FFO estimates in 5 of the last 7 quarters.'}
+    earningsCycle:{score:48, daysToEarnings:23, note:'An occupancy recovery in the senior-housing portfolio is continuing; beat FFO estimates in 5 of the last 7 quarters.'},
+    optionsFlow:{putCallRatio:0.72, callOI:980, putOI:706, topCallStrike:'$19 (Aug expiry)', topPutStrike:'$16 (Aug expiry)', unusualActivity:'Call buying has actually outpaced puts recently, possibly tied to yield-seeking or takeover speculation, a notable contrast with the bearish rate-cycle read.'}
   },
   { ticker:'UMH', company:'UMH Properties', sector:'Real Estate', price:19.40,
     seasonal:{score:46, bestMonths:'Mar-Jun', worstMonths:'Nov-Jan', pattern:'Manufactured-housing REIT where spring and summer are the seasonal peak for new home placements and occupancy gains.'},
     sectorCycle:{score:36, phase:'Late Expansion - Rate Headwind', note:'REITs have tended to underperform late-cycle as elevated long-term rates pressure valuations and refinancing costs.'},
-    earningsCycle:{score:50, daysToEarnings:37, note:'Rent growth and occupancy gains have driven beats in 5 of the last 6 quarters, though new community development adds execution risk.'}
+    earningsCycle:{score:50, daysToEarnings:37, note:'Rent growth and occupancy gains have driven beats in 5 of the last 6 quarters, though new community development adds execution risk.'},
+    optionsFlow:{putCallRatio:1.28, callOI:140, putOI:179, topCallStrike:'$21 (Jul expiry)', topPutStrike:'$18 (Jul expiry)', unusualActivity:'Put open interest has been building into the next earnings report.'}
   },
   { ticker:'IRT', company:'Independence Realty Trust', sector:'Real Estate', price:16.20,
     seasonal:{score:44, bestMonths:'May-Aug', worstMonths:'Dec-Feb', pattern:'Multifamily apartment REIT where leasing season peaks from May through August, when most lease turnover occurs.'},
     sectorCycle:{score:36, phase:'Late Expansion - Rate Headwind', note:'REITs have tended to underperform late-cycle as elevated long-term rates pressure valuations and refinancing costs.'},
-    earningsCycle:{score:42, daysToEarnings:44, note:'Sun Belt supply pressure has weighed on same-store rent growth; missed estimates in 3 of the last 5 quarters.'}
+    earningsCycle:{score:42, daysToEarnings:44, note:'Sun Belt supply pressure has weighed on same-store rent growth; missed estimates in 3 of the last 5 quarters.'},
+    optionsFlow:{putCallRatio:1.48, callOI:310, putOI:459, topCallStrike:'$17.50 (Aug expiry)', topPutStrike:'$15 (Aug expiry)', unusualActivity:'A put sweep of about 400 contracts hit the $15 strike on June 18, well above typical volume.'}
   },
 
   // --- Utilities (Late Expansion - Defensive Plus AI Power-Demand Favorite) ---
   { ticker:'AVA', company:'Avista Corp', sector:'Utilities', price:38.90,
     seasonal:{score:64, bestMonths:'Jun-Aug, Dec-Jan', worstMonths:'Apr-May', pattern:'Electric and gas utility with a bimodal seasonal demand pattern from summer air-conditioning load and winter heating load; shoulder-season spring is seasonally the softest.'},
     sectorCycle:{score:67, phase:'Late Expansion - Defensive Plus AI Power-Demand Favorite', note:'Utilities have become a late-cycle defensive favorite, with rising data-center electricity demand adding a structural growth tailwind.'},
-    earningsCycle:{score:54, daysToEarnings:41, note:'Rate-case outcomes are the primary earnings driver; results were in line with guidance in 4 of the last 6 quarters.'}
+    earningsCycle:{score:54, daysToEarnings:41, note:'Rate-case outcomes are the primary earnings driver; results were in line with guidance in 4 of the last 6 quarters.'},
+    optionsFlow:{putCallRatio:1.22, callOI:170, putOI:207, topCallStrike:'$41 (Aug expiry)', topPutStrike:'$36 (Aug expiry)', unusualActivity:'Put open interest is modestly elevated, consistent with rate-case uncertainty.'}
   },
   { ticker:'OGS', company:'ONE Gas', sector:'Utilities', price:74.20,
     seasonal:{score:58, bestMonths:'Nov-Feb', worstMonths:'Jun-Aug', pattern:'Pure-play natural-gas utility where the winter heating season drives the bulk of annual earnings; summer is seasonally the slowest stretch.'},
     sectorCycle:{score:67, phase:'Late Expansion - Defensive Plus AI Power-Demand Favorite', note:'Utilities have become a late-cycle defensive favorite, with rising data-center electricity demand adding a structural growth tailwind.'},
-    earningsCycle:{score:56, daysToEarnings:52, note:'A highly predictable rate-base growth model; results were in line or better in 6 of the last 7 quarters.'}
+    earningsCycle:{score:56, daysToEarnings:52, note:'A highly predictable rate-base growth model; results were in line or better in 6 of the last 7 quarters.'},
+    optionsFlow:{putCallRatio:0.93, callOI:150, putOI:140, topCallStrike:'$78 (Aug expiry)', topPutStrike:'$70 (Aug expiry)', unusualActivity:'No notable unusual activity detected.'}
   },
   { ticker:'NWN', company:'Northwest Natural Holdings', sector:'Utilities', price:38.50,
     seasonal:{score:56, bestMonths:'Nov-Feb', worstMonths:'Jun-Aug', pattern:'Natural-gas utility with a pronounced winter-heating earnings skew; summer months are seasonally the quietest for the stock.'},
     sectorCycle:{score:67, phase:'Late Expansion - Defensive Plus AI Power-Demand Favorite', note:'Utilities have become a late-cycle defensive favorite, with rising data-center electricity demand adding a structural growth tailwind.'},
-    earningsCycle:{score:50, daysToEarnings:48, note:'Water-utility diversification is adding modest growth; results were in line with guidance in 5 of the last 7 quarters.'}
+    earningsCycle:{score:50, daysToEarnings:48, note:'Water-utility diversification is adding modest growth; results were in line with guidance in 5 of the last 7 quarters.'},
+    optionsFlow:{putCallRatio:1.00, callOI:95, putOI:95, topCallStrike:'$41 (Aug expiry)', topPutStrike:'$36 (Aug expiry)', unusualActivity:'No notable unusual activity detected.'}
   },
 
   // --- Communication Services (Late Expansion - Neutral and Defensive) ---
   { ticker:'SHEN', company:'Shenandoah Telecommunications', sector:'Communication Services', price:14.60,
     seasonal:{score:50, bestMonths:'Sep-Nov', worstMonths:'Jun-Jul', pattern:'Rural fiber-broadband provider where subscriber-growth bookings seasonally accelerate in the fall as fiber-build markets reach completion.'},
     sectorCycle:{score:52, phase:'Late Expansion - Neutral and Defensive', note:'Telecom and communication infrastructure names are generally neutral late-cycle, providing defensive cash flow without a strong cyclical tilt either way.'},
-    earningsCycle:{score:58, daysToEarnings:26, note:'Fiber subscriber growth has driven beats in 5 of the last 7 quarters as legacy cable and copper subscriber counts decline.'}
+    earningsCycle:{score:58, daysToEarnings:26, note:'Fiber subscriber growth has driven beats in 5 of the last 7 quarters as legacy cable and copper subscriber counts decline.'},
+    optionsFlow:{putCallRatio:0.89, callOI:130, putOI:116, topCallStrike:'$16 (Jul expiry)', topPutStrike:'$13 (Jul expiry)', unusualActivity:'No notable unusual activity detected.'}
   },
   { ticker:'CCOI', company:'Cogent Communications', sector:'Communication Services', price:58.30,
     seasonal:{score:52, bestMonths:'Q4', worstMonths:'Q2', pattern:'Internet infrastructure and colocation provider where enterprise bandwidth contracts typically renew or expand around the calendar year-end budget cycle.'},
     sectorCycle:{score:52, phase:'Late Expansion - Neutral and Defensive', note:'Telecom and communication infrastructure names are generally neutral late-cycle, providing defensive cash flow without a strong cyclical tilt either way.'},
-    earningsCycle:{score:62, daysToEarnings:34, note:'Wavelength and IP-transit growth has supported beating revenue estimates in 6 of the last 8 quarters.'}
+    earningsCycle:{score:62, daysToEarnings:34, note:'Wavelength and IP-transit growth has supported beating revenue estimates in 6 of the last 8 quarters.'},
+    optionsFlow:{putCallRatio:0.81, callOI:240, putOI:194, topCallStrike:'$62.50 (Aug expiry)', topPutStrike:'$55 (Aug expiry)', unusualActivity:'Call open interest has grown alongside the multi-quarter revenue beat streak.'}
   },
   { ticker:'TDS', company:'Telephone and Data Systems', sector:'Communication Services', price:24.80,
     seasonal:{score:46, bestMonths:'Sep-Nov', worstMonths:'Jun-Jul', pattern:'Regional wireless and wireline carrier where promotional device cycles and back-to-school plan switching create a fall seasonal bump.'},
     sectorCycle:{score:52, phase:'Late Expansion - Neutral and Defensive', note:'Telecom and communication infrastructure names are generally neutral late-cycle, providing defensive cash flow without a strong cyclical tilt either way.'},
-    earningsCycle:{score:44, daysToEarnings:30, note:'Spectrum monetization and tower-sale proceeds are key catalysts, though core wireless subscriber trends have missed in 3 of the last 5 quarters.'}
+    earningsCycle:{score:44, daysToEarnings:30, note:'Spectrum monetization and tower-sale proceeds are key catalysts, though core wireless subscriber trends have missed in 3 of the last 5 quarters.'},
+    optionsFlow:{putCallRatio:1.20, callOI:180, putOI:216, topCallStrike:'$26 (Jul expiry)', topPutStrike:'$22 (Jul expiry)', unusualActivity:'Put open interest is modestly elevated amid soft subscriber trends.'}
   },
 ];
 
@@ -5905,6 +5935,33 @@ function cyclicalScoreColor(combined) {
   return '#94a3b8';
 }
 
+// Cross-checks the options market's own put/call positioning against
+// our combined seasonal+sector+earnings signal. This is a separate
+// informational check - it does not feed into the combined score.
+function getOptionsFlowAgreement(stock, analysis) {
+  const ratio = stock.optionsFlow.putCallRatio;
+  let lean, leanColor;
+  if (ratio <= 0.8) { lean = 'Call-Heavy'; leanColor = '#22c55e'; }
+  else if (ratio >= 1.2) { lean = 'Put-Heavy'; leanColor = '#ef4444'; }
+  else { lean = 'Balanced'; leanColor = '#94a3b8'; }
+
+  let agreement, agreementColor;
+  if (analysis.signal === 'BUY CALL') {
+    if (ratio <= 0.8) { agreement = 'Confirms'; agreementColor = '#22c55e'; }
+    else if (ratio >= 1.2) { agreement = 'Contradicts'; agreementColor = '#f59e0b'; }
+    else { agreement = 'Mixed'; agreementColor = '#94a3b8'; }
+  } else if (analysis.signal === 'BUY PUT') {
+    if (ratio >= 1.2) { agreement = 'Confirms'; agreementColor = '#22c55e'; }
+    else if (ratio <= 0.8) { agreement = 'Contradicts'; agreementColor = '#f59e0b'; }
+    else { agreement = 'Mixed'; agreementColor = '#94a3b8'; }
+  } else {
+    agreement = 'N/A (model neutral)';
+    agreementColor = '#94a3b8';
+  }
+
+  return { lean: lean, leanColor: leanColor, agreement: agreement, agreementColor: agreementColor };
+}
+
 let cyclicalFilterSignal = 'all';
 let cyclicalFilterSector = 'all';
 
@@ -5960,6 +6017,7 @@ function renderCyclicalScanner() {
       const stock = item.stock;
       const a = item.a;
       const color = cyclicalScoreColor(a.combined);
+      const flow = getOptionsFlowAgreement(stock, a);
       listHtml += `
         <div data-cyc-ticker="${stock.ticker}" class="cyclical-item-card" style="background:var(--border);padding:12px;border-radius:8px;border-left:4px solid ${color};cursor:pointer;transition:all 0.2s" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
@@ -5972,7 +6030,7 @@ function renderCyclicalScanner() {
               <div style="font-size:9px;font-weight:700;color:${color}">${a.signal}</div>
             </div>
           </div>
-          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;font-size:8px">
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;font-size:8px;margin-bottom:6px">
             <div style="background:var(--card);padding:4px;border-radius:4px;text-align:center">
               <div style="color:var(--muted)">Seasonal</div><div style="font-weight:700">${stock.seasonal.score}</div>
             </div>
@@ -5983,6 +6041,7 @@ function renderCyclicalScanner() {
               <div style="color:var(--muted)">Earnings</div><div style="font-weight:700">${stock.earningsCycle.score}</div>
             </div>
           </div>
+          <div style="font-size:8px;color:var(--muted)">📑 Options flow: ${stock.optionsFlow.putCallRatio.toFixed(2)} P/C · <span style="color:${flow.leanColor};font-weight:700">${flow.lean}</span> · <span style="color:${flow.agreementColor};font-weight:700">${flow.agreement}</span></div>
         </div>
       `;
     });
@@ -6033,6 +6092,8 @@ function showCyclicalDetail(stock) {
 
   const a = getCyclicalAnalysis(stock);
   const color = cyclicalScoreColor(a.combined);
+  const flow = getOptionsFlowAgreement(stock, a);
+  const of = stock.optionsFlow;
 
   panel.innerHTML = `
     <div style="background:var(--border);padding:16px;border-radius:8px;border-top:4px solid ${color}">
@@ -6065,6 +6126,33 @@ function showCyclicalDetail(stock) {
           <div style="font-size:9px;color:var(--accent);margin-bottom:4px">Next earnings in ~${stock.earningsCycle.daysToEarnings} days</div>
           <div style="font-size:10px;color:var(--text);line-height:1.6">${stock.earningsCycle.note}</div>
         </div>
+
+        <div style="background:var(--card);padding:10px;border-radius:6px;border-left:3px solid ${flow.agreementColor}">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">
+            <div style="font-weight:700;font-size:10px;color:var(--muted)">📑 OPTIONS POSITIONING (how contracts are placed)</div>
+            <div style="font-weight:700;font-size:10px;color:${flow.agreementColor}">${flow.agreement}</div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px;font-size:9px">
+            <div style="background:var(--border);padding:6px;border-radius:4px">
+              <div style="color:var(--muted)">Put/Call Volume Ratio</div>
+              <div style="font-weight:700;color:${flow.leanColor}">${of.putCallRatio.toFixed(2)} (${flow.lean})</div>
+            </div>
+            <div style="background:var(--border);padding:6px;border-radius:4px">
+              <div style="color:var(--muted)">Open Interest (Calls / Puts)</div>
+              <div style="font-weight:700;color:var(--text)">${of.callOI.toLocaleString()} / ${of.putOI.toLocaleString()}</div>
+            </div>
+            <div style="background:var(--border);padding:6px;border-radius:4px">
+              <div style="color:var(--muted)">Top Call OI Strike</div>
+              <div style="font-weight:700;color:var(--text)">${of.topCallStrike}</div>
+            </div>
+            <div style="background:var(--border);padding:6px;border-radius:4px">
+              <div style="color:var(--muted)">Top Put OI Strike</div>
+              <div style="font-weight:700;color:var(--text)">${of.topPutStrike}</div>
+            </div>
+          </div>
+          <div style="font-size:9px;color:var(--text);line-height:1.6;margin-bottom:4px">${of.unusualActivity}</div>
+          <div style="font-size:8px;color:var(--muted);line-height:1.5">${flow.agreement === 'Confirms' ? 'Options market positioning leans the same direction as the model signal.' : flow.agreement === 'Contradicts' ? 'Options market positioning leans the opposite direction from the model signal - worth a closer look before acting.' : 'Options market positioning is roughly balanced relative to the model signal.'}</div>
+        </div>
       </div>
 
       <div style="background:rgba(0,0,0,0.2);padding:12px;border-radius:8px;margin-bottom:8px">
@@ -6086,7 +6174,7 @@ function showCyclicalDetail(stock) {
       </div>
 
       <div style="font-size:8px;color:var(--muted);line-height:1.5;padding:8px;background:rgba(0,0,0,0.15);border-radius:6px">
-        ⚠️ Educational illustrative analysis combining seasonal, sector-cycle, and earnings-cycle scores. Not a real-time data feed or financial advice. Verify current price, options chain, and fundamentals before trading.
+        ⚠️ Educational illustrative analysis combining seasonal, sector-cycle, earnings-cycle, and options-positioning data. Not a real-time data feed or financial advice. Verify current price, options chain, and fundamentals before trading.
       </div>
     </div>
   `;
@@ -6112,6 +6200,10 @@ function showCyclicalMethodology() {
         <div style="background:var(--border);padding:12px;border-radius:8px">
           <div style="font-weight:700;font-size:11px;color:var(--accent);margin-bottom:6px">3️⃣ Earnings-Cycle Drift (0-100)</div>
           <div style="font-size:10px;color:var(--muted);line-height:1.6">How this stock has historically behaved heading into and out of earnings. Consistent beat rates and positive average moves score higher.</div>
+        </div>
+        <div style="background:var(--border);padding:12px;border-radius:8px">
+          <div style="font-weight:700;font-size:11px;color:var(--accent);margin-bottom:6px">📑 Options Positioning (cross-check, not part of the score)</div>
+          <div style="font-size:10px;color:var(--muted);line-height:1.6">A separate read on how call and put contracts are currently placed: the put/call volume ratio, where open interest is concentrated by strike, and any notable unusual activity. This is compared against the model signal and flagged as Confirms, Contradicts, or Mixed - it does not change the combined score, but a Contradicts flag is worth a closer look before acting on the idea.</div>
         </div>
       </div>
 
