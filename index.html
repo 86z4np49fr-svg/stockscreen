@@ -95,6 +95,8 @@ footer{margin-top:40px;padding-top:16px;border-top:1px solid var(--border);color
     <button class="nav-tab" id="tab-backtester">🧪 Backtester</button>
     <button class="nav-tab" id="tab-news">📰 News</button>
     <button class="nav-tab" id="tab-cyclical">🔄 Cyclical</button>
+    <button class="nav-tab" id="tab-autosignals">🤖 Auto Signals</button>
+    <button class="nav-tab" id="tab-opttracker">📜 Options Tracker</button>
   </div>
 
   <div class="view active" id="analyzer">
@@ -500,6 +502,20 @@ footer{margin-top:40px;padding-top:16px;border-top:1px solid var(--border);color
       🔄 <strong>Russell 2000 Cyclical Options Scanner:</strong> Combines seasonal/calendar patterns, sector rotation cycle position, and earnings-cycle drift into one score across ~30 liquid, optionable small-caps, then derives a put/call idea with strike, expiry, and target move. Each stock also shows how call and put contracts are currently positioned (put/call ratio, open interest, unusual activity) as a cross-check against the signal. Educational/illustrative — not live data.
     </div>
     <div id="cyclicalOutput" class="empty">Loading cyclical scanner...</div>
+  </div>
+
+  <div class="view" id="autosignals">
+    <div style="font-size:11px;color:var(--muted);margin-bottom:12px;padding:8px 12px;background:rgba(52,211,153,0.08);border-radius:6px;border-left:3px solid var(--accent)">
+      🤖 <strong>Auto Signals:</strong> Event-driven engine that watches live news for your tickers, classifies major events (earnings, FDA, M&A, lawsuits, guidance changes...), confirms against the live price reaction, and automatically issues BUY/SELL calls. Runs while this tab is open. Signals are decision support — not trade execution and not financial advice.
+    </div>
+    <div id="autoSignalOutput" class="empty">Loading auto signals engine...</div>
+  </div>
+
+  <div class="view" id="opttracker">
+    <div style="font-size:11px;color:var(--muted);margin-bottom:12px;padding:8px 12px;background:rgba(52,211,153,0.08);border-radius:6px;border-left:3px solid var(--accent)">
+      📜 <strong>Options Tracker:</strong> Track your option contracts — live underlying price via Finnhub, with contract value estimated by a Black-Scholes model (free data tiers don't include options chains, so values are model estimates, not live option quotes). Tracks moneyness, days to expiry, break-even, and estimated P/L.
+    </div>
+    <div id="optTrackerOutput" class="empty">Loading options tracker...</div>
   </div>
 
   <footer>Not financial advice. Data from Finnhub + Twelve Data. <b id="appVersion" style="color:var(--accent)">v7.0 MARKETS REDESIGN</b></footer>
@@ -1082,6 +1098,8 @@ document.getElementById('tab-technicals').addEventListener('click', () => switch
 document.getElementById('tab-backtester').addEventListener('click', () => switchTab('backtester'));
 document.getElementById('tab-news').addEventListener('click', () => switchTab('news'));
 document.getElementById('tab-cyclical').addEventListener('click', () => { switchTab('cyclical'); showCyclicalScanner(); });
+document.getElementById('tab-autosignals').addEventListener('click', () => { switchTab('autosignals'); renderAutoSignals(); });
+document.getElementById('tab-opttracker').addEventListener('click', () => { switchTab('opttracker'); renderOptTracker(); });
 
 function switchTab(name) {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
@@ -5956,6 +5974,485 @@ async function runCompare() {
 }
 
 
+
+
+// ============================================
+// OPTIONS TRACKER
+// Tracks user-entered option contracts. Live underlying price via
+// Finnhub; contract value estimated with Black-Scholes (free data
+// tiers lack options chains, so this is a clearly-labeled model
+// estimate, not a live option quote).
+// ============================================
+
+function normCdf(x) {
+  // Abramowitz-Stegun approximation
+  const t = 1 / (1 + 0.2316419 * Math.abs(x));
+  const d = 0.3989423 * Math.exp(-x * x / 2);
+  let p = d * t * (0.3193815 + t * (-0.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274))));
+  return x > 0 ? 1 - p : p;
+}
+
+// Black-Scholes European option price. S=spot, K=strike, T=years, r=rate, iv=vol
+function blackScholes(type, S, K, T, r, iv) {
+  if (T <= 0) {
+    return type === 'CALL' ? Math.max(S - K, 0) : Math.max(K - S, 0);
+  }
+  const d1 = (Math.log(S / K) + (r + iv * iv / 2) * T) / (iv * Math.sqrt(T));
+  const d2 = d1 - iv * Math.sqrt(T);
+  if (type === 'CALL') return S * normCdf(d1) - K * Math.exp(-r * T) * normCdf(d2);
+  return K * Math.exp(-r * T) * normCdf(-d2) - S * normCdf(-d1);
+}
+
+let trackedOptions = [];
+
+function loadTrackedOptions() {
+  try {
+    const raw = localStorage.getItem('ssp_tracked_options');
+    if (raw) trackedOptions = JSON.parse(raw);
+    if (!Array.isArray(trackedOptions)) trackedOptions = [];
+  } catch (e) { trackedOptions = []; }
+}
+
+function saveTrackedOptions() {
+  try { localStorage.setItem('ssp_tracked_options', JSON.stringify(trackedOptions)); } catch (e) {}
+}
+
+function addTrackedOption(opt) {
+  opt.id = 'opt_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+  trackedOptions.unshift(opt);
+  trackedOptions = trackedOptions.slice(0, 30);
+  saveTrackedOptions();
+}
+
+function removeTrackedOption(id) {
+  trackedOptions = trackedOptions.filter(function(o) { return o.id !== id; });
+  saveTrackedOptions();
+  renderOptTracker();
+}
+
+function addOptionFromForm() {
+  const g = function(id) { const e = document.getElementById(id); return e ? e.value : ''; };
+  const ticker = (g('optTicker') || '').toUpperCase().trim();
+  const type = g('optType') === 'PUT' ? 'PUT' : 'CALL';
+  const strike = parseFloat(g('optStrike'));
+  const expiry = g('optExpiry');
+  const premium = parseFloat(g('optPremium'));
+  const qty = parseInt(g('optQty') || '1', 10);
+  const iv = parseFloat(g('optIV') || '40');
+
+  const msgEl = document.getElementById('optFormMsg');
+  if (!/^[A-Z]{1,5}$/.test(ticker) || !(strike > 0) || !expiry || !(premium >= 0) || !(qty > 0)) {
+    if (msgEl) msgEl.textContent = '⚠ Please fill ticker, strike (>0), expiry date, entry premium, and contracts.';
+    return;
+  }
+  if (new Date(expiry + 'T16:00:00') <= new Date()) {
+    if (msgEl) msgEl.textContent = '⚠ Expiry must be a future date.';
+    return;
+  }
+
+  addTrackedOption({
+    ticker: ticker, type: type, strike: strike, expiry: expiry,
+    premium: premium, qty: qty, iv: (iv > 0 && iv < 500) ? iv : 40,
+    addedAt: new Date().toISOString().slice(0, 10),
+  });
+  if (msgEl) msgEl.textContent = '';
+  renderOptTracker();
+  refreshTrackedOptions();
+}
+
+// Used by the Cyclical Scanner "Track this idea" button
+function trackIdeaFromCyclical(ticker, signal, price, dte) {
+  if (signal !== 'BUY CALL' && signal !== 'BUY PUT') return;
+  const isCall = signal === 'BUY CALL';
+  const strike = Math.round(price * (isCall ? 1.05 : 0.95) * 100) / 100;
+  const expiryDate = new Date(Date.now() + (dte + 21) * 86400000).toISOString().slice(0, 10);
+  addTrackedOption({
+    ticker: ticker, type: isCall ? 'CALL' : 'PUT', strike: strike, expiry: expiryDate,
+    premium: 0, qty: 1, iv: 40, addedAt: new Date().toISOString().slice(0, 10),
+    fromScanner: true,
+  });
+  switchTab('opttracker');
+  renderOptTracker();
+  refreshTrackedOptions();
+}
+
+let optQuoteCache = {};
+
+async function refreshTrackedOptions() {
+  const tickers = [];
+  trackedOptions.forEach(function(o) { if (tickers.indexOf(o.ticker) === -1) tickers.push(o.ticker); });
+  for (let i = 0; i < tickers.length; i++) {
+    const q = await fetchQuoteSafe(tickers[i]);
+    if (q) optQuoteCache[tickers[i]] = q;
+  }
+  renderOptTracker();
+}
+
+function analyzeTrackedOption(o) {
+  const q = optQuoteCache[o.ticker];
+  const S = q ? q.c : null;
+  const now = new Date();
+  const exp = new Date(o.expiry + 'T16:00:00');
+  const dte = Math.max(0, Math.ceil((exp - now) / 86400000));
+  const T = Math.max(dte, 0) / 365;
+
+  let modelVal = null, intrinsic = null, moneyness = 'N/A', pl = null, plPct = null, breakEven = null;
+  if (S !== null) {
+    modelVal = blackScholes(o.type, S, o.strike, T, 0.045, o.iv / 100);
+    intrinsic = o.type === 'CALL' ? Math.max(S - o.strike, 0) : Math.max(o.strike - S, 0);
+    const dist = ((S - o.strike) / o.strike * 100);
+    if (o.type === 'CALL') moneyness = S > o.strike * 1.005 ? 'ITM' : S < o.strike * 0.995 ? 'OTM' : 'ATM';
+    else moneyness = S < o.strike * 0.995 ? 'ITM' : S > o.strike * 1.005 ? 'OTM' : 'ATM';
+    moneyness += ' (' + (dist >= 0 ? '+' : '') + dist.toFixed(1) + '% vs strike)';
+    breakEven = o.type === 'CALL' ? o.strike + o.premium : o.strike - o.premium;
+    if (o.premium > 0) {
+      pl = (modelVal - o.premium) * 100 * o.qty;
+      plPct = (modelVal - o.premium) / o.premium * 100;
+    }
+  }
+  let status = '';
+  if (dte === 0) status = '🔴 EXPIRES TODAY';
+  else if (dte <= 7) status = '🟠 ' + dte + ' days left';
+  else status = '🟢 ' + dte + ' days left';
+
+  return { S: S, dte: dte, modelVal: modelVal, intrinsic: intrinsic, moneyness: moneyness, pl: pl, plPct: plPct, breakEven: breakEven, status: status, live: q ? q.live : false };
+}
+
+function renderOptTracker() {
+  const out = document.getElementById('optTrackerOutput');
+  if (!out) return;
+
+  let rows = '';
+  if (trackedOptions.length === 0) {
+    rows = '<div style="text-align:center;color:var(--muted);font-size:11px;padding:24px">No contracts tracked yet. Add one above, or use "Track this idea" from the Cyclical scanner.</div>';
+  } else {
+    trackedOptions.forEach(function(o) {
+      const a = analyzeTrackedOption(o);
+      const isCall = o.type === 'CALL';
+      const color = isCall ? 'var(--green)' : 'var(--red)';
+      const plColor = a.pl === null ? 'var(--muted)' : a.pl >= 0 ? 'var(--green)' : 'var(--red)';
+      rows += '<div style="background:var(--card);border:1px solid var(--border);border-left:4px solid ' + color + ';border-radius:8px;padding:12px;margin-bottom:10px">' +
+        '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">' +
+          '<div><span style="font-weight:800;font-family:monospace;font-size:14px">' + o.ticker + '</span> ' +
+          '<span style="font-weight:800;color:' + color + '">' + (isCall ? '📈 CALL' : '📉 PUT') + '</span> ' +
+          '<span style="font-size:12px;font-weight:700">$' + o.strike.toFixed(2) + ' strike</span>' +
+          (o.fromScanner ? ' <span style="font-size:9px;color:var(--accent)">from scanner</span>' : '') + '</div>' +
+          '<div style="display:flex;gap:8px;align-items:center"><span style="font-size:10px;font-weight:700">' + a.status + '</span>' +
+          '<span data-remove-opt="' + o.id + '" style="cursor:pointer;color:var(--red);font-weight:800;font-size:14px">×</span></div>' +
+        '</div>' +
+        '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:6px;font-size:9px">' +
+          '<div style="background:var(--border);padding:6px;border-radius:4px"><div style="color:var(--muted)">Underlying</div><div style="font-weight:700">' + (a.S !== null ? '$' + a.S.toFixed(2) + (a.live ? '' : ' ⚠ indicative') : 'refresh to load') + '</div></div>' +
+          '<div style="background:var(--border);padding:6px;border-radius:4px"><div style="color:var(--muted)">Moneyness</div><div style="font-weight:700">' + a.moneyness + '</div></div>' +
+          '<div style="background:var(--border);padding:6px;border-radius:4px"><div style="color:var(--muted)">Model Value / contract</div><div style="font-weight:700">' + (a.modelVal !== null ? '$' + a.modelVal.toFixed(2) + ' (intrinsic $' + a.intrinsic.toFixed(2) + ')' : '—') + '</div></div>' +
+          '<div style="background:var(--border);padding:6px;border-radius:4px"><div style="color:var(--muted)">Entry / Break-even</div><div style="font-weight:700">' + (o.premium > 0 ? '$' + o.premium.toFixed(2) + ' / $' + (a.breakEven !== null ? a.breakEven.toFixed(2) : '—') : 'no entry set') + '</div></div>' +
+          '<div style="background:var(--border);padding:6px;border-radius:4px"><div style="color:var(--muted)">Est. P/L (' + o.qty + 'x)</div><div style="font-weight:800;color:' + plColor + '">' + (a.pl !== null ? (a.pl >= 0 ? '+' : '') + '$' + a.pl.toFixed(0) + ' (' + (a.plPct >= 0 ? '+' : '') + a.plPct.toFixed(1) + '%)' : '—') + '</div></div>' +
+          '<div style="background:var(--border);padding:6px;border-radius:4px"><div style="color:var(--muted)">Expiry / IV used</div><div style="font-weight:700">' + o.expiry + ' / ' + o.iv + '%</div></div>' +
+        '</div>' +
+      '</div>';
+    });
+  }
+
+  out.innerHTML =
+    '<div class="card">' +
+      '<div class="card-title">➕ Track a Contract</div>' +
+      '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin-bottom:8px">' +
+        '<input type="text" id="optTicker" placeholder="Ticker (AAPL)">' +
+        '<select id="optType" style="padding:8px;background:var(--card);color:var(--ink);border:1px solid var(--border);border-radius:6px"><option value="CALL">CALL</option><option value="PUT">PUT</option></select>' +
+        '<input type="number" id="optStrike" placeholder="Strike ($)" step="0.5">' +
+        '<input type="date" id="optExpiry">' +
+        '<input type="number" id="optPremium" placeholder="Entry premium ($)" step="0.05">' +
+        '<input type="number" id="optQty" placeholder="Contracts" value="1" min="1">' +
+        '<input type="number" id="optIV" placeholder="IV % (default 40)" step="1">' +
+      '</div>' +
+      '<div style="display:flex;gap:8px;align-items:center">' +
+        '<button class="btn btn-go" id="optAddBtn">Add Contract</button>' +
+        '<button class="btn btn-ghost" id="optRefreshBtn">🔄 Refresh Prices</button>' +
+        '<span id="optFormMsg" style="font-size:10px;color:var(--red)"></span>' +
+      '</div>' +
+    '</div>' +
+    '<div class="card"><div class="card-title">📜 Tracked Contracts (' + trackedOptions.length + ')</div>' + rows + '</div>' +
+    '<div style="font-size:9px;color:var(--muted);line-height:1.6;padding:8px;background:rgba(0,0,0,0.15);border-radius:6px">⚠️ Contract values are Black-Scholes model estimates using the live underlying price and your IV input (default 40%) with a 4.5% rate — actual market option prices will differ, especially around earnings and for illiquid strikes. Not financial advice.</div>';
+
+  setTimeout(function() {
+    const ab = document.getElementById('optAddBtn'); if (ab) ab.addEventListener('click', addOptionFromForm);
+    const rb = document.getElementById('optRefreshBtn'); if (rb) rb.addEventListener('click', refreshTrackedOptions);
+    document.querySelectorAll('[data-remove-opt]').forEach(function(elm) {
+      elm.addEventListener('click', function() { removeTrackedOption(this.getAttribute('data-remove-opt')); });
+    });
+  }, 0);
+}
+
+
+// ============================================
+// AUTO SIGNALS - EVENT-DRIVEN BUY/SELL ENGINE
+// Pipeline: poll Finnhub company news for watched tickers ->
+// classify each fresh headline against event rules ->
+// confirm direction against the live price reaction ->
+// emit a BUY/SELL signal with confidence -> feed + notification.
+// Signals are decision support only (no trade execution).
+// ============================================
+
+const AUTO_SIGNAL_RULES = [
+  { pattern: /fda approv|approval granted|clears fda/i, action: 'BUY', type: 'FDA Approval', weight: 3 },
+  { pattern: /acquis|acquires|agrees to buy|deal to buy|takeover|merger agreement|buyout/i, action: 'BUY', type: 'M&A', weight: 3 },
+  { pattern: /beats|tops estimates|exceeds expectations|record revenue|record profit/i, action: 'BUY', type: 'Earnings Beat', weight: 2 },
+  { pattern: /raises guidance|hikes guidance|raises outlook|raises forecast/i, action: 'BUY', type: 'Guidance Raise', weight: 2 },
+  { pattern: /buyback|share repurchase|dividend increase|special dividend/i, action: 'BUY', type: 'Capital Return', weight: 2 },
+  { pattern: /wins contract|major contract|awarded contract|new partnership|strategic partnership/i, action: 'BUY', type: 'Contract/Partnership', weight: 2 },
+  { pattern: /upgrade[ds]? to|analyst upgrade/i, action: 'BUY', type: 'Analyst Upgrade', weight: 1 },
+  { pattern: /bankrupt|chapter 11|chapter 7|insolven|default[s]? on/i, action: 'SELL', type: 'Bankruptcy/Default', weight: 3 },
+  { pattern: /fraud|sec investigation|doj investigation|criminal probe|accounting irregular/i, action: 'SELL', type: 'Fraud/Investigation', weight: 3 },
+  { pattern: /misses|falls short|disappoint|below expectations/i, action: 'SELL', type: 'Earnings Miss', weight: 2 },
+  { pattern: /cuts guidance|lowers guidance|cuts outlook|lowers forecast|withdraws guidance/i, action: 'SELL', type: 'Guidance Cut', weight: 2 },
+  { pattern: /recall|safety issue|safety concern|halts production/i, action: 'SELL', type: 'Recall/Safety', weight: 2 },
+  { pattern: /lawsuit|sues|sued|class action|litigation/i, action: 'SELL', type: 'Litigation', weight: 2 },
+  { pattern: /ceo resigns|ceo steps down|cfo resigns|executive departure/i, action: 'SELL', type: 'Leadership Exit', weight: 2 },
+  { pattern: /data breach|cyberattack|hacked|ransomware/i, action: 'SELL', type: 'Cyber Incident', weight: 2 },
+  { pattern: /downgrade[ds]? to|analyst downgrade/i, action: 'SELL', type: 'Analyst Downgrade', weight: 1 },
+];
+
+let autoSig = {
+  tickers: ['AAPL', 'NVDA', 'TSLA', 'PFE', 'BA'],
+  running: false,
+  timer: null,
+  intervalMin: 5,
+  seenIds: [],
+  signals: [],
+  lastScanAt: null,
+};
+
+function loadAutoSigState() {
+  try {
+    const raw = localStorage.getItem('ssp_autosig');
+    if (raw) {
+      const saved = JSON.parse(raw);
+      if (Array.isArray(saved.tickers) && saved.tickers.length) autoSig.tickers = saved.tickers;
+      if (Array.isArray(saved.signals)) autoSig.signals = saved.signals.slice(0, 50);
+      if (Array.isArray(saved.seenIds)) autoSig.seenIds = saved.seenIds.slice(0, 500);
+    }
+  } catch (e) {}
+}
+
+function saveAutoSigState() {
+  try {
+    localStorage.setItem('ssp_autosig', JSON.stringify({
+      tickers: autoSig.tickers,
+      signals: autoSig.signals.slice(0, 50),
+      seenIds: autoSig.seenIds.slice(0, 500),
+    }));
+  } catch (e) {}
+}
+
+function classifyEventHeadline(headline) {
+  for (let i = 0; i < AUTO_SIGNAL_RULES.length; i++) {
+    const rule = AUTO_SIGNAL_RULES[i];
+    if (rule.pattern.test(headline)) {
+      return { action: rule.action, type: rule.type, weight: rule.weight };
+    }
+  }
+  return null;
+}
+
+function buildSignal(ticker, headline, cls, quote, source) {
+  // Confidence: rule weight + price confirmation
+  let confidencePts = cls.weight;
+  let priceNote = 'Price reaction unavailable.';
+  if (quote && typeof quote.dp === 'number') {
+    const dirMatch = (cls.action === 'BUY' && quote.dp > 0.5) || (cls.action === 'SELL' && quote.dp < -0.5);
+    const dirConflict = (cls.action === 'BUY' && quote.dp < -0.5) || (cls.action === 'SELL' && quote.dp > 0.5);
+    if (dirMatch) { confidencePts += 1; priceNote = 'Price confirms (' + (quote.dp >= 0 ? '+' : '') + quote.dp.toFixed(2) + '% today).'; }
+    else if (dirConflict) { confidencePts -= 1; priceNote = 'Price conflicts (' + (quote.dp >= 0 ? '+' : '') + quote.dp.toFixed(2) + '% today) - treat with caution.'; }
+    else { priceNote = 'Price flat so far (' + (quote.dp >= 0 ? '+' : '') + quote.dp.toFixed(2) + '% today).'; }
+  }
+  const confidence = confidencePts >= 4 ? 'HIGH' : confidencePts >= 2 ? 'MEDIUM' : 'LOW';
+  return {
+    ticker: ticker,
+    action: cls.action,
+    type: cls.type,
+    confidence: confidence,
+    headline: headline,
+    priceNote: priceNote,
+    price: quote && quote.c ? quote.c : null,
+    time: new Date().toLocaleString(),
+    source: source || 'news scan',
+  };
+}
+
+function pushSignal(sig) {
+  autoSig.signals.unshift(sig);
+  autoSig.signals = autoSig.signals.slice(0, 50);
+  saveAutoSigState();
+  // Browser notification (guarded - optional)
+  try {
+    if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+      new Notification('🤖 ' + sig.action + ' signal: ' + sig.ticker, { body: sig.type + ' - ' + sig.headline.slice(0, 80) });
+    }
+  } catch (e) {}
+}
+
+async function scanTickerForEvents(ticker) {
+  let found = 0;
+  try {
+    const to = new Date().toISOString().slice(0, 10);
+    const fromD = new Date(Date.now() - 2 * 86400000).toISOString().slice(0, 10);
+    const r = await fetch('https://finnhub.io/api/v1/company-news?symbol=' + ticker + '&from=' + fromD + '&to=' + to + '&token=' + API_KEY);
+    const news = await r.json();
+    if (!Array.isArray(news)) return 0;
+    const quote = await fetchQuoteSafe(ticker);
+    for (let i = 0; i < Math.min(news.length, 15); i++) {
+      const item = news[i];
+      const nid = ticker + ':' + (item.id || item.headline);
+      if (autoSig.seenIds.indexOf(nid) !== -1) continue;
+      autoSig.seenIds.unshift(nid);
+      const cls = classifyEventHeadline(item.headline || '');
+      if (cls) {
+        pushSignal(buildSignal(ticker, item.headline, cls, quote, item.source));
+        found++;
+      }
+    }
+    autoSig.seenIds = autoSig.seenIds.slice(0, 500);
+    saveAutoSigState();
+  } catch (e) {}
+  return found;
+}
+
+async function runAutoScanNow() {
+  const statusEl = document.getElementById('autoSigStatus');
+  if (statusEl) statusEl.textContent = 'Scanning ' + autoSig.tickers.length + ' tickers for major events...';
+  let total = 0;
+  for (let i = 0; i < autoSig.tickers.length; i++) {
+    total += await scanTickerForEvents(autoSig.tickers[i]);
+  }
+  autoSig.lastScanAt = new Date().toLocaleTimeString();
+  renderAutoSignals();
+  const statusEl2 = document.getElementById('autoSigStatus');
+  if (statusEl2) statusEl2.textContent = 'Last scan ' + autoSig.lastScanAt + ' - ' + (total > 0 ? total + ' new signal(s) found.' : 'no new event signals. Feed below shows history.');
+}
+
+function toggleAutoSignalPolling() {
+  if (autoSig.running) {
+    autoSig.running = false;
+    if (autoSig.timer && typeof clearInterval === 'function') clearInterval(autoSig.timer);
+    autoSig.timer = null;
+  } else {
+    autoSig.running = true;
+    try {
+      if (typeof Notification !== 'undefined' && Notification.permission === 'default') Notification.requestPermission();
+    } catch (e) {}
+    runAutoScanNow();
+    if (typeof setInterval === 'function') {
+      autoSig.timer = setInterval(runAutoScanNow, autoSig.intervalMin * 60 * 1000);
+    }
+  }
+  renderAutoSignals();
+}
+
+function addAutoSigTicker() {
+  const input = document.getElementById('autoSigTickerInput');
+  if (!input) return;
+  const t = (input.value || '').toUpperCase().trim();
+  if (/^[A-Z]{1,5}$/.test(t) && autoSig.tickers.indexOf(t) === -1 && autoSig.tickers.length < 10) {
+    autoSig.tickers.push(t);
+    saveAutoSigState();
+  }
+  input.value = '';
+  renderAutoSignals();
+}
+
+function removeAutoSigTicker(t) {
+  autoSig.tickers = autoSig.tickers.filter(function(x) { return x !== t; });
+  saveAutoSigState();
+  renderAutoSignals();
+}
+
+function injectDemoSignal() {
+  // Lets you see the full pipeline instantly without waiting for real news
+  const demos = [
+    { t: 'NVDA', h: 'NVIDIA beats estimates with record revenue as data center demand surges' },
+    { t: 'PFE', h: 'Pfizer receives FDA approval for new oncology treatment' },
+    { t: 'BA', h: 'Boeing faces new safety investigation after production halt' },
+    { t: 'TSLA', h: 'Tesla cuts guidance amid softening EV demand, shares tumble' },
+  ];
+  const d = demos[Math.floor(Math.random() * demos.length)];
+  const cls = classifyEventHeadline(d.h);
+  if (cls) pushSignal(buildSignal(d.t, d.h, cls, null, 'DEMO'));
+  renderAutoSignals();
+}
+
+function clearAutoSignals() {
+  autoSig.signals = [];
+  saveAutoSigState();
+  renderAutoSignals();
+}
+
+function renderAutoSignals() {
+  const out = document.getElementById('autoSignalOutput');
+  if (!out) return;
+
+  let tickerChips = '';
+  autoSig.tickers.forEach(function(t) {
+    tickerChips += '<span style="display:inline-flex;align-items:center;gap:6px;padding:5px 10px;margin:3px;border:1px solid var(--border);border-radius:14px;font-size:11px;font-family:monospace;font-weight:700">' + t +
+      '<span data-remove-autosig="' + t + '" style="cursor:pointer;color:var(--red);font-weight:800">×</span></span>';
+  });
+
+  let feed = '';
+  if (autoSig.signals.length === 0) {
+    feed = '<div style="text-align:center;color:var(--muted);font-size:11px;padding:24px">No signals yet. Click "Scan Now" to check for major events, or "Demo Event" to preview the pipeline.</div>';
+  } else {
+    autoSig.signals.forEach(function(sig) {
+      const isBuy = sig.action === 'BUY';
+      const color = isBuy ? 'var(--green)' : 'var(--red)';
+      feed += '<div style="background:var(--card);border:1px solid var(--border);border-left:4px solid ' + color + ';border-radius:8px;padding:12px;margin-bottom:10px">' +
+        '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">' +
+          '<div><span style="font-weight:800;font-size:14px;color:' + color + '">' + (isBuy ? '📈 BUY' : '📉 SELL') + '</span> ' +
+          '<span style="font-weight:800;font-family:monospace;font-size:14px">' + sig.ticker + '</span>' +
+          (sig.price ? ' <span style="font-size:11px;color:var(--muted)">$' + Number(sig.price).toFixed(2) + '</span>' : '') + '</div>' +
+          '<div style="text-align:right"><div style="font-size:10px;font-weight:800;color:' + color + '">' + sig.confidence + ' confidence</div>' +
+          '<div style="font-size:9px;color:var(--muted)">' + sig.time + '</div></div>' +
+        '</div>' +
+        '<div style="font-size:10px;font-weight:700;color:var(--accent);margin-bottom:4px">Event: ' + sig.type + (sig.source === 'DEMO' ? ' (demo)' : '') + '</div>' +
+        '<div style="font-size:11px;line-height:1.5;margin-bottom:4px">' + sig.headline + '</div>' +
+        '<div style="font-size:9px;color:var(--muted)">' + sig.priceNote + '</div>' +
+      '</div>';
+    });
+  }
+
+  out.innerHTML =
+    '<div class="card">' +
+      '<div class="card-title">🤖 Engine Controls</div>' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">' +
+        '<button class="btn ' + (autoSig.running ? 'btn-red' : 'btn-go') + '" id="autoSigToggleBtn">' + (autoSig.running ? '⏹ Stop Auto-Polling' : '▶ Start Auto-Polling (every ' + autoSig.intervalMin + ' min)') + '</button>' +
+        '<button class="btn btn-ghost" id="autoSigScanBtn">🔍 Scan Now</button>' +
+        '<button class="btn btn-ghost" id="autoSigDemoBtn">🧪 Demo Event</button>' +
+        '<button class="btn btn-ghost" id="autoSigClearBtn">🗑 Clear Feed</button>' +
+      '</div>' +
+      '<div id="autoSigStatus" style="font-size:10px;color:var(--muted);margin-bottom:10px">' + (autoSig.running ? '🟢 Polling active. ' : '⚪ Polling stopped. ') + (autoSig.lastScanAt ? 'Last scan: ' + autoSig.lastScanAt : 'No scan yet this session.') + '</div>' +
+      '<div style="font-size:10px;color:var(--muted);margin-bottom:6px;font-weight:700">WATCHED TICKERS (' + autoSig.tickers.length + '/10):</div>' +
+      '<div style="margin-bottom:8px">' + tickerChips + '</div>' +
+      '<div class="row" style="margin-bottom:0">' +
+        '<input type="text" id="autoSigTickerInput" placeholder="Add ticker e.g. AMD" style="max-width:200px">' +
+        '<button class="btn btn-ghost" id="autoSigAddBtn">+ Add</button>' +
+      '</div>' +
+    '</div>' +
+    '<div class="card">' +
+      '<div class="card-title">📡 Signal Feed (' + autoSig.signals.length + ')</div>' + feed +
+    '</div>' +
+    '<div style="font-size:9px;color:var(--muted);line-height:1.6;padding:8px;background:rgba(0,0,0,0.15);border-radius:6px">⚠️ How it works: while this browser tab is open, the engine polls Finnhub news for your tickers, classifies major events against ' + AUTO_SIGNAL_RULES.length + ' rule patterns, and confirms direction against the live price move. Signals are automated decision support, not trade execution and not financial advice. True 24/7 monitoring or order placement would require a server plus a brokerage API and is intentionally out of scope.</div>';
+
+  setTimeout(function() {
+    const tb = document.getElementById('autoSigToggleBtn'); if (tb) tb.addEventListener('click', toggleAutoSignalPolling);
+    const sb = document.getElementById('autoSigScanBtn'); if (sb) sb.addEventListener('click', runAutoScanNow);
+    const db = document.getElementById('autoSigDemoBtn'); if (db) db.addEventListener('click', injectDemoSignal);
+    const cb = document.getElementById('autoSigClearBtn'); if (cb) cb.addEventListener('click', clearAutoSignals);
+    const ab = document.getElementById('autoSigAddBtn'); if (ab) ab.addEventListener('click', addAutoSigTicker);
+    const ai = document.getElementById('autoSigTickerInput'); if (ai) ai.addEventListener('keydown', function(e) { if (e.key === 'Enter') addAutoSigTicker(); });
+    document.querySelectorAll('[data-remove-autosig]').forEach(function(elm) {
+      elm.addEventListener('click', function() { removeAutoSigTicker(this.getAttribute('data-remove-autosig')); });
+    });
+  }, 0);
+}
+
+
 // ============================================
 // RUSSELL 2000 CYCLICAL OPTIONS SCANNER
 // Combines three signals into one composite score per stock:
@@ -6460,6 +6957,7 @@ function showCyclicalDetail(stock) {
           <div style="font-size:9px;color:var(--muted)">Target Move</div>
           <div style="font-size:11px;font-weight:700;color:${color}">${a.targetMove}</div>
         </div>
+        ${(a.signal === 'BUY CALL' || a.signal === 'BUY PUT') ? '<button class="btn btn-ghost" id="trackIdeaBtn" style="width:100%;margin-top:8px;padding:8px;font-size:10px">📜 Track this idea in Options Tracker</button>' : ''}
       </div>
 
       <div style="font-size:8px;color:var(--muted);line-height:1.5;padding:8px;background:rgba(0,0,0,0.15);border-radius:6px">
@@ -6467,6 +6965,13 @@ function showCyclicalDetail(stock) {
       </div>
     </div>
   `;
+
+  setTimeout(function() {
+    const tib = document.getElementById('trackIdeaBtn');
+    if (tib) tib.addEventListener('click', function() {
+      trackIdeaFromCyclical(stock.ticker, a.signal, stock.price, stock.earningsCycle.daysToEarnings);
+    });
+  }, 0);
 }
 
 function showCyclicalMethodology() {
@@ -7948,6 +8453,8 @@ document.getElementById('newsBtn').addEventListener('click', async () => {
 // Init
 loadPortfolio();
 initTheme();
+loadAutoSigState();
+loadTrackedOptions();
 loadGlobalIndexStrip();
 document.getElementById('compareBtn').addEventListener('click', runCompare);
 document.getElementById('compareInput').addEventListener('keydown', function(e) { if (e.key === 'Enter') runCompare(); });
