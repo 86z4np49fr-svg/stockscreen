@@ -5997,6 +5997,14 @@ function parseOccSymbol(sym) {
   return { expiry: '20' + m[2] + '-' + m[3] + '-' + m[4], type: m[5] === 'C' ? 'CALL' : 'PUT', strike: parseInt(m[6], 10) / 1000 };
 }
 
+function numField(o, names) {
+  for (let i = 0; i < names.length; i++) {
+    const v = o[names[i]];
+    if (v !== undefined && v !== null && v !== '' && !isNaN(Number(v))) return Number(v);
+  }
+  return null;
+}
+
 async function fetchChainFinnhub(ticker) {
   const j = await (await fetch('https://finnhub.io/api/v1/stock/option-chain?symbol=' + ticker + '&token=' + API_KEY)).json();
   if (!j || !Array.isArray(j.data) || j.data.length === 0) throw new Error('no finnhub chain');
@@ -6009,7 +6017,7 @@ async function fetchChainFinnhub(ticker) {
     ['CALL', 'PUT'].forEach(function(side) {
       const arr = (d.options && d.options[side]) || [];
       arr.forEach(function(o) {
-        byExp[exp].push({ type: side, strike: o.strike, bid: o.bid, ask: o.ask, last: o.lastPrice, vol: o.volume, oi: o.openInterest, iv: o.impliedVolatility });
+        byExp[exp].push({ type: side, strike: o.strike, bid: o.bid, ask: o.ask, last: o.lastPrice, vol: numField(o,['volume','vol','totalVolume','total_volume']), oi: numField(o,['openInterest','open_interest','oi']), iv: o.impliedVolatility });
       });
     });
   });
@@ -6034,7 +6042,7 @@ async function fetchChainCboe(ticker) {
     const p = parseOccSymbol((o.option || '').replace(/\s+/g, ''));
     if (!p) return;
     if (!byExp[p.expiry]) { byExp[p.expiry] = []; exps.push(p.expiry); }
-    byExp[p.expiry].push({ type: p.type, strike: p.strike, bid: o.bid, ask: o.ask, last: o.last_trade_price, vol: o.volume, oi: o.open_interest, iv: o.iv });
+    byExp[p.expiry].push({ type: p.type, strike: p.strike, bid: o.bid, ask: o.ask, last: o.last_trade_price, vol: numField(o,['volume','vol','total_volume','totalVolume']), oi: numField(o,['open_interest','openInterest','oi']), iv: o.iv });
   });
   exps.sort();
   return { source: 'CBOE delayed (exchange-published)', spot: j.data.current_price || j.data.close || null, expirations: exps, byExp: byExp };
@@ -6104,7 +6112,8 @@ function summarizeChain() {
   const avgVol = volN ? volSum / volN : 0;
   ivs.sort(function(a,b){return a-b;});
   const medIV = ivs.length ? ivs[Math.floor(ivs.length/2)] : 0;
-  const top = list.slice().sort(function(a,b){ return (b.vol||0) - (a.vol||0); }).slice(0, 12);
+  const hasVol = list.some(function(o){ return o.vol != null && Number(o.vol) > 0; });
+  const top = list.slice().sort(function(a,b){ return hasVol ? (b.vol||0)-(a.vol||0) : (b.oi||0)-(a.oi||0); }).slice(0, 12);
   let rows = '';
   top.forEach(function(o) {
     const flags = [];
@@ -6119,7 +6128,7 @@ function summarizeChain() {
       '<div><span style="color:' + c + ';font-weight:800">' + o.type + '</span> <b>$' + Number(o.strike).toFixed(2) + '</b>' + (isOut ? ' <span style="font-size:8px;color:#f59e0b;font-weight:700">' + flags.join(' ') + '</span>' : '') + '</div>' +
       '<div style="text-align:right;color:var(--muted)">buy(ask) ' + (o.ask != null ? '$' + Number(o.ask).toFixed(2) : '—') + ' · sell(bid) ' + (o.bid != null ? '$' + Number(o.bid).toFixed(2) : '—') + ' · ' + (o.vol != null ? o.vol : '—') + ' contracts (' + ((o.vol||0)*100).toLocaleString() + ' sh) · OI ' + (o.oi != null ? o.oi : '—') + '</div></div>';
   });
-  box.innerHTML = '<div style="border-top:1px solid var(--border);margin-top:8px;padding-top:8px"><div style="font-weight:700;font-size:11px;margin-bottom:4px">📋 Summary — top by volume, ' + chainState.selectedExp + ' (avg vol ' + Math.round(avgVol) + ', median IV ' + (medIV*100).toFixed(0) + '%)</div>' + rows + '<div style="font-size:8px;color:var(--muted);margin-top:4px">Outliers highlighted: Vol>OI (new positioning), 2x average volume, IV 1.5x above chain median, spread >25% of ask. 1 contract = 100 shares.</div></div>';
+  box.innerHTML = '<div style="border-top:1px solid var(--border);margin-top:8px;padding-top:8px"><div style="font-weight:700;font-size:11px;margin-bottom:4px">📋 Summary — top by ' + (hasVol ? 'volume' : 'open interest (feed gave no volume — common off-hours)') + ', ' + chainState.selectedExp + ' (avg vol ' + Math.round(avgVol) + ', median IV ' + (medIV*100).toFixed(0) + '%)</div>' + rows + '<div style="font-size:8px;color:var(--muted);margin-top:4px">Outliers highlighted: Vol>OI (new positioning), 2x average volume, IV 1.5x above chain median, spread >25% of ask. 1 contract = 100 shares.</div></div>';
 }
 
 function renderChain() {
