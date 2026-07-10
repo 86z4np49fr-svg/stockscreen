@@ -6048,6 +6048,33 @@ async function fetchChainCboe(ticker) {
   return { source: 'CBOE delayed (exchange-published)', spot: j.data.current_price || j.data.close || null, expirations: exps, byExp: byExp };
 }
 
+async function fetchChainYahoo(ticker, dateUnix) {
+  const base = 'https://query1.finance.yahoo.com/v7/finance/options/' + ticker + (dateUnix ? '?date=' + dateUnix : '');
+  const attempts = ['https://api.allorigins.win/raw?url=' + encodeURIComponent(base), 'https://corsproxy.io/?url=' + encodeURIComponent(base)];
+  let j = null;
+  for (let i = 0; i < attempts.length; i++) {
+    try { j = await (await fetch(attempts[i])).json(); if (j && j.optionChain) break; j = null; } catch (e) { j = null; }
+  }
+  const res = j && j.optionChain && j.optionChain.result && j.optionChain.result[0];
+  if (!res || !res.options || !res.options[0]) throw new Error('no yahoo chain');
+  const spot = res.quote ? res.quote.regularMarketPrice : null;
+  const dates = res.expirationDates || [];
+  const exps = dates.map(function(u) { return new Date(u * 1000).toISOString().slice(0, 10); });
+  const yahooDates = {};
+  dates.forEach(function(u, i) { yahooDates[exps[i]] = u; });
+  const byExp = {};
+  res.options.forEach(function(block) {
+    const exp = new Date(block.expirationDate * 1000).toISOString().slice(0, 10);
+    byExp[exp] = [];
+    ['calls', 'puts'].forEach(function(k) {
+      (block[k] || []).forEach(function(o) {
+        byExp[exp].push({ type: k === 'calls' ? 'CALL' : 'PUT', strike: o.strike, bid: o.bid, ask: o.ask, last: o.lastPrice, vol: numField(o, ['volume', 'vol']), oi: numField(o, ['openInterest', 'open_interest']), iv: o.impliedVolatility });
+      });
+    });
+  });
+  return { source: 'Yahoo Finance (delayed, via proxy)', spot: spot, expirations: exps.length ? exps : Object.keys(byExp), byExp: byExp, yahooDates: yahooDates, kind: 'yahoo' };
+}
+
 // Final fallback: model-generated chain from live spot (clearly labeled)
 async function buildModelChain(ticker) {
   const q = await fetchQuoteSafe(ticker);
@@ -6073,7 +6100,7 @@ async function buildModelChain(ticker) {
       });
     }
   });
-  return { source: '⚠ Model-generated (exchange feeds unreachable) — Black-Scholes @ 35% IV', spot: spot, expirations: exps, byExp: byExp };
+  return { source: '⚠ Model-generated (exchange feeds unreachable) — Black-Scholes @ 35% IV', spot: spot, expirations: exps, byExp: byExp, synthetic: true };
 }
 
 async function loadExchangeChain() {
@@ -6087,7 +6114,9 @@ async function loadExchangeChain() {
   let chain = null;
   try { chain = await fetchChainFinnhub(ticker); } catch (e1) {
     try { chain = await fetchChainCboe(ticker); } catch (e2) {
-      try { chain = await buildModelChain(ticker); } catch (e3) { chain = null; }
+      try { chain = await fetchChainYahoo(ticker); } catch (e3) {
+        try { chain = await buildModelChain(ticker); } catch (e4) { chain = null; }
+      }
     }
   }
   if (!chain) {
@@ -6095,12 +6124,32 @@ async function loadExchangeChain() {
     return;
   }
   if (!chain.spot) { const q = await fetchQuoteSafe(ticker); if (q) chain.spot = q.c; }
-  chainState = { ticker: ticker, source: chain.source, spot: chain.spot, expirations: chain.expirations, byExp: chain.byExp, selectedExp: chain.expirations[0] || null };
+  chainState = { ticker: ticker, source: chain.source, spot: chain.spot, expirations: chain.expirations, byExp: chain.byExp, selectedExp: chain.expirations[0] || null, synthetic: !!chain.synthetic, kind: chain.kind || null, yahooDates: chain.yahooDates || null };
   renderChain();
 }
 
-function selectChainExp(exp) { chainState.selectedExp = exp; renderChain(); }
+function selectChainExp(exp) {
+  chainState.selectedExp = exp;
+  if (chainState.kind === 'yahoo' && (!chainState.byExp[exp] || chainState.byExp[exp].length === 0) && chainState.yahooDates && chainState.yahooDates[exp]) {
+    fetchChainYahoo(chainState.ticker, chainState.yahooDates[exp]).then(function(c) {
+      if (c && c.byExp && c.byExp[exp]) chainState.byExp[exp] = c.byExp[exp];
+      renderChain();
+    }).catch(function() { renderChain(); });
+    return;
+  }
+  renderChain();
+}
 
+
+function whaleBadge(o) {
+  const mid = (o.bid != null && o.ask != null && (Number(o.bid) + Number(o.ask)) > 0) ? (Number(o.bid) + Number(o.ask)) / 2 : (o.last != null ? Number(o.last) : 0);
+  const notional = (o.vol || 0) * mid * 100;
+  const badges = [];
+  if (notional >= 1000000) badges.push('🐋 $' + (notional / 1e6).toFixed(1) + 'M traded today');
+  else if (notional >= 250000) badges.push('🏦 $' + Math.round(notional / 1000) + 'K traded today');
+  if ((o.oi || 0) >= 5000) badges.push('🏛 ' + Number(o.oi).toLocaleString() + ' OI held');
+  return badges.length ? ' <span style="font-size:8px;color:#f59e0b;font-weight:700">' + badges.join(' · ') + '</span>' : '';
+}
 
 function summarizeChain() {
   const box = document.getElementById('chainSummary');
@@ -6122,13 +6171,15 @@ function summarizeChain() {
     const ivN = o.iv ? (Number(o.iv) > 3 ? Number(o.iv)/100 : Number(o.iv)) : 0;
     if (ivN && medIV && ivN > 1.5*medIV) flags.push('📈 High IV');
     if (o.bid != null && o.ask != null && Number(o.ask) > 0 && (Number(o.ask)-Number(o.bid)) / Number(o.ask) > 0.25) flags.push('⚠ Wide spread');
+    const midP = (o.bid != null && o.ask != null && (Number(o.bid)+Number(o.ask))>0) ? (Number(o.bid)+Number(o.ask))/2 : (o.last != null ? Number(o.last) : 0);
+    if ((o.vol || 0) * midP * 100 >= 1000000) flags.push('🐋 Whale-size');
     const isOut = flags.length > 0;
     const c = o.type === 'CALL' ? 'var(--green)' : 'var(--red)';
     rows += '<div class="mover-row" style="font-size:10px;' + (isOut ? 'border-left:3px solid #f59e0b;background:rgba(245,158,11,0.07);' : '') + '">' +
       '<div><span style="color:' + c + ';font-weight:800">' + o.type + '</span> <b>$' + Number(o.strike).toFixed(2) + '</b>' + (isOut ? ' <span style="font-size:8px;color:#f59e0b;font-weight:700">' + flags.join(' ') + '</span>' : '') + '</div>' +
-      '<div style="text-align:right;color:var(--muted)">buy(ask) ' + (o.ask != null ? '$' + Number(o.ask).toFixed(2) : '—') + ' · sell(bid) ' + (o.bid != null ? '$' + Number(o.bid).toFixed(2) : '—') + ' · ' + (o.vol != null ? o.vol : '—') + ' contracts (' + ((o.vol||0)*100).toLocaleString() + ' sh) · OI ' + (o.oi != null ? o.oi : '—') + '</div></div>';
+      '<div style="text-align:right;color:var(--muted)">buy(ask) ' + (o.ask != null ? '$' + Number(o.ask).toFixed(2) : '—') + ' · sell(bid) ' + (o.bid != null ? '$' + Number(o.bid).toFixed(2) : '—') + ' · ' + (o.vol != null ? o.vol + ' contracts (' + (o.vol*100).toLocaleString() + ' sh)' : 'vol n/a') + ' · OI ' + (o.oi != null ? o.oi : '—') + '</div></div>';
   });
-  box.innerHTML = '<div style="border-top:1px solid var(--border);margin-top:8px;padding-top:8px"><div style="font-weight:700;font-size:11px;margin-bottom:4px">📋 Summary — top by ' + (hasVol ? 'volume' : 'open interest (feed gave no volume — common off-hours)') + ', ' + chainState.selectedExp + ' (avg vol ' + Math.round(avgVol) + ', median IV ' + (medIV*100).toFixed(0) + '%)</div>' + rows + '<div style="font-size:8px;color:var(--muted);margin-top:4px">Outliers highlighted: Vol>OI (new positioning), 2x average volume, IV 1.5x above chain median, spread >25% of ask. 1 contract = 100 shares.</div></div>';
+  box.innerHTML = '<div style="border-top:1px solid var(--border);margin-top:8px;padding-top:8px"><div style="font-weight:700;font-size:11px;margin-bottom:4px">📋 Summary — top by ' + (hasVol ? 'volume' : 'open interest (feed gave no volume — common off-hours)') + ', ' + chainState.selectedExp + ' (avg vol ' + Math.round(avgVol) + ', median IV ' + (medIV*100).toFixed(0) + '%)</div>' + rows + '<div style="font-size:8px;color:var(--muted);margin-top:4px">Outliers highlighted: Vol>OI (new positioning), 2x average volume, IV 1.5x above chain median, spread >25% of ask, 🐋 Whale-size = over $1M notional traded. 🏦/🐋/🏛 badges in the chain list mark big-player footprints (large $ traded or 5,000+ contracts held). 1 contract = 100 shares.</div></div>';
 }
 
 function renderChain() {
@@ -6149,9 +6200,9 @@ function renderChain() {
   shown.slice(0, 60).forEach(function(o, i) {
     const color = o.type === 'CALL' ? 'var(--green)' : 'var(--red)';
     const atm = spot && Math.abs(o.strike - spot) / spot < 0.01;
-    rows += '<div class="mover-row" data-chain-pick="' + i + '" style="' + (atm ? 'background:var(--card);' : '') + 'font-size:10px">' +
-      '<div><span style="color:' + color + ';font-weight:800">' + o.type + '</span> <span style="font-weight:700">$' + Number(o.strike).toFixed(2) + '</span>' + (atm ? ' <span style="font-size:8px;color:var(--accent)">ATM</span>' : '') + '</div>' +
-      '<div style="text-align:right;color:var(--muted)">bid ' + (o.bid != null ? '$' + Number(o.bid).toFixed(2) : '—') + ' / ask ' + (o.ask != null ? '$' + Number(o.ask).toFixed(2) : '—') + ' · vol ' + (o.vol != null ? o.vol : '—') + ' · OI ' + (o.oi != null ? o.oi : '—') + (o.iv ? ' · IV ' + (Number(o.iv) > 3 ? Number(o.iv).toFixed(0) : (Number(o.iv) * 100).toFixed(0)) + '%' : '') + '</div>' +
+    rows += '<div class="mover-row" data-chain-pick="' + i + '" style="' + (whaleBadge(o) ? 'border-left:3px solid #f59e0b;' : '') + (atm ? 'background:var(--card);' : '') + 'font-size:10px">' +
+      '<div><span style="color:' + color + ';font-weight:800">' + o.type + '</span> <span style="font-weight:700">$' + Number(o.strike).toFixed(2) + '</span>' + (atm ? ' <span style="font-size:8px;color:var(--accent)">ATM</span>' : '') + whaleBadge(o) + '</div>' +
+      '<div style="text-align:right;color:var(--muted)">bid ' + (o.bid != null ? '$' + Number(o.bid).toFixed(2) : '—') + ' / ask ' + (o.ask != null ? '$' + Number(o.ask).toFixed(2) : '—') + ' · vol ' + (o.vol != null ? o.vol : (chainState.synthetic ? 'synthetic' : 'n/a')) + ' · OI ' + (o.oi != null ? o.oi : (chainState.synthetic ? 'synthetic' : 'n/a')) + (o.iv ? ' · IV ' + (Number(o.iv) > 3 ? Number(o.iv).toFixed(0) : (Number(o.iv) * 100).toFixed(0)) + '%' : '') + '</div>' +
     '</div>';
   });
   chainState.shown = shown;
