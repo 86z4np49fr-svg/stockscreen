@@ -6005,6 +6005,34 @@ function numField(o, names) {
   return null;
 }
 
+async function fetchChainLocal(ticker) {
+  const j = await (await fetch('http://localhost:8787/chain/' + ticker)).json();
+  if (j && j.kind === 'cboe' && j.body && j.body.data && Array.isArray(j.body.data.options)) {
+    const byExp = {}, exps = [];
+    j.body.data.options.forEach(function(o) {
+      const p = parseOccSymbol((o.option || '').replace(/\s+/g, ''));
+      if (!p) return;
+      if (!byExp[p.expiry]) { byExp[p.expiry] = []; exps.push(p.expiry); }
+      byExp[p.expiry].push({ type: p.type, strike: p.strike, bid: o.bid, ask: o.ask, last: o.last_trade_price, vol: numField(o, ['volume','vol']), oi: numField(o, ['open_interest','openInterest']), iv: o.iv });
+    });
+    exps.sort();
+    return { source: 'CBOE delayed via local worker proxy', spot: j.body.data.current_price || j.body.data.close || null, expirations: exps, byExp: byExp };
+  }
+  if (j && j.kind === 'yahoo' && j.body && j.body.optionChain) {
+    const res = j.body.optionChain.result && j.body.optionChain.result[0];
+    if (res && res.options && res.options[0]) {
+      const byExp = {}, exps = (res.expirationDates || []).map(function(u){ return new Date(u*1000).toISOString().slice(0,10); });
+      res.options.forEach(function(b) {
+        const exp = new Date(b.expirationDate*1000).toISOString().slice(0,10);
+        byExp[exp] = [];
+        ['calls','puts'].forEach(function(k){ (b[k]||[]).forEach(function(o){ byExp[exp].push({ type: k==='calls'?'CALL':'PUT', strike:o.strike, bid:o.bid, ask:o.ask, last:o.lastPrice, vol:numField(o,['volume','vol']), oi:numField(o,['openInterest','open_interest']), iv:o.impliedVolatility }); }); });
+      });
+      return { source: 'Yahoo delayed via local worker proxy', spot: res.quote ? res.quote.regularMarketPrice : null, expirations: exps.length?exps:Object.keys(byExp), byExp: byExp };
+    }
+  }
+  throw new Error('local proxy: no usable chain');
+}
+
 async function fetchChainFinnhub(ticker) {
   const j = await (await fetch('https://finnhub.io/api/v1/stock/option-chain?symbol=' + ticker + '&token=' + API_KEY)).json();
   if (!j || !Array.isArray(j.data) || j.data.length === 0) throw new Error('no finnhub chain');
@@ -6112,18 +6140,18 @@ async function loadExchangeChain() {
   out.innerHTML = '<div style="text-align:center;color:var(--muted);padding:20px;font-size:12px">Fetching exchange chain for ' + ticker + '...</div>';
 
   let chain = null;
-  try { chain = await fetchChainFinnhub(ticker); } catch (e1) {
-    try { chain = await fetchChainCboe(ticker); } catch (e2) {
-      try { chain = await fetchChainYahoo(ticker); } catch (e3) {
-        try { chain = await buildModelChain(ticker); } catch (e4) { chain = null; }
-      }
-    }
-  }
+  const tried = [];
+  try { chain = await fetchChainLocal(ticker); } catch (e0) { tried.push('local worker proxy (run: node worker.js)'); }
+  if (!chain) { try { chain = await fetchChainFinnhub(ticker); } catch (e1) { tried.push('Finnhub (needs paid plan)'); } }
+  if (!chain) { try { chain = await fetchChainCboe(ticker); } catch (e2) { tried.push('CBOE direct + 2 proxies'); } }
+  if (!chain) { try { chain = await fetchChainYahoo(ticker); } catch (e3) { tried.push('Yahoo via 2 proxies'); } }
+  if (!chain) { try { chain = await buildModelChain(ticker); if (chain) chain.tried = tried; } catch (e4) { chain = null; } }
   if (!chain) {
     out.innerHTML = '<div class="empty">Could not load a chain for ' + ticker + ' from Finnhub (may require a paid plan) or CBOE\'s public feed (may be blocked by CORS in some browsers). The manual tracker below still works with any contract you enter.</div>';
     return;
   }
   if (!chain.spot) { const q = await fetchQuoteSafe(ticker); if (q) chain.spot = q.c; }
+  if (chain.synthetic && chain.tried) chain.source += ' · failed: ' + chain.tried.join(', ');
   chainState = { ticker: ticker, source: chain.source, spot: chain.spot, expirations: chain.expirations, byExp: chain.byExp, selectedExp: chain.expirations[0] || null, synthetic: !!chain.synthetic, kind: chain.kind || null, yahooDates: chain.yahooDates || null };
   renderChain();
 }
