@@ -6017,7 +6017,16 @@ async function fetchChainFinnhub(ticker) {
 }
 
 async function fetchChainCboe(ticker) {
-  const j = await (await fetch('https://cdn.cboe.com/api/global/delayed_quotes/options/' + ticker + '.json')).json();
+  const target = 'https://cdn.cboe.com/api/global/delayed_quotes/options/' + ticker + '.json';
+  const attempts = [
+    target,
+    'https://api.allorigins.win/raw?url=' + encodeURIComponent(target),
+    'https://corsproxy.io/?url=' + encodeURIComponent(target)
+  ];
+  let j = null;
+  for (let i = 0; i < attempts.length; i++) {
+    try { j = await (await fetch(attempts[i])).json(); if (j && j.data) break; j = null; } catch (e) { j = null; }
+  }
   const opts = j && j.data && Array.isArray(j.data.options) ? j.data.options : null;
   if (!opts || opts.length === 0) throw new Error('no cboe chain');
   const byExp = {}, exps = [];
@@ -6031,6 +6040,34 @@ async function fetchChainCboe(ticker) {
   return { source: 'CBOE delayed (exchange-published)', spot: j.data.current_price || j.data.close || null, expirations: exps, byExp: byExp };
 }
 
+// Final fallback: model-generated chain from live spot (clearly labeled)
+async function buildModelChain(ticker) {
+  const q = await fetchQuoteSafe(ticker);
+  if (!q || !q.c) throw new Error('no spot');
+  const spot = q.c;
+  const step = spot >= 200 ? 5 : spot >= 50 ? 2.5 : 1;
+  const exps = [];
+  const d = new Date();
+  for (let m = 0; m < 4; m++) {
+    const dt = new Date(d.getFullYear(), d.getMonth() + m + (m === 0 && d.getDate() > 14 ? 1 : 0), 1);
+    let fri = 0, day = new Date(dt);
+    while (fri < 3) { if (day.getDay() === 5) fri++; if (fri < 3) day.setDate(day.getDate() + 1); }
+    if (day > d) exps.push(day.toISOString().slice(0, 10));
+  }
+  const byExp = {};
+  exps.forEach(function(exp) {
+    const T = Math.max((new Date(exp + 'T16:00:00') - d) / 86400000, 1) / 365;
+    byExp[exp] = [];
+    for (let k = Math.ceil(spot * 0.85 / step) * step; k <= spot * 1.15; k += step) {
+      ['CALL', 'PUT'].forEach(function(side) {
+        const v = blackScholes(side, spot, k, T, 0.045, 0.35);
+        byExp[exp].push({ type: side, strike: k, bid: Math.max(v - 0.05, 0), ask: v + 0.05, last: v, vol: null, oi: null, iv: 0.35 });
+      });
+    }
+  });
+  return { source: '⚠ Model-generated (exchange feeds unreachable) — Black-Scholes @ 35% IV', spot: spot, expirations: exps, byExp: byExp };
+}
+
 async function loadExchangeChain() {
   const inp = document.getElementById('chainTicker');
   const out = document.getElementById('chainOutput');
@@ -6041,7 +6078,9 @@ async function loadExchangeChain() {
 
   let chain = null;
   try { chain = await fetchChainFinnhub(ticker); } catch (e1) {
-    try { chain = await fetchChainCboe(ticker); } catch (e2) { chain = null; }
+    try { chain = await fetchChainCboe(ticker); } catch (e2) {
+      try { chain = await buildModelChain(ticker); } catch (e3) { chain = null; }
+    }
   }
   if (!chain) {
     out.innerHTML = '<div class="empty">Could not load a chain for ' + ticker + ' from Finnhub (may require a paid plan) or CBOE\'s public feed (may be blocked by CORS in some browsers). The manual tracker below still works with any contract you enter.</div>';
