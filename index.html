@@ -6093,6 +6093,35 @@ async function loadExchangeChain() {
 
 function selectChainExp(exp) { chainState.selectedExp = exp; renderChain(); }
 
+
+function summarizeChain() {
+  const box = document.getElementById('chainSummary');
+  if (!box || !chainState.ticker) return;
+  const list = (chainState.byExp[chainState.selectedExp] || []).filter(function(o){ return o.vol != null || o.oi != null; });
+  if (list.length === 0) { box.innerHTML = '<div style="font-size:10px;color:var(--muted);padding:8px">No volume/OI data in this chain (model-generated chains have none) — summary unavailable.</div>'; return; }
+  let volSum = 0, volN = 0, ivs = [];
+  list.forEach(function(o){ if (o.vol) { volSum += Number(o.vol); volN++; } if (o.iv) ivs.push(Number(o.iv) > 3 ? Number(o.iv)/100 : Number(o.iv)); });
+  const avgVol = volN ? volSum / volN : 0;
+  ivs.sort(function(a,b){return a-b;});
+  const medIV = ivs.length ? ivs[Math.floor(ivs.length/2)] : 0;
+  const top = list.slice().sort(function(a,b){ return (b.vol||0) - (a.vol||0); }).slice(0, 12);
+  let rows = '';
+  top.forEach(function(o) {
+    const flags = [];
+    if (o.vol && o.oi && Number(o.vol) > Number(o.oi)) flags.push('🔥 Vol>OI');
+    if (o.vol && avgVol && Number(o.vol) > 2*avgVol) flags.push('⚡ 2x avg vol');
+    const ivN = o.iv ? (Number(o.iv) > 3 ? Number(o.iv)/100 : Number(o.iv)) : 0;
+    if (ivN && medIV && ivN > 1.5*medIV) flags.push('📈 High IV');
+    if (o.bid != null && o.ask != null && Number(o.ask) > 0 && (Number(o.ask)-Number(o.bid)) / Number(o.ask) > 0.25) flags.push('⚠ Wide spread');
+    const isOut = flags.length > 0;
+    const c = o.type === 'CALL' ? 'var(--green)' : 'var(--red)';
+    rows += '<div class="mover-row" style="font-size:10px;' + (isOut ? 'border-left:3px solid #f59e0b;background:rgba(245,158,11,0.07);' : '') + '">' +
+      '<div><span style="color:' + c + ';font-weight:800">' + o.type + '</span> <b>$' + Number(o.strike).toFixed(2) + '</b>' + (isOut ? ' <span style="font-size:8px;color:#f59e0b;font-weight:700">' + flags.join(' ') + '</span>' : '') + '</div>' +
+      '<div style="text-align:right;color:var(--muted)">buy(ask) ' + (o.ask != null ? '$' + Number(o.ask).toFixed(2) : '—') + ' · sell(bid) ' + (o.bid != null ? '$' + Number(o.bid).toFixed(2) : '—') + ' · ' + (o.vol != null ? o.vol : '—') + ' contracts (' + ((o.vol||0)*100).toLocaleString() + ' sh) · OI ' + (o.oi != null ? o.oi : '—') + '</div></div>';
+  });
+  box.innerHTML = '<div style="border-top:1px solid var(--border);margin-top:8px;padding-top:8px"><div style="font-weight:700;font-size:11px;margin-bottom:4px">📋 Summary — top by volume, ' + chainState.selectedExp + ' (avg vol ' + Math.round(avgVol) + ', median IV ' + (medIV*100).toFixed(0) + '%)</div>' + rows + '<div style="font-size:8px;color:var(--muted);margin-top:4px">Outliers highlighted: Vol>OI (new positioning), 2x average volume, IV 1.5x above chain median, spread >25% of ask. 1 contract = 100 shares.</div></div>';
+}
+
 function renderChain() {
   const out = document.getElementById('chainOutput');
   if (!out || !chainState.ticker) return;
@@ -6121,11 +6150,14 @@ function renderChain() {
   out.innerHTML = '<div class="card">' +
     '<div class="card-title">📊 ' + chainState.ticker + ' Chain — ' + chainState.source + (spot ? ' · spot $' + Number(spot).toFixed(2) : '') + '</div>' +
     '<div style="margin-bottom:8px">' + expBtns + '</div>' +
+    '<button class="btn btn-ghost" id="chainSumBtn" style="padding:5px 10px;font-size:9px;margin-bottom:6px">📋 Summarize + Outliers</button>' +
     '<div style="max-height:38vh;overflow-y:auto">' + rows + '</div>' +
+    '<div id="chainSummary"></div>' +
     '<div style="font-size:9px;color:var(--muted);margin-top:6px">Showing strikes within ±15% of spot. Click a contract to prefill the tracker form below. Data is delayed exchange data — verify with your broker before trading.</div>' +
   '</div>';
 
   setTimeout(function() {
+    const csb = document.getElementById('chainSumBtn'); if (csb) csb.addEventListener('click', summarizeChain);
     document.querySelectorAll('[data-chain-exp]').forEach(function(b) {
       b.addEventListener('click', function() { selectChainExp(this.getAttribute('data-chain-exp')); });
     });
